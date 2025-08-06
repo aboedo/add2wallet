@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
@@ -58,6 +59,21 @@ struct ContentView: View {
             }
             .padding()
             .navigationBarHidden(true)
+            .fileImporter(
+                isPresented: $viewModel.showingDocumentPicker,
+                allowedContentTypes: [UTType.pdf],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    if let url = urls.first {
+                        viewModel.handleSelectedDocument(url: url)
+                    }
+                case .failure(let error):
+                    viewModel.statusMessage = "Error selecting PDF: \(error.localizedDescription)"
+                    viewModel.hasError = true
+                }
+            }
         }
     }
 }

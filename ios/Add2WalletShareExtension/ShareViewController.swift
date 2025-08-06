@@ -3,50 +3,30 @@ import Social
 import MobileCoreServices
 import UniformTypeIdentifiers
 
-class ShareViewController: UIViewController {
+class ShareViewController: SLComposeServiceViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        setupUI()
+        // Configure the share extension UI
+        title = "Add to Wallet"
+        placeholder = "Converting PDF to Apple Wallet pass..."
+        
+        // Hide the text view since we're just processing
+        textView.isHidden = true
+        
+        // Process the shared content immediately
         handleSharedContent()
     }
     
-    private func setupUI() {
-        view.backgroundColor = UIColor.systemBackground
-        
-        let titleLabel = UILabel()
-        titleLabel.text = "Add to Wallet"
-        titleLabel.font = UIFont.systemFont(ofSize: 24, weight: .bold)
-        titleLabel.textAlignment = .center
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        let messageLabel = UILabel()
-        messageLabel.text = "Converting PDF to Apple Wallet pass..."
-        messageLabel.font = UIFont.systemFont(ofSize: 16)
-        messageLabel.textAlignment = .center
-        messageLabel.textColor = UIColor.secondaryLabel
-        messageLabel.numberOfLines = 0
-        messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        let activityIndicator = UIActivityIndicatorView(style: .large)
-        activityIndicator.startAnimating()
-        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-        
-        let stackView = UIStackView(arrangedSubviews: [titleLabel, messageLabel, activityIndicator])
-        stackView.axis = .vertical
-        stackView.spacing = 20
-        stackView.alignment = .center
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        
-        view.addSubview(stackView)
-        
-        NSLayoutConstraint.activate([
-            stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            stackView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20)
-        ])
+    override func isContentValid() -> Bool {
+        // Content is always valid for our use case
+        return true
+    }
+    
+    override func didSelectPost() {
+        // This will be called when user taps "Post" but we handle everything automatically
+        extensionContext!.completeRequest(returningItems: [], completionHandler: nil)
     }
     
     private func handleSharedContent() {
@@ -98,6 +78,11 @@ class ShareViewController: UIViewController {
                     let jsonData = try JSONSerialization.data(withJSONObject: sharedData)
                     try jsonData.write(to: sharedFile)
                     
+                    // Update UI to show success
+                    DispatchQueue.main.async { [weak self] in
+                        self?.placeholder = "PDF saved! Opening Add2Wallet..."
+                    }
+                    
                     // Open main app
                     openMainApp()
                 } catch {
@@ -113,33 +98,35 @@ class ShareViewController: UIViewController {
     }
     
     private func openMainApp() {
-        // Try to open the main app
-        if let url = URL(string: "add2wallet://share-pdf") {
-            var responder = self as UIResponder?
-            let selectorOpenURL = sel_registerName("openURL:")
-            
-            while responder != nil {
-                if responder!.responds(to: selectorOpenURL) {
-                    responder!.perform(selectorOpenURL, with: url)
-                    break
-                }
-                responder = responder!.next
-            }
+        // Update UI to show we're opening the app
+        DispatchQueue.main.async { [weak self] in
+            self?.placeholder = "Opening Add2Wallet..."
         }
         
-        // Close the extension
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+        // Simple approach: just try to open the URL
+        if let url = URL(string: "add2wallet://share-pdf") {
+            extensionContext?.open(url, completionHandler: { success in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+                }
+            })
+        } else {
+            // If URL creation fails, just close
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+            }
         }
     }
     
     private func showError(_ message: String) {
         DispatchQueue.main.async { [weak self] in
-            let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+            // Update the UI to show error state
+            self?.placeholder = "Error: \(message)"
+            
+            // Close the extension after a brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-            })
-            self?.present(alert, animated: true)
+            }
         }
     }
 }

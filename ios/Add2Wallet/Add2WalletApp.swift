@@ -45,7 +45,7 @@ struct Add2WalletApp: App {
                     try FileManager.default.removeItem(at: sharedFile)
                 }
             } catch {
-                print("Error processing shared PDF: \(error)")
+                // Silent error handling
             }
         }
     }

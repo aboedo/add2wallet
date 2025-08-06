@@ -1,10 +1,12 @@
 import SwiftUI
 import Combine
+import UniformTypeIdentifiers
 
 class ContentViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var statusMessage: String?
     @Published var hasError = false
+    @Published var showingDocumentPicker = false
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
@@ -29,8 +31,27 @@ class ContentViewModel: ObservableObject {
     }
     
     func selectPDF() {
-        statusMessage = "PDF selection will be implemented with document picker"
+        showingDocumentPicker = true
         hasError = false
+    }
+    
+    func handleSelectedDocument(url: URL) {
+        guard url.startAccessingSecurityScopedResource() else {
+            statusMessage = "Unable to access selected file"
+            hasError = true
+            return
+        }
+        
+        defer { url.stopAccessingSecurityScopedResource() }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let filename = url.lastPathComponent
+            processPDF(data: data, filename: filename)
+        } catch {
+            statusMessage = "Error reading PDF: \(error.localizedDescription)"
+            hasError = true
+        }
     }
     
     func processPDF(data: Data, filename: String) {

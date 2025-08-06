@@ -36,7 +36,7 @@ enum NetworkError: Error, LocalizedError {
 }
 
 class NetworkService {
-    private let baseURL = "http://localhost:8000"
+    private let baseURL = "http://192.168.68.66:8000"
     private let session = URLSession.shared
     
     func uploadPDF(data: Data, filename: String) -> AnyPublisher<UploadResponse, Error> {
