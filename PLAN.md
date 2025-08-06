@@ -351,6 +351,11 @@ Phase 7 (Production):
 - Git: Conventional commits
 - Documentation: Inline + README
 
+### Project Management
+- **Use Tuist for iOS project generation**: All Xcode project files are generated using Tuist configuration
+- **Compilation verification**: For every change in the iOS app, ensure that it continues to compile successfully
+- **Test project integrity**: After each modification, verify the project opens in Xcode and builds without errors
+
 ### Testing Requirements
 - Minimum 80% code coverage
 - All endpoints must have tests
@@ -401,14 +406,23 @@ Phase 7 (Production):
 # - Xcode 15.0+
 # - iOS 17.0+ SDK
 # - Apple Developer Account
+# - Tuist (brew install tuist)
 
 # Clone and open project
 git clone [repository]
 cd add2wallet/ios
+
+# Generate Xcode project using Tuist
+tuist generate
+
+# Open generated project
 open Add2Wallet.xcodeproj
 
 # Run tests
 xcodebuild test -scheme Add2Wallet
+
+# Verify compilation after changes
+xcodebuild -scheme Add2Wallet build
 ```
 
 #### Backend Development

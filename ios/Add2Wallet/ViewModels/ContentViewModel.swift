@@ -9,6 +9,25 @@ class ContentViewModel: ObservableObject {
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
     
+    init() {
+        // Listen for shared PDFs from the Share Extension
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("SharedPDFReceived"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let userInfo = notification.userInfo,
+               let filename = userInfo["filename"] as? String,
+               let data = userInfo["data"] as? Data {
+                self?.processPDF(data: data, filename: filename)
+            }
+        }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     func selectPDF() {
         statusMessage = "PDF selection will be implemented with document picker"
         hasError = false
@@ -16,7 +35,7 @@ class ContentViewModel: ObservableObject {
     
     func processPDF(data: Data, filename: String) {
         isProcessing = true
-        statusMessage = nil
+        statusMessage = "Processing \(filename)..."
         hasError = false
         
         networkService.uploadPDF(data: data, filename: filename)

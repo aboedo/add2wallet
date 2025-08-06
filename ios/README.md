@@ -53,9 +53,11 @@ Add2WalletTests/
 - ✅ Network service for API communication
 - ✅ Multipart form upload for PDFs
 - ✅ Error handling and loading states
-- ✅ Unit tests for core functionality
+- ✅ Share Extension for PDF import from other apps
+- ✅ App Groups for data sharing between app and extension
+- ✅ URL scheme handling for extension communication
+- ✅ Comprehensive unit tests for core functionality
 - ⏳ Document picker (coming next)
-- ⏳ Share extension (coming next)
 
 ## Configuration
 
@@ -76,8 +78,27 @@ The app is configured to:
 2. Run the iOS app in simulator
 3. The app will connect to the local backend
 
+## Using the Share Extension
+
+The app includes a Share Extension that allows users to import PDFs from other apps:
+
+1. Open any PDF in Safari, Files app, Mail, or another app
+2. Tap the Share button (square with arrow pointing up)
+3. Find and tap "Add to Wallet" in the share sheet
+4. The PDF will be automatically processed and sent to the backend
+
+### How it works:
+- The Share Extension captures the PDF from the sharing app
+- Saves it temporarily in a shared App Group container
+- Opens the main app via URL scheme
+- Main app processes the PDF and uploads it to the backend
+- Shared file is cleaned up after processing
+
+### App Group Configuration:
+Both the main app and extension use App Group `group.com.andresboedo.add2wallet` for data sharing.
+
 ## Next Steps
-1. Add Share Extension target for PDF import from other apps
-2. Implement document picker for in-app PDF selection
-3. Add PassKit integration for Apple Wallet
-4. Implement proper authentication flow
+1. Implement document picker for in-app PDF selection
+2. Add PassKit integration for Apple Wallet
+3. Implement proper authentication flow
+4. Add progress tracking for pass generation

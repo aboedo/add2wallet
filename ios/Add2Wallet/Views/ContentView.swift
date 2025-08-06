@@ -32,9 +32,17 @@ struct ContentView: View {
                                 .cornerRadius(10)
                         }
                         
-                        Text("Or use the Share Extension from any app")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        VStack(spacing: 8) {
+                            Text("Or use the Share Extension from any app")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Text("Open a PDF in Files, Safari, or any app and tap the Share button, then select \"Add to Wallet\"")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
                     }
                 }
                 
