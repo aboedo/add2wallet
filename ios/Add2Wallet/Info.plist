@@ -66,6 +66,17 @@
             </array>
         </dict>
     </array>
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIColorName</key>
+        <string>AccentColor</string>
+        <key>UIImageName</key>
+        <string>AppIcon</string>
+        <key>UILaunchScreenMinimumSize</key>
+        <string>{320, 568}</string>
+    </dict>
+    <key>UIRequiresFullScreen</key>
+    <false/>
     <key>UTImportedTypeDeclarations</key>
     <array>
         <dict>

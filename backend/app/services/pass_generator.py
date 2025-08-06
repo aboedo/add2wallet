@@ -6,13 +6,18 @@ import tempfile
 import zipfile
 import shutil
 import subprocess
+import re
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 import hashlib
+from collections import Counter
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.serialization import pkcs7
 from cryptography import x509
+import PyPDF2
+from PIL import Image
+import io
 
 
 class PassGenerator:
@@ -185,7 +190,7 @@ class PassGenerator:
     def create_pass_from_pdf_data(self, 
                                  pdf_data: bytes, 
                                  filename: str) -> bytes:
-        """Create a pass from PDF data.
+        """Create an intelligent pass from PDF data.
         
         Args:
             pdf_data: Raw PDF bytes
@@ -194,13 +199,165 @@ class PassGenerator:
         Returns:
             The .pkpass file as bytes
         """
-        # For now, create a basic pass with PDF info
-        # In future versions, we'd extract more info from the PDF
+        print(f"🔍 Analyzing PDF: {filename}")
         
-        title = filename.replace('.pdf', '').replace('_', ' ').title()
-        description = f"Digital pass generated from {filename}"
+        # Extract text content from PDF
+        pdf_text = self._extract_pdf_text(pdf_data)
+        print(f"📝 Extracted {len(pdf_text)} characters of text")
         
-        return self.create_basic_pass(title=title, description=description)
+        # Analyze PDF content to extract pass information
+        pass_info = self._extract_pass_info(pdf_text)
+        print(f"🎯 Extracted info: {pass_info}")
+        
+        # Analyze colors for dynamic theming
+        bg_color, fg_color, label_color = self._analyze_pdf_colors(pdf_data)
+        print(f"🎨 Color theme: bg={bg_color}, fg={fg_color}")
+        
+        # Use extracted title or fallback to filename
+        title = pass_info.get('title') or filename.replace('.pdf', '').replace('_', ' ').title()
+        
+        # Use extracted description or create one
+        description = pass_info.get('description') or f"Digital pass from {filename}"
+        
+        return self.create_enhanced_pass(
+            title=title,
+            description=description,
+            pass_info=pass_info,
+            bg_color=bg_color,
+            fg_color=fg_color,
+            label_color=label_color
+        )
+    
+    def create_enhanced_pass(self, 
+                            title: str,
+                            description: str,
+                            pass_info: Dict[str, str],
+                            bg_color: str,
+                            fg_color: str,
+                            label_color: str,
+                            organization: str = "Add2Wallet") -> bytes:
+        """Create an enhanced pass with extracted PDF data.
+        
+        Args:
+            title: Pass title
+            description: Pass description
+            pass_info: Extracted information from PDF
+            bg_color: Background color
+            fg_color: Foreground color  
+            label_color: Label color
+            organization: Organization name
+            
+        Returns:
+            bytes: The .pkpass file as bytes
+        """
+        # Extract identifiers from certificate
+        pass_type_id, team_id = self._extract_certificate_identifiers()
+        
+        # Build pass fields dynamically based on extracted info
+        header_fields = []
+        primary_fields = []
+        secondary_fields = []
+        auxiliary_fields = []
+        
+        # Header field - always show document type or title
+        if pass_info.get('title'):
+            header_fields.append({
+                "key": "header",
+                "label": "EVENT",
+                "value": title[:25]  # Limit length for header
+            })
+        else:
+            header_fields.append({
+                "key": "header", 
+                "label": "DOCUMENT",
+                "value": "Digital Pass"
+            })
+        
+        # Primary field - main title
+        primary_fields.append({
+            "key": "title",
+            "label": "",
+            "value": title
+        })
+        
+        # Secondary fields - date and time if available
+        if pass_info.get('date'):
+            secondary_fields.append({
+                "key": "date",
+                "label": "Date",
+                "value": pass_info['date']
+            })
+            
+        if pass_info.get('time'):
+            secondary_fields.append({
+                "key": "time", 
+                "label": "Time",
+                "value": pass_info['time']
+            })
+        
+        # Auxiliary fields - venue and other details
+        if pass_info.get('venue'):
+            auxiliary_fields.append({
+                "key": "venue",
+                "label": "Venue",
+                "value": pass_info['venue']
+            })
+            
+        # Always add generation info
+        auxiliary_fields.append({
+            "key": "generated",
+            "label": "Generated",
+            "value": datetime.now().strftime("%b %d, %Y")
+        })
+        
+        # Create pass.json with enhanced content
+        pass_json = {
+            "formatVersion": 1,
+            "passTypeIdentifier": pass_type_id,
+            "serialNumber": f"enhanced-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "teamIdentifier": team_id,
+            "organizationName": organization,
+            "description": description,
+            "logoText": title[:20],  # Shorter for logo text
+            "foregroundColor": fg_color,
+            "backgroundColor": bg_color,
+            "labelColor": label_color,
+            "generic": {
+                "headerFields": header_fields,
+                "primaryFields": primary_fields,
+                "secondaryFields": secondary_fields,
+                "auxiliaryFields": auxiliary_fields
+            }
+        }
+        
+        # Create temporary directory for pass files
+        with tempfile.TemporaryDirectory() as temp_dir:
+            
+            # Write pass.json
+            pass_json_path = os.path.join(temp_dir, "pass.json")
+            with open(pass_json_path, 'w') as f:
+                json.dump(pass_json, f, indent=2)
+            
+            # Copy icon files to pass directory
+            self._copy_icon_assets(temp_dir)
+            
+            # Create manifest.json (file hashes)
+            manifest = self._create_manifest(temp_dir)
+            manifest_path = os.path.join(temp_dir, "manifest.json")
+            with open(manifest_path, 'w') as f:
+                json.dump(manifest, f, indent=2)
+            
+            # Sign the manifest if certificates are available
+            if self.signing_enabled:
+                signature = self._sign_manifest_file(manifest_path)
+                signature_path = os.path.join(temp_dir, "signature")
+                with open(signature_path, 'wb') as f:
+                    f.write(signature)
+            
+            # Create .pkpass zip file
+            pkpass_data = self._create_pkpass_zip(temp_dir)
+            
+            return pkpass_data
     
     def _check_certificates_available(self) -> bool:
         """Check if all required certificate files are available.
@@ -419,6 +576,141 @@ class PassGenerator:
         except Exception as e:
             print(f"❌ Error with OpenSSL signing: {e}")
             return b""
+    
+    def _extract_pdf_text(self, pdf_data: bytes) -> str:
+        """Extract text content from PDF.
+        
+        Args:
+            pdf_data: Raw PDF bytes
+            
+        Returns:
+            Extracted text content
+        """
+        try:
+            pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_data))
+            text_content = ""
+            
+            for page in pdf_reader.pages:
+                text_content += page.extract_text() + "\n"
+            
+            return text_content.strip()
+            
+        except Exception as e:
+            print(f"❌ Error extracting PDF text: {e}")
+            return ""
+    
+    def _analyze_pdf_colors(self, pdf_data: bytes) -> Tuple[str, str, str]:
+        """Analyze PDF to suggest color palette.
+        
+        Args:
+            pdf_data: Raw PDF bytes
+            
+        Returns:
+            tuple: (background_color, foreground_color, label_color)
+        """
+        # For now, return a smart default palette based on common ticket colors
+        # This is a simplified approach - full implementation would analyze actual PDF colors
+        
+        try:
+            text = self._extract_pdf_text(pdf_data).lower()
+            
+            # Simple color inference based on content type
+            if any(word in text for word in ['airline', 'flight', 'boarding']):
+                return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Blue theme
+            elif any(word in text for word in ['concert', 'music', 'show', 'festival']):
+                return "rgb(255, 45, 85)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"   # Red theme
+            elif any(word in text for word in ['train', 'railway', 'rail']):
+                return "rgb(48, 176, 199)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Teal theme
+            elif any(word in text for word in ['hotel', 'reservation', 'check']):
+                return "rgb(142, 142, 147)", "rgb(255, 255, 255)", "rgb(255, 255, 255)" # Gray theme
+            else:
+                # Default professional blue
+                return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"
+                
+        except Exception as e:
+            print(f"⚠️  Error analyzing PDF colors: {e}")
+            return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"
+    
+    def _extract_pass_info(self, pdf_text: str) -> Dict[str, str]:
+        """Extract basic pass information from PDF text.
+        
+        Args:
+            pdf_text: Extracted text from PDF
+            
+        Returns:
+            Dictionary with extracted information
+        """
+        info = {
+            'title': '',
+            'event_name': '',
+            'date': '',
+            'time': '',
+            'venue': '',
+            'description': ''
+        }
+        
+        lines = [line.strip() for line in pdf_text.split('\n') if line.strip()]
+        
+        if not lines:
+            return info
+        
+        # Extract title (usually one of the first meaningful lines)
+        for line in lines[:5]:
+            if len(line) > 3 and not re.match(r'^[\d\s\-\+\(\)]+$', line):
+                info['title'] = line[:50]  # Limit title length
+                break
+        
+        # Extract dates (look for various date formats)
+        date_patterns = [
+            r'\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\b',  # MM/DD/YYYY, DD-MM-YYYY
+            r'\b(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2})\b',     # YYYY-MM-DD
+            r'\b((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{4})\b',  # Month DD, YYYY
+            r'\b(\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4})\b'     # DD Month YYYY
+        ]
+        
+        for pattern in date_patterns:
+            match = re.search(pattern, pdf_text, re.IGNORECASE)
+            if match:
+                info['date'] = match.group(1)
+                break
+        
+        # Extract times (look for time formats)
+        time_patterns = [
+            r'\b(\d{1,2}:\d{2}\s*(?:AM|PM))\b',  # 12-hour format
+            r'\b(\d{1,2}:\d{2})\b'               # 24-hour format
+        ]
+        
+        for pattern in time_patterns:
+            match = re.search(pattern, pdf_text, re.IGNORECASE)
+            if match:
+                info['time'] = match.group(1)
+                break
+        
+        # Extract venue/location (look for common venue indicators)
+        venue_indicators = ['venue:', 'location:', 'address:', 'at:', '@']
+        for line in lines:
+            line_lower = line.lower()
+            for indicator in venue_indicators:
+                if indicator in line_lower:
+                    venue_text = line[line_lower.find(indicator) + len(indicator):].strip()
+                    if len(venue_text) > 3:
+                        info['venue'] = venue_text[:100]  # Limit venue length
+                        break
+            if info['venue']:
+                break
+        
+        # Create description
+        if info.get('date') or info.get('time') or info.get('venue'):
+            desc_parts = []
+            if info.get('date'):
+                desc_parts.append(info['date'])
+            if info.get('time'):
+                desc_parts.append(info['time'])
+            if info.get('venue'):
+                desc_parts.append(info['venue'])
+            info['description'] = " • ".join(desc_parts)
+        
+        return info
 
 
 # Global instance

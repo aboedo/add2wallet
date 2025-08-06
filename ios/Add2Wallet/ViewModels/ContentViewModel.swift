@@ -131,7 +131,7 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(
                 name: NSNotification.Name("PassReadyToAdd"),
                 object: nil,
-                userInfo: ["passViewController": passVC, "tempURL": tempURL]
+                userInfo: ["passViewController": passVC!, "tempURL": tempURL]
             )
             
         } catch {
