@@ -4,6 +4,7 @@ from typing import Optional
 class UploadResponse(BaseModel):
     job_id: str
     status: str
+    pass_url: Optional[str] = None
 
 class ErrorResponse(BaseModel):
     error: str

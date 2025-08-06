@@ -1,8 +1,11 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import PassKit
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
+    @State private var passViewController: PKAddPassesViewController?
+    @State private var showingAddPassVC = false
     
     var body: some View {
         NavigationView {
@@ -55,10 +58,40 @@ struct ContentView: View {
                         .padding()
                 }
                 
+                if passViewController != nil {
+                    Button(action: {
+                        showingAddPassVC = true
+                    }) {
+                        Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                }
+                
                 Spacer()
             }
             .padding()
             .navigationBarHidden(true)
+            .onAppear {
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("PassReadyToAdd"),
+                    object: nil,
+                    queue: .main
+                ) { notification in
+                    if let userInfo = notification.userInfo,
+                       let passVC = userInfo["passViewController"] as? PKAddPassesViewController {
+                        self.passViewController = passVC
+                    }
+                }
+            }
+            .sheet(isPresented: $showingAddPassVC) {
+                if let passVC = passViewController {
+                    PassKitView(passViewController: passVC)
+                }
+            }
             .fileImporter(
                 isPresented: $viewModel.showingDocumentPicker,
                 allowedContentTypes: [UTType.pdf],
@@ -75,6 +108,18 @@ struct ContentView: View {
                 }
             }
         }
+    }
+}
+
+struct PassKitView: UIViewControllerRepresentable {
+    let passViewController: PKAddPassesViewController
+    
+    func makeUIViewController(context: Context) -> PKAddPassesViewController {
+        return passViewController
+    }
+    
+    func updateUIViewController(_ uiViewController: PKAddPassesViewController, context: Context) {
+        // No updates needed
     }
 }
 

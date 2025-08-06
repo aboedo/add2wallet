@@ -4,10 +4,12 @@ import Combine
 struct UploadResponse: Codable {
     let jobId: String
     let status: String
+    let passUrl: String?
     
     enum CodingKeys: String, CodingKey {
         case jobId = "job_id"
         case status
+        case passUrl = "pass_url"
     }
 }
 
@@ -92,6 +94,30 @@ class NetworkService {
                 }
             }
             .decode(type: UploadResponse.self, decoder: JSONDecoder())
+            .eraseToAnyPublisher()
+    }
+    
+    func downloadPass(from passUrl: String) -> AnyPublisher<Data, Error> {
+        guard let url = URL(string: "\(baseURL)\(passUrl)") else {
+            return Fail(error: NetworkError.invalidURL)
+                .eraseToAnyPublisher()
+        }
+        
+        var request = URLRequest(url: url)
+        request.setValue("development-api-key", forHTTPHeaderField: "X-API-Key")
+        
+        return session.dataTaskPublisher(for: request)
+            .tryMap { data, response in
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw NetworkError.invalidResponse
+                }
+                
+                if httpResponse.statusCode == 200 {
+                    return data
+                } else {
+                    throw NetworkError.serverError("Failed to download pass: \(httpResponse.statusCode)")
+                }
+            }
             .eraseToAnyPublisher()
     }
 }

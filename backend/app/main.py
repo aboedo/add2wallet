@@ -88,7 +88,7 @@ async def upload_pdf(
             "filename": file.filename
         }
         
-        return UploadResponse(job_id=job_id, status="completed")
+        return UploadResponse(job_id=job_id, status="completed", pass_url=f"/pass/{job_id}")
         
     except Exception as e:
         # If pass generation fails, mark job as failed

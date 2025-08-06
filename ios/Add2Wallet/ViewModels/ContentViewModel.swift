@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import UniformTypeIdentifiers
+import PassKit
 
 class ContentViewModel: ObservableObject {
     @Published var isProcessing = false
@@ -70,10 +71,72 @@ class ContentViewModel: ObservableObject {
                     }
                 },
                 receiveValue: { [weak self] response in
-                    self?.statusMessage = "PDF uploaded successfully! Job ID: \(response.jobId)"
-                    self?.hasError = false
+                    if response.status == "completed", let passUrl = response.passUrl {
+                        self?.downloadAndOpenPass(passUrl: passUrl)
+                    } else {
+                        self?.statusMessage = "Pass generation failed. Status: \(response.status)"
+                        self?.hasError = true
+                    }
                 }
             )
             .store(in: &cancellables)
+    }
+    
+    private func downloadAndOpenPass(passUrl: String) {
+        statusMessage = "Downloading pass..."
+        
+        networkService.downloadPass(from: passUrl)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.statusMessage = "Error downloading pass: \(error.localizedDescription)"
+                        self?.hasError = true
+                    }
+                },
+                receiveValue: { [weak self] passData in
+                    self?.openPassInWallet(passData: passData)
+                }
+            )
+            .store(in: &cancellables)
+    }
+    
+    private func openPassInWallet(passData: Data) {
+        do {
+            // Save pass data to temporary file
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("pkpass")
+            
+            try passData.write(to: tempURL)
+            
+            // Create PKPass from the data
+            let pass = try PKPass(data: passData)
+            
+            // Check if PassKit is available and pass can be added
+            guard PKPassLibrary.isPassLibraryAvailable() else {
+                statusMessage = "Apple Wallet is not available on this device"
+                hasError = true
+                return
+            }
+            
+            // Present the add pass view controller
+            let passVC = PKAddPassesViewController(pass: pass)
+            
+            // For now, show success message - we'll need to present the VC from the View
+            statusMessage = "Pass ready! Tap to add to Wallet"
+            hasError = false
+            
+            // Store the pass data for the view to access
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PassReadyToAdd"),
+                object: nil,
+                userInfo: ["passViewController": passVC, "tempURL": tempURL]
+            )
+            
+        } catch {
+            statusMessage = "Error creating pass: \(error.localizedDescription)"
+            hasError = true
+        }
     }
 }
