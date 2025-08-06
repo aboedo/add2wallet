@@ -1,4 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Header
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import uuid
@@ -8,6 +9,7 @@ from pathlib import Path
 
 from app.models.responses import UploadResponse, ErrorResponse, StatusResponse
 from app.services.pdf_validator import PDFValidator
+from app.services.pass_generator import pass_generator
 
 app = FastAPI(title="Add2Wallet API", version="1.0.0")
 
@@ -67,16 +69,39 @@ async def upload_pdf(
     with open(file_path, "wb") as f:
         f.write(contents)
     
-    # Store job information
-    jobs[job_id] = {
-        "user_id": user_id,
-        "status": "processing",
-        "progress": 0,
-        "file_path": str(file_path),
-        "filename": file.filename
-    }
-    
-    return UploadResponse(job_id=job_id, status="processing")
+    # Generate Apple Wallet pass immediately
+    try:
+        pkpass_data = pass_generator.create_pass_from_pdf_data(contents, file.filename)
+        
+        # Save the pass file
+        pass_path = UPLOAD_DIR / f"{job_id}.pkpass"
+        with open(pass_path, "wb") as f:
+            f.write(pkpass_data)
+        
+        # Store job information
+        jobs[job_id] = {
+            "user_id": user_id,
+            "status": "completed",
+            "progress": 100,
+            "file_path": str(file_path),
+            "pass_path": str(pass_path),
+            "filename": file.filename
+        }
+        
+        return UploadResponse(job_id=job_id, status="completed")
+        
+    except Exception as e:
+        # If pass generation fails, mark job as failed
+        jobs[job_id] = {
+            "user_id": user_id,
+            "status": "failed",
+            "progress": 0,
+            "file_path": str(file_path),
+            "filename": file.filename,
+            "error": str(e)
+        }
+        
+        return UploadResponse(job_id=job_id, status="failed")
 
 @app.get("/status/{job_id}", response_model=StatusResponse)
 async def get_status(
@@ -90,10 +115,7 @@ async def get_status(
     
     job = jobs[job_id]
     
-    # Simulate processing completion for now
-    if job["progress"] == 0:
-        job["progress"] = 100
-        job["status"] = "completed"
+    # Job status is already set during upload
     
     return StatusResponse(
         job_id=job_id,
@@ -116,12 +138,21 @@ async def download_pass(
     if job["status"] != "completed":
         raise HTTPException(status_code=400, detail="Pass is not ready yet")
     
-    # For now, return a placeholder response
-    return {
-        "message": "Pass generation will be implemented in Phase 4",
-        "job_id": job_id,
-        "filename": job["filename"]
-    }
+    # Return the actual .pkpass file
+    pass_path = Path(job["pass_path"])
+    if not pass_path.exists():
+        raise HTTPException(status_code=404, detail="Pass file not found")
+    
+    with open(pass_path, "rb") as f:
+        pass_data = f.read()
+    
+    return Response(
+        content=pass_data,
+        media_type="application/vnd.apple.pkpass",
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{job['filename'].replace('.pdf', '.pkpass')}\""
+        }
+    )
 
 @app.get("/passes")
 async def list_passes(
@@ -145,9 +176,16 @@ async def list_passes(
 async def shutdown_event():
     """Clean up temporary files on shutdown."""
     for job in jobs.values():
+        # Clean up PDF file
         file_path = Path(job["file_path"])
         if file_path.exists():
             file_path.unlink()
+        
+        # Clean up pass file
+        if "pass_path" in job:
+            pass_path = Path(job["pass_path"])
+            if pass_path.exists():
+                pass_path.unlink()
 
 if __name__ == "__main__":
     import uvicorn
