@@ -190,8 +190,8 @@ class PassGenerator:
     def create_pass_from_pdf_data(self, 
                                  pdf_data: bytes, 
                                  filename: str,
-                                 ai_metadata: Dict[str, Any] = None) -> Tuple[bytes, List[Dict[str, Any]]]:
-        """Create an intelligent pass from PDF data.
+                                 ai_metadata: Dict[str, Any] = None) -> Tuple[List[bytes], List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Create intelligent passes from PDF data, supporting multiple tickets.
         
         Args:
             pdf_data: Raw PDF bytes
@@ -199,23 +199,30 @@ class PassGenerator:
             ai_metadata: AI-extracted metadata (optional)
             
         Returns:
-            Tuple of (.pkpass file as bytes, list of detected barcodes)
+            Tuple of (list of .pkpass files as bytes, list of detected barcodes, list of ticket info)
         """
         print(f"🔍 Analyzing PDF: {filename}")
         
-        # Step 1: Extract barcodes from PDF
+        # Step 1: Extract barcodes from PDF (with fallback)
         barcodes = []
         try:
-            from app.services.barcode_extractor import barcode_extractor
-            barcodes = barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
-            print(f"📊 Found {len(barcodes)} barcodes in PDF")
+            # Try main barcode extractor first
+            try:
+                from app.services.barcode_extractor import barcode_extractor
+                barcodes = barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
+                print(f"📊 Found {len(barcodes)} barcodes in PDF using main extractor")
+            except ImportError:
+                # Fall back to text-based extraction
+                from app.services.barcode_extractor_fallback import fallback_barcode_extractor
+                barcodes = fallback_barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
+                print(f"📊 Found {len(barcodes)} potential barcodes in PDF using fallback extractor")
         except Exception as e:
             print(f"⚠️ Barcode extraction failed: {e}")
         
         # Step 2: Use AI metadata if available, otherwise fall back to basic extraction
         if ai_metadata and ai_metadata.get('ai_processed'):
             print(f"🤖 Using AI-extracted metadata (confidence: {ai_metadata.get('confidence_score', 'unknown')})")
-            pass_info = ai_metadata
+            base_pass_info = ai_metadata
         else:
             print("🔄 Falling back to basic PDF analysis")
             # Extract text content from PDF
@@ -223,44 +230,103 @@ class PassGenerator:
             print(f"📝 Extracted {len(pdf_text)} characters of text")
             
             # Analyze PDF content to extract pass information
-            pass_info = self._extract_pass_info(pdf_text)
-            print(f"🎯 Extracted info: {pass_info}")
+            base_pass_info = self._extract_pass_info(pdf_text)
+            print(f"🎯 Extracted info: {base_pass_info}")
         
-        # Step 3: Merge barcode data with pass info
-        if barcodes:
-            primary_barcode = barcode_extractor.get_primary_barcode(barcodes)
-            if primary_barcode:
-                print(f"🎫 Using primary barcode: {primary_barcode['type']} - {primary_barcode['data'][:50]}...")
-                pass_info['primary_barcode'] = primary_barcode
+        # Step 3: Detect multiple tickets
+        try:
+            from app.services.barcode_extractor_fallback import fallback_barcode_extractor
+            tickets = fallback_barcode_extractor.detect_multiple_tickets(barcodes, base_pass_info)
+        except:
+            # Simple fallback if detection fails
+            tickets = []
+            if barcodes:
+                for i, barcode in enumerate(barcodes, 1):
+                    tickets.append({
+                        'barcode': barcode,
+                        'metadata': base_pass_info,
+                        'ticket_number': i,
+                        'total_tickets': len(barcodes)
+                    })
+            else:
+                # No barcodes, create single pass
+                tickets.append({
+                    'barcode': None,
+                    'metadata': base_pass_info,
+                    'ticket_number': 1,
+                    'total_tickets': 1
+                })
+        
+        print(f"🎫 Detected {len(tickets)} ticket(s) in PDF")
+        
+        # Step 4: Generate passes for each ticket
+        pkpass_files = []
+        ticket_info = []
+        
+        for ticket in tickets:
+            ticket_barcode = ticket['barcode']
+            ticket_metadata = ticket['metadata']
+            ticket_num = ticket['ticket_number']
+            total_tickets = ticket['total_tickets']
+            
+            # Merge barcode data with pass info
+            pass_info = ticket_metadata.copy()
+            if ticket_barcode:
+                pass_info['primary_barcode'] = ticket_barcode
                 # Use barcode data if no other barcode data was found
                 if not pass_info.get('barcode_data'):
-                    pass_info['barcode_data'] = primary_barcode['data']
+                    pass_info['barcode_data'] = ticket_barcode['data']
+                print(f"🎫 Ticket {ticket_num}: Using barcode {ticket_barcode['type']} - {ticket_barcode['data'][:50]}...")
+            
+            # Analyze colors for dynamic theming
+            bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
+            
+            # Use AI-extracted title or fallback
+            base_title = (pass_info.get('title') or 
+                         pass_info.get('event_name') or 
+                         filename.replace('.pdf', '').replace('_', ' ').title())
+            
+            # Customize title for multiple tickets
+            if total_tickets > 1:
+                title = f"{base_title} (#{ticket_num})"
+            else:
+                title = base_title
+            
+            # Use AI-extracted description or create one
+            base_description = (pass_info.get('description') or 
+                               pass_info.get('event_description') or 
+                               f"Digital pass from {filename}")
+            
+            # Customize description for multiple tickets
+            if total_tickets > 1:
+                description = f"{base_description} - Ticket {ticket_num} of {total_tickets}"
+            else:
+                description = base_description
+            
+            # Generate the enhanced pass with barcode
+            pkpass_data = self.create_enhanced_pass(
+                title=title,
+                description=description,
+                pass_info=pass_info,
+                bg_color=bg_color,
+                fg_color=fg_color,
+                label_color=label_color
+            )
+            
+            pkpass_files.append(pkpass_data)
+            
+            # Store ticket info for response
+            ticket_info.append({
+                'ticket_number': ticket_num,
+                'total_tickets': total_tickets,
+                'title': title,
+                'description': description,
+                'barcode': ticket_barcode,
+                'metadata': pass_info
+            })
         
-        # Step 4: Analyze colors for dynamic theming
-        bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
-        print(f"🎨 Color theme: bg={bg_color}, fg={fg_color}")
-        
-        # Step 5: Use AI-extracted title or fallback
-        title = (pass_info.get('title') or 
-                pass_info.get('event_name') or 
-                filename.replace('.pdf', '').replace('_', ' ').title())
-        
-        # Step 6: Use AI-extracted description or create one
-        description = (pass_info.get('description') or 
-                      pass_info.get('event_description') or 
-                      f"Digital pass from {filename}")
-        
-        # Step 7: Generate the enhanced pass with barcode
-        pkpass_data = self.create_enhanced_pass(
-            title=title,
-            description=description,
-            pass_info=pass_info,
-            bg_color=bg_color,
-            fg_color=fg_color,
-            label_color=label_color
-        )
-        
-        return pkpass_data, barcodes
+        print(f"✅ Generated {len(pkpass_files)} wallet pass(es)")
+        return pkpass_files, barcodes, ticket_info
     
     def create_enhanced_pass(self, 
                             title: str,

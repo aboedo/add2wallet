@@ -106,25 +106,36 @@ async def upload_pdf(
             # Continue with basic extraction
             jobs[job_id]["progress"] = 50
         
-        # Step 3: Generate enhanced pass with AI metadata and barcode extraction
-        pkpass_data, detected_barcodes = pass_generator.create_pass_from_pdf_data(
+        # Step 3: Generate enhanced pass(es) with AI metadata and barcode extraction
+        pkpass_files, detected_barcodes, ticket_info = pass_generator.create_pass_from_pdf_data(
             contents, 
             file.filename,
             ai_metadata
         )
         
-        # Save the pass file
-        pass_path = UPLOAD_DIR / f"{job_id}.pkpass"
-        with open(pass_path, "wb") as f:
-            f.write(pkpass_data)
+        # Save pass files
+        pass_paths = []
+        for i, pkpass_data in enumerate(pkpass_files):
+            if len(pkpass_files) > 1:
+                pass_path = UPLOAD_DIR / f"{job_id}_ticket_{i+1}.pkpass"
+            else:
+                pass_path = UPLOAD_DIR / f"{job_id}.pkpass"
+            
+            with open(pass_path, "wb") as f:
+                f.write(pkpass_data)
+            pass_paths.append(str(pass_path))
         
         # Update job information with completion
         jobs[job_id].update({
             "status": "completed",
             "progress": 100,
-            "pass_path": str(pass_path),
+            "pass_paths": pass_paths,
             "detected_barcodes": detected_barcodes,
-            "barcode_count": len(detected_barcodes)
+            "barcode_count": len(detected_barcodes),
+            "ticket_count": len(pkpass_files),
+            "ticket_info": ticket_info,
+            # Keep backwards compatibility
+            "pass_path": pass_paths[0] if pass_paths else None
         })
         
         return UploadResponse(
@@ -170,9 +181,10 @@ async def get_status(
 @app.get("/pass/{job_id}")
 async def download_pass(
     job_id: str,
+    ticket_number: Optional[int] = None,
     authorization: Optional[str] = Header(None)
 ):
-    """Download the generated Apple Wallet pass."""
+    """Download the generated Apple Wallet pass(es)."""
     
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -181,21 +193,70 @@ async def download_pass(
     if job["status"] != "completed":
         raise HTTPException(status_code=400, detail="Pass is not ready yet")
     
-    # Return the actual .pkpass file
-    pass_path = Path(job["pass_path"])
+    # Handle multiple passes
+    pass_paths = job.get("pass_paths", [job.get("pass_path")]) if job.get("pass_path") else []
+    ticket_count = job.get("ticket_count", 1)
+    
+    if not pass_paths:
+        raise HTTPException(status_code=404, detail="No pass files found")
+    
+    # If specific ticket requested
+    if ticket_number is not None:
+        if ticket_number < 1 or ticket_number > len(pass_paths):
+            raise HTTPException(status_code=400, detail=f"Invalid ticket number. Available: 1-{len(pass_paths)}")
+        
+        pass_path = Path(pass_paths[ticket_number - 1])
+        filename_suffix = f"_ticket_{ticket_number}" if ticket_count > 1 else ""
+    else:
+        # Return first pass (backwards compatibility)
+        pass_path = Path(pass_paths[0])
+        filename_suffix = "_ticket_1" if ticket_count > 1 else ""
+    
     if not pass_path.exists():
         raise HTTPException(status_code=404, detail="Pass file not found")
     
     with open(pass_path, "rb") as f:
         pass_data = f.read()
     
+    base_filename = job['filename'].replace('.pdf', '')
     return Response(
         content=pass_data,
         media_type="application/vnd.apple.pkpass",
         headers={
-            "Content-Disposition": f"attachment; filename=\"{job['filename'].replace('.pdf', '.pkpass')}\""
+            "Content-Disposition": f"attachment; filename=\"{base_filename}{filename_suffix}.pkpass\""
         }
     )
+
+@app.get("/tickets/{job_id}")
+async def list_tickets(
+    job_id: str,
+    authorization: Optional[str] = Header(None)
+):
+    """List all tickets for a specific job."""
+    
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    job = jobs[job_id]
+    ticket_info = job.get("ticket_info", [])
+    ticket_count = job.get("ticket_count", 1)
+    
+    return {
+        "job_id": job_id,
+        "ticket_count": ticket_count,
+        "barcode_count": job.get("barcode_count", 0),
+        "tickets": [
+            {
+                "ticket_number": ticket["ticket_number"],
+                "title": ticket["title"],
+                "description": ticket["description"],
+                "download_url": f"/pass/{job_id}?ticket_number={ticket['ticket_number']}",
+                "has_barcode": ticket["barcode"] is not None,
+                "barcode_type": ticket["barcode"]["type"] if ticket["barcode"] else None
+            }
+            for ticket in ticket_info
+        ]
+    }
 
 @app.get("/passes")
 async def list_passes(
@@ -209,7 +270,9 @@ async def list_passes(
             {
                 "job_id": job_id,
                 "filename": job["filename"],
-                "status": job["status"]
+                "status": job["status"],
+                "ticket_count": job.get("ticket_count", 1),
+                "barcode_count": job.get("barcode_count", 0)
             }
             for job_id, job in jobs.items()
         ]
