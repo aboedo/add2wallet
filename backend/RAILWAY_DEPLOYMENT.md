@@ -12,7 +12,7 @@
    ```
    OPENAI_API_KEY=your-openai-api-key-here
    
-   API_KEY=add2wallet-prod-4fafa87d63f30ecc38e1a156bcb240d6
+   API_KEY=your-production-api-key-here
    
    DEBUG=false
    LOG_LEVEL=INFO
