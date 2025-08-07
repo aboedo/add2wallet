@@ -21,12 +21,25 @@ class ActionViewController: UIViewController {
     }
 
     private func openHostApp() {
+        // Try openURL via responder chain first
         guard let url = URL(string: "add2wallet://share-pdf") else {
             self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
             return
         }
-        self.extensionContext?.open(url, completionHandler: { _ in
-            self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-        })
+        var responder: UIResponder? = self as UIResponder
+        let selector = NSSelectorFromString("openURL:")
+        var didOpen = false
+        while responder != nil {
+            if responder!.responds(to: selector) {
+                _ = responder!.perform(selector, with: url)
+                didOpen = true
+                break
+            }
+            responder = responder?.next
+        }
+        if !didOpen {
+            self.extensionContext?.open(url, completionHandler: { _ in })
+        }
+        self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
     }
 }
