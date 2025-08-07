@@ -2,9 +2,8 @@ import UIKit
 import Social
 import MobileCoreServices
 import UniformTypeIdentifiers
-import QuickLook
 
-class ShareViewController: SLComposeServiceViewController, QLPreviewControllerDataSource {
+class ShareViewController: SLComposeServiceViewController {
     private var itemProvider: NSItemProvider?
     private var pdfTempURL: URL?
     
@@ -15,9 +14,9 @@ class ShareViewController: SLComposeServiceViewController, QLPreviewControllerDa
         title = "Add to Wallet"
         placeholder = "Converting PDF to Apple Wallet pass..."
         
-        // Optional: keep a minimal UI; we provide actions via configuration items
+        // Minimal UI; user taps Post to proceed
         textView.isHidden = true
-        loadSharedPDF()
+        // For testing: don't load or process the shared item. We'll only open the app.
     }
     
     override func isContentValid() -> Bool {
@@ -26,27 +25,8 @@ class ShareViewController: SLComposeServiceViewController, QLPreviewControllerDa
     }
     
     override func didSelectPost() {
-        // User tapped "Post"; treat as explicit action to hand off to the app
-        sendToAdd2Wallet()
-    }
-
-    override func configurationItems() -> [Any]! {
-        var items: [SLComposeSheetConfigurationItem] = []
-        let previewItem = SLComposeSheetConfigurationItem()
-        previewItem?.title = "Preview PDF"
-        previewItem?.tapHandler = { [weak self] in
-            self?.presentPreview()
-        }
-        if let previewItem { items.append(previewItem) }
-
-        let sendItem = SLComposeSheetConfigurationItem()
-        sendItem?.title = "Send to Add2Wallet"
-        sendItem?.tapHandler = { [weak self] in
-            self?.sendToAdd2Wallet()
-        }
-        if let sendItem { items.append(sendItem) }
-
-        return items
+        // For testing: do nothing but open the host app
+        openMainApp()
     }
 
     private func loadSharedPDF() {
@@ -87,47 +67,7 @@ class ShareViewController: SLComposeServiceViewController, QLPreviewControllerDa
         }
     }
     
-    private func sendToAdd2Wallet() {
-        guard let tempURL = pdfTempURL ?? (try? self.exportProviderToTemp()),
-              let filename = tempURL?.lastPathComponent else {
-            showError("No PDF available")
-            return
-        }
-
-        do {
-            let pdfData = try Data(contentsOf: tempURL!)
-
-            // Save to shared container (App Group)
-            guard let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet") else {
-                showError("Unable to access shared container")
-                return
-            }
-
-            // Write the raw PDF
-            let pdfOutURL = sharedContainer.appendingPathComponent("shared.pdf")
-            try pdfData.write(to: pdfOutURL, options: .atomic)
-
-            // Write metadata
-            let metadata: [String: Any] = [
-                "filename": filename,
-                "timestamp": Date().timeIntervalSince1970
-            ]
-            let metadataURL = sharedContainer.appendingPathComponent("shared_pdf.json")
-            let jsonData = try JSONSerialization.data(withJSONObject: metadata, options: [])
-            try jsonData.write(to: metadataURL, options: .atomic)
-
-            // Update UI
-            DispatchQueue.main.async { [weak self] in
-                self?.placeholder = "Opening Add2Wallet..."
-            }
-
-            // Try to open the host app (user-initiated action)
-            openMainApp()
-
-        } catch {
-            showError("Error preparing PDF: \(error.localizedDescription)")
-        }
-    }
+    // For testing, skip writing any files and just open the app
 
     private func exportProviderToTemp() throws -> URL? {
         guard let provider = self.itemProvider else { return nil }
@@ -151,7 +91,7 @@ class ShareViewController: SLComposeServiceViewController, QLPreviewControllerDa
             self?.placeholder = "Opening Add2Wallet..."
         }
         
-        // Use openURL via responder chain (works better when triggered by user action)
+        // Use extensionContext open to foreground host app
         guard let url = URL(string: "add2wallet://share-pdf") else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
@@ -159,35 +99,11 @@ class ShareViewController: SLComposeServiceViewController, QLPreviewControllerDa
             return
         }
 
-        var responder: UIResponder? = self as UIResponder
-        let selector = NSSelectorFromString("openURL:")
-        while responder != nil {
-            if responder!.responds(to: selector) {
-                _ = responder!.perform(selector, with: url)
-                break
+        extensionContext?.open(url, completionHandler: { [weak self] _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
             }
-            responder = responder?.next
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-        }
-    }
-
-    // MARK: - QLPreviewControllerDataSource
-    func numberOfPreviewItems(in controller: QLPreviewController) -> Int { pdfTempURL == nil ? 0 : 1 }
-    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
-        return pdfTempURL! as NSURL
-    }
-
-    private func presentPreview() {
-        guard let _ = pdfTempURL else {
-            showError("PDF not ready to preview")
-            return
-        }
-        let preview = QLPreviewController()
-        preview.dataSource = self
-        self.present(preview, animated: true)
+        })
     }
     
     private func showError(_ message: String) {
