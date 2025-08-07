@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.serialization import pkcs7
 from cryptography import x509
+from cryptography.x509.oid import NameOID
 import PyPDF2
 from PIL import Image
 import io
@@ -622,12 +623,20 @@ class PassGenerator:
             # Extract UID from certificate subject (this is the passTypeIdentifier)
             pass_type_id = None
             team_id = None
-            
-            for attribute in pass_cert.subject:
-                if attribute.oid._name == 'userID':  # UID field (note the capital D)
-                    pass_type_id = attribute.value
-                elif attribute.oid._name == 'organizationalUnitName':  # OU field  
-                    team_id = attribute.value
+
+            try:
+                uid_attributes = pass_cert.subject.get_attributes_for_oid(NameOID.USER_ID)
+                if uid_attributes:
+                    pass_type_id = uid_attributes[0].value
+            except Exception:
+                pass
+
+            try:
+                ou_attributes = pass_cert.subject.get_attributes_for_oid(NameOID.ORGANIZATIONAL_UNIT_NAME)
+                if ou_attributes:
+                    team_id = ou_attributes[0].value
+            except Exception:
+                pass
             
             if pass_type_id and team_id:
                 print(f"✅ Extracted from certificate: passTypeId={pass_type_id}, teamId={team_id}")
@@ -699,11 +708,20 @@ class PassGenerator:
             with open(manifest_path, 'rb') as f:
                 manifest_data = f.read()
             
-            options = [pkcs7.PKCS7Options.DetachedSignature]
+            # Apple Wallet requires a detached, binary CMS signature
+            # Historically, SHA1 is used for the CMS signature of the manifest
+            options = [
+                pkcs7.PKCS7Options.DetachedSignature,
+                pkcs7.PKCS7Options.Binary,
+            ]
+            # Allow selecting digest via env; default to SHA-256. iOS accepts SHA-1 or SHA-256.
+            digest_name = os.getenv('PASS_SIGNATURE_DIGEST', 'sha256').lower()
+            digest_algo = hashes.SHA1() if 'sha1' in digest_name else hashes.SHA256()
+
             signature = pkcs7.PKCS7SignatureBuilder().set_data(
                 manifest_data
             ).add_signer(
-                pass_cert, private_key, hashes.SHA256()  # Cryptography library requires SHA256
+                pass_cert, private_key, digest_algo
             ).add_certificate(
                 pass_cert  # Add the pass certificate to the chain
             ).add_certificate(
