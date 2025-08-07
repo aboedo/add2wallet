@@ -1,10 +1,12 @@
 [build]
 builder = "dockerfile"
 buildCommand = "docker build -t add2wallet-backend ."
+watchPatterns = ["**/*.py", "requirements.txt", "Dockerfile"]
 
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 300
+branch = "fix/deployment"
 
 [environments.production]
 variables = {}
