@@ -2,6 +2,8 @@ import SwiftUI
 
 @main
 struct Add2WalletApp: App {
+    // UIApplicationDelegateAdaptor temporarily disabled; not required for URL
+    // @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -17,6 +19,21 @@ struct Add2WalletApp: App {
     private func handleURL(_ url: URL) {
         if url.scheme == "add2wallet" && url.host == "share-pdf" {
             checkForSharedPDF()
+            return
+        }
+        // Handle files opened via "Open in Add2Wallet"
+        if url.isFileURL {
+            do {
+                let data = try Data(contentsOf: url)
+                let filename = url.lastPathComponent
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("SharedPDFReceived"),
+                    object: nil,
+                    userInfo: ["filename": filename, "data": data]
+                )
+            } catch {
+                // ignore in UI for now
+            }
         }
     }
     

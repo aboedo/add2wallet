@@ -9,6 +9,7 @@ class ContentViewModel: ObservableObject {
     @Published var funnyPhrase: String = ""
     @Published var hasError = false
     @Published var showingDocumentPicker = false
+    @Published var selectedFileURL: URL?
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
@@ -51,22 +52,47 @@ class ContentViewModel: ObservableObject {
     }
     
     func handleSelectedDocument(url: URL) {
+        // Copy PDF into our sandbox for reliable preview/access
         guard url.startAccessingSecurityScopedResource() else {
             statusMessage = "Unable to access selected file"
             hasError = true
             return
         }
-        
-        defer { url.stopAccessingSecurityScopedResource() }
-        
+
         do {
             let data = try Data(contentsOf: url)
-            let filename = url.lastPathComponent
-            processPDF(data: data, filename: filename)
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("pdf")
+            try data.write(to: tempURL, options: [.atomic])
+            selectedFileURL = tempURL
+            statusMessage = "Ready to upload \(url.lastPathComponent)"
+            hasError = false
         } catch {
             statusMessage = "Error reading PDF: \(error.localizedDescription)"
             hasError = true
         }
+        url.stopAccessingSecurityScopedResource()
+    }
+
+    func uploadSelected() {
+        guard let url = selectedFileURL else { return }
+        do {
+            let data = try Data(contentsOf: url)
+            processPDF(data: data, filename: url.lastPathComponent)
+        } catch {
+            statusMessage = "Error reading PDF: \(error.localizedDescription)"
+            hasError = true
+        }
+    }
+
+    func clearSelection() {
+        if let url = selectedFileURL {
+            try? FileManager.default.removeItem(at: url)
+        }
+        selectedFileURL = nil
+        statusMessage = nil
+        hasError = false
     }
     
     func processPDF(data: Data, filename: String) {

@@ -9,70 +9,85 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                Text("Add2Wallet")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Text("Convert PDFs to Apple Wallet passes")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-                
-                if viewModel.isProcessing {
-                    ProcessingView(phrase: viewModel.funnyPhrase)
-                } else {
-                    VStack(spacing: 16) {
-                        Button(action: {
-                            viewModel.selectPDF()
-                        }) {
-                            Label("Select PDF", systemImage: "doc.fill")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
+            ScrollView {
+                VStack(spacing: 16) {
+                    VStack(spacing: 4) {
+                        Text("Add2Wallet")
+                            .font(.largeTitle).fontWeight(.bold)
+                        Text("Convert PDFs to Apple Wallet passes")
+                            .font(.subheadline).foregroundColor(.secondary)
+                    }
+                    
+                    if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
+                        VStack(alignment: .leading, spacing: 12) {
+                            PDFPreviewView(url: url)
+                                .frame(height: 320)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.secondary.opacity(0.2)))
+                            HStack(spacing: 12) {
+                                Button(role: .cancel) {
+                                    viewModel.clearSelection()
+                                } label: {
+                                    Label("Cancel", systemImage: "xmark")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                
+                                Button {
+                                    viewModel.uploadSelected()
+                                } label: {
+                                    Label("Upload", systemImage: "arrow.up.circle")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
                         }
-                        
-                        VStack(spacing: 8) {
+                        .padding(.top, 8)
+                    } else if viewModel.isProcessing {
+                        ProcessingView(phrase: viewModel.funnyPhrase)
+                            .padding(.top, 40)
+                    } else {
+                        VStack(spacing: 12) {
+                            Button(action: { viewModel.selectPDF() }) {
+                                Label("Select PDF", systemImage: "doc.fill")
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
                             Text("Or use the Share Extension from any app")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Text("Open a PDF in Files, Safari, or any app and tap the Share button, then select \"Add to Wallet\"")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .font(.caption).foregroundColor(.secondary)
+                            Text("Open a PDF in Files, Safari, or any app and tap Share → Add to Wallet")
+                                .font(.caption2).foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                         }
+                        .padding(.top, 24)
                     }
-                }
-                
-                if let message = viewModel.statusMessage {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundColor(viewModel.hasError ? .red : .green)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                }
-                
-                if passViewController != nil {
-                    Button(action: {
-                        showingAddPassVC = true
-                    }) {
-                        Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
+                    
+                    if let message = viewModel.statusMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundColor(viewModel.hasError ? .red : .green)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
                     }
+                    
+                    if passViewController != nil {
+                        Button(action: { showingAddPassVC = true }) {
+                            Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                    }
+                    Spacer(minLength: 12)
                 }
-                
-                Spacer()
+                .padding()
             }
-            .padding()
             .navigationBarHidden(true)
             .onAppear {
                 NotificationCenter.default.addObserver(
