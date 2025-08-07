@@ -111,20 +111,27 @@ class ShareViewController: SLComposeServiceViewController {
             self?.placeholder = "Opening Add2Wallet..."
         }
         
-        // Use NSExtensionContext open to host app via URL scheme
+        // Preferred: use openURL via responder chain from extension to host app
         guard let url = URL(string: "add2wallet://share-pdf") else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
             }
             return
         }
 
-        extensionContext?.open(url, completionHandler: { [weak self] _ in
-            // Close the extension regardless; host app will pick up file on launch
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+        var responder: UIResponder? = self as UIResponder
+        let selector = NSSelectorFromString("openURL:")
+        while responder != nil {
+            if responder!.responds(to: selector) {
+                _ = responder!.perform(selector, with: url)
+                break
             }
-        })
+            responder = responder?.next
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+        }
     }
     
     private func showError(_ message: String) {
