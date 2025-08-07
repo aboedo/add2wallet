@@ -1,15 +1,114 @@
 import Foundation
 import Combine
 
+struct EnhancedPassMetadata: Codable {
+    // Basic Information
+    let eventType: String?
+    let eventName: String?
+    let title: String?
+    let description: String?
+
+    // Date and Time
+    let date: String?
+    let time: String?
+    let duration: String?
+
+    // Location Information
+    let venueName: String?
+    let venueAddress: String?
+    let city: String?
+    let stateCountry: String?
+    let latitude: Double?
+    let longitude: Double?
+
+    // Event Details
+    let organizer: String?
+    let performerArtist: String?
+    let seatInfo: String?
+    let barcodeData: String?
+    let price: String?
+    let confirmationNumber: String?
+    let gateInfo: String?
+
+    // Enriched Information
+    let eventDescription: String?
+    let venueType: String?
+    let capacity: String?
+    let website: String?
+    let phone: String?
+    let nearbyLandmarks: [String]?
+    let publicTransport: String?
+    let parkingInfo: String?
+
+    // Additional Details
+    let ageRestriction: String?
+    let dressCode: String?
+    let weatherConsiderations: String?
+    let amenities: [String]?
+    let accessibility: String?
+
+    // Processing Information
+    let aiProcessed: Bool?
+    let confidenceScore: Int?
+    let processingTimestamp: String?
+    let modelUsed: String?
+    let enrichmentCompleted: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case eventType = "event_type"
+        case eventName = "event_name"
+        case title
+        case description
+        case date
+        case time
+        case duration
+        case venueName = "venue_name"
+        case venueAddress = "venue_address"
+        case city
+        case stateCountry = "state_country"
+        case latitude
+        case longitude
+        case organizer
+        case performerArtist = "performer_artist"
+        case seatInfo = "seat_info"
+        case barcodeData = "barcode_data"
+        case price
+        case confirmationNumber = "confirmation_number"
+        case gateInfo = "gate_info"
+        case eventDescription = "event_description"
+        case venueType = "venue_type"
+        case capacity
+        case website
+        case phone
+        case nearbyLandmarks = "nearby_landmarks"
+        case publicTransport = "public_transport"
+        case parkingInfo = "parking_info"
+        case ageRestriction = "age_restriction"
+        case dressCode = "dress_code"
+        case weatherConsiderations = "weather_considerations"
+        case amenities
+        case accessibility
+        case aiProcessed = "ai_processed"
+        case confidenceScore = "confidence_score"
+        case processingTimestamp = "processing_timestamp"
+        case modelUsed = "model_used"
+        case enrichmentCompleted = "enrichment_completed"
+    }
+}
+
 struct UploadResponse: Codable {
     let jobId: String
     let status: String
     let passUrl: String?
+    let aiMetadata: EnhancedPassMetadata?
+    let ticketCount: Int?
     
     enum CodingKeys: String, CodingKey {
         case jobId = "job_id"
         case status
         case passUrl = "pass_url"
+        case aiMetadata = "ai_metadata"
+        case ticketCount = "ticket_count"
     }
 }
 

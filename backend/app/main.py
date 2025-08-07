@@ -189,7 +189,8 @@ async def upload_pdf(
             job_id=job_id, 
             status="completed", 
             pass_url=f"/pass/{job_id}",
-            ai_metadata=ai_metadata
+            ai_metadata=ai_metadata,
+            ticket_count=len(pkpass_files)
         )
         
     except Exception as e:

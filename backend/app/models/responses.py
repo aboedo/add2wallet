@@ -6,6 +6,7 @@ class UploadResponse(BaseModel):
     status: str
     pass_url: Optional[str] = None
     ai_metadata: Optional[Dict[str, Any]] = None
+    ticket_count: Optional[int] = None
 
 class ErrorResponse(BaseModel):
     error: str

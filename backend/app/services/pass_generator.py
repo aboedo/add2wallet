@@ -19,6 +19,7 @@ from cryptography.x509.oid import NameOID
 import PyPDF2
 from PIL import Image
 import io
+from dateutil import parser as date_parser
 
 
 class PassGenerator:
@@ -204,8 +205,8 @@ class PassGenerator:
         """
         print(f"🔍 Analyzing PDF: {filename}")
         
-        # Step 1: Extract barcodes from PDF (with fallback)
-        barcodes = []
+        # Step 1: Extract barcodes from PDF (with robust fallback)
+        barcodes: List[Dict[str, Any]] = []
         try:
             # Try main barcode extractor first
             try:
@@ -213,10 +214,16 @@ class PassGenerator:
                 barcodes = barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
                 print(f"📊 Found {len(barcodes)} barcodes in PDF using main extractor")
             except ImportError:
-                # Fall back to text-based extraction
-                from app.services.barcode_extractor_fallback import fallback_barcode_extractor
-                barcodes = fallback_barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
-                print(f"📊 Found {len(barcodes)} potential barcodes in PDF using fallback extractor")
+                barcodes = []
+            
+            # If main extractor not available or returned none, try fallback extractor
+            if not barcodes:
+                try:
+                    from app.services.barcode_extractor_fallback import fallback_barcode_extractor
+                    barcodes = fallback_barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
+                    print(f"📊 Found {len(barcodes)} potential barcodes in PDF using fallback extractor")
+                except Exception as fe:
+                    print(f"⚠️ Fallback barcode extraction failed: {fe}")
         except Exception as e:
             print(f"⚠️ Barcode extraction failed: {e}")
         
@@ -238,7 +245,18 @@ class PassGenerator:
         try:
             from app.services.barcode_extractor_fallback import fallback_barcode_extractor
             tickets = fallback_barcode_extractor.detect_multiple_tickets(barcodes, base_pass_info)
-        except:
+            # If fallback collapses duplicates and we have multiple barcodes on different pages,
+            # ensure we still create distinct tickets per barcode instance
+            if len(tickets) == 1 and len(barcodes) > 1:
+                tickets = []
+                for i, bc in enumerate(barcodes, 1):
+                    tickets.append({
+                        'barcode': bc,
+                        'metadata': base_pass_info,
+                        'ticket_number': i,
+                        'total_tickets': len(barcodes)
+                    })
+        except Exception as _:
             # Simple fallback if detection fails
             tickets = []
             if barcodes:
@@ -311,7 +329,8 @@ class PassGenerator:
                 pass_info=pass_info,
                 bg_color=bg_color,
                 fg_color=fg_color,
-                label_color=label_color
+                label_color=label_color,
+                pdf_bytes=pdf_data
             )
             
             pkpass_files.append(pkpass_data)
@@ -336,7 +355,8 @@ class PassGenerator:
                             bg_color: str,
                             fg_color: str,
                             label_color: str,
-                            organization: str = "Add2Wallet") -> bytes:
+                            organization: str = "Add2Wallet",
+                            pdf_bytes: Optional[bytes] = None) -> bytes:
         """Create an enhanced pass with extracted PDF data.
         
         Args:
@@ -483,6 +503,8 @@ class PassGenerator:
             "foregroundColor": fg_color,
             "backgroundColor": bg_color,
             "labelColor": label_color,
+            # Add a default expiration if date is available; otherwise, 90 days from now
+            "expirationDate": self._compute_expiration_date(pass_info),
             "generic": {
                 "headerFields": header_fields,
                 "primaryFields": primary_fields,
@@ -495,9 +517,28 @@ class PassGenerator:
         primary_barcode = pass_info.get('primary_barcode')
         if primary_barcode:
             barcode_format = primary_barcode.get('format', 'PKBarcodeFormatQR')
+            # Prefer raw bytes to preserve exact payload; fall back to text
+            raw_bytes = primary_barcode.get('raw_bytes')
             barcode_data = primary_barcode.get('data', '')
             
-            if barcode_data:
+            if raw_bytes is not None and isinstance(raw_bytes, (bytes, bytearray)):
+                # Decode bytes with ISO-8859-1 to preserve 1:1 byte mapping in PassKit
+                try:
+                    message_text = bytes(raw_bytes).decode('latin-1')
+                except Exception:
+                    message_text = barcode_data or ''
+                pass_json['barcode'] = {
+                    "format": barcode_format,
+                    "message": message_text,
+                    "messageEncoding": "iso-8859-1"
+                }
+                pass_json['barcodes'] = [{
+                    "format": barcode_format,
+                    "message": message_text,
+                    "messageEncoding": "iso-8859-1"
+                }]
+                print(f"🎫 Added barcode preserving raw bytes via latin-1 ({len(raw_bytes)} bytes, format {barcode_format})")
+            elif barcode_data:
                 pass_json['barcode'] = {
                     "format": barcode_format,
                     "message": barcode_data,
@@ -538,7 +579,7 @@ class PassGenerator:
         
         # Improve color palette with image-based extraction when possible
         try:
-            auto_bg, auto_fg, auto_label = self._extract_color_palette_from_pdf_images(pass_info.get('pdf_bytes')) if pass_info.get('pdf_bytes') else self._extract_color_palette_from_pdf_images(None)
+            auto_bg, auto_fg, auto_label = self._extract_color_palette_from_pdf_images(pdf_bytes)
             if auto_bg and auto_fg and auto_label:
                 bg_color, fg_color, label_color = auto_bg, auto_fg, auto_label
         except Exception as _:
@@ -555,7 +596,7 @@ class PassGenerator:
             
             # Generate dynamic assets (icon/thumbnail) to make the pass distinctive
             try:
-                self._generate_dynamic_assets(temp_dir, pass_info.get('pdf_bytes'), pass_info, bg_color, fg_color)
+                self._generate_dynamic_assets(temp_dir, pdf_bytes, pass_info, bg_color, fg_color)
             except Exception as e:
                 print(f"⚠️  Dynamic asset generation failed: {e}. Falling back to static icons")
                 self._copy_icon_assets(temp_dir)
@@ -579,63 +620,69 @@ class PassGenerator:
             return pkpass_data
 
     def _extract_color_palette_from_pdf_images(self, pdf_bytes: Optional[bytes]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        """Extract a color palette by rasterizing the first page and quantizing.
+        """Extract dominant colors by rasterizing pages and counting occurrences.
+        Considers multiple pages; chooses the most frequent non-white-ish as background,
+        then sets foreground/label for contrast.
         Returns (bg, fg, label) in rgb(r, g, b) or (None, None, None) on failure.
         """
         try:
-            image: Optional[Image.Image] = None
-            if pdf_bytes:
-                try:
-                    # Prefer PyMuPDF for speed
-                    import fitz  # type: ignore
-                    doc = fitz.open(stream=pdf_bytes, filetype='pdf')
-                    if doc.page_count > 0:
-                        page = doc.load_page(0)
-                        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-                        image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                except Exception:
-                    image = None
-                
-                if image is None:
-                    try:
-                        from pdf2image import convert_from_bytes  # type: ignore
-                        pages = convert_from_bytes(pdf_bytes, first_page=1, last_page=1)
-                        if pages:
-                            image = pages[0].convert('RGB')
-                    except Exception:
-                        image = None
-            
-            if image is None:
+            if not pdf_bytes:
                 return None, None, None
-            
-            # Resize for efficiency
-            small = image.copy()
-            small.thumbnail((256, 256))
-            # Quantize to get dominant colors
-            palette = small.convert('P', palette=Image.ADAPTIVE, colors=6)
-            palette_colors = palette.getcolors(256) or []
-            # Map palette indexes back to RGB
-            rgb_palette = palette.getpalette()[:18]  # 6 colors * 3
-            color_counts: List[Tuple[int, Tuple[int, int, int]]] = []
-            for count, idx in palette_colors:
-                r = rgb_palette[idx * 3] if idx * 3 < len(rgb_palette) else 0
-                g = rgb_palette[idx * 3 + 1] if idx * 3 + 1 < len(rgb_palette) else 0
-                b = rgb_palette[idx * 3 + 2] if idx * 3 + 2 < len(rgb_palette) else 0
-                color_counts.append((count, (r, g, b)))
-            # Sort by frequency descending
-            color_counts.sort(reverse=True, key=lambda x: x[0])
-            # Choose first non-white-ish as background
-            bg_rgb = None
-            for _, (r, g, b) in color_counts:
-                if (r + g + b) / 3 < 245:  # avoid near-white
-                    bg_rgb = (r, g, b)
-                    break
-            if bg_rgb is None:
-                bg_rgb = color_counts[0][1] if color_counts else (0, 122, 255)
-            # Choose foreground contrasting with bg
+
+            images: List[Image.Image] = []
+            # Try PyMuPDF first for speed
+            try:
+                import fitz  # type: ignore
+                doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+                page_limit = min(doc.page_count, 3)
+                for i in range(page_limit):
+                    page = doc.load_page(i)
+                    pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+                    images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+            except Exception:
+                images = []
+
+            if not images:
+                try:
+                    from pdf2image import convert_from_bytes  # type: ignore
+                    images = [im.convert('RGB') for im in convert_from_bytes(pdf_bytes, first_page=1, last_page=3)]
+                except Exception:
+                    return None, None, None
+
+            # Accumulate color counts across pages
+            color_counter: Counter = Counter()
+            for img in images:
+                small = img.copy()
+                small.thumbnail((256, 256))
+                pal = small.convert('P', palette=Image.ADAPTIVE, colors=12)
+                pal_colors = pal.getcolors(512) or []
+                palette_list = pal.getpalette()
+                for count, idx in pal_colors:
+                    r = palette_list[idx * 3] if idx * 3 < len(palette_list) else 0
+                    g = palette_list[idx * 3 + 1] if idx * 3 + 1 < len(palette_list) else 0
+                    b = palette_list[idx * 3 + 2] if idx * 3 + 2 < len(palette_list) else 0
+                    color_counter[(r, g, b)] += count
+
+            if not color_counter:
+                return None, None, None
+
+            # Filter out near-white/near-black extremes with small counts
+            def is_near_white(c: Tuple[int, int, int]) -> bool:
+                r, g, b = c
+                return (r + g + b) / 3 >= 245
+
+            def is_near_black(c: Tuple[int, int, int]) -> bool:
+                r, g, b = c
+                return (r + g + b) / 3 <= 10
+
+            ranked = [item for item in color_counter.most_common() if not is_near_white(item[0])]
+            bg_rgb = ranked[0][0] if ranked else list(color_counter.keys())[0]
+
+            # Foreground choice by contrast ratio
             def luminance(c: Tuple[int, int, int]) -> float:
                 r, g, b = [x / 255.0 for x in c]
                 return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
             bg_l = luminance(bg_rgb)
             fg_rgb = (255, 255, 255) if bg_l < 0.6 else (0, 0, 0)
             label_rgb = (255, 255, 255) if bg_l < 0.4 else (0, 0, 0)
@@ -1006,6 +1053,32 @@ class PassGenerator:
         except Exception as e:
             print(f"⚠️  Error analyzing PDF colors: {e}")
             return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"
+
+    def _compute_expiration_date(self, pass_info: Dict[str, Any]) -> str:
+        """Compute an ISO8601 expiration date for the pass.
+        - If pass_info has an explicit date (and optional time), expire next day 03:00 local time.
+        - Otherwise, expire 90 days from now.
+        """
+        try:
+            now = datetime.utcnow()
+            date_str = pass_info.get('date')
+            time_str = pass_info.get('time')
+            if date_str:
+                # Combine if time present
+                combined = f"{date_str} {time_str}" if time_str else date_str
+                dt = date_parser.parse(combined, fuzzy=True, dayfirst=False)
+                # Expire next day at 03:00
+                expire = dt.replace(hour=3, minute=0, second=0, microsecond=0)
+                if expire <= dt:
+                    from datetime import timedelta
+                    expire = expire + timedelta(days=1)
+            else:
+                from datetime import timedelta
+                expire = now + timedelta(days=90)
+            return expire.strftime("%Y-%m-%dT%H:%M:%SZ")
+        except Exception:
+            from datetime import timedelta
+            return (datetime.utcnow() + timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
     
     def _extract_pass_info(self, pdf_text: str) -> Dict[str, str]:
         """Extract basic pass information from PDF text.
