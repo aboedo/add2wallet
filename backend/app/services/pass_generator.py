@@ -536,6 +536,15 @@ class PassGenerator:
             else:
                 print("⚠️ No barcode data found - pass will not have scannable code")
         
+        # Improve color palette with image-based extraction when possible
+        try:
+            auto_bg, auto_fg, auto_label = self._extract_color_palette_from_pdf_images(pass_info.get('pdf_bytes')) if pass_info.get('pdf_bytes') else self._extract_color_palette_from_pdf_images(None)
+            if auto_bg and auto_fg and auto_label:
+                bg_color, fg_color, label_color = auto_bg, auto_fg, auto_label
+        except Exception as _:
+            # Keep previously computed colors
+            pass
+
         # Create temporary directory for pass files
         with tempfile.TemporaryDirectory() as temp_dir:
             
@@ -544,8 +553,12 @@ class PassGenerator:
             with open(pass_json_path, 'w') as f:
                 json.dump(pass_json, f, indent=2)
             
-            # Copy icon files to pass directory
-            self._copy_icon_assets(temp_dir)
+            # Generate dynamic assets (icon/thumbnail) to make the pass distinctive
+            try:
+                self._generate_dynamic_assets(temp_dir, pass_info.get('pdf_bytes'), pass_info, bg_color, fg_color)
+            except Exception as e:
+                print(f"⚠️  Dynamic asset generation failed: {e}. Falling back to static icons")
+                self._copy_icon_assets(temp_dir)
             
             # Create manifest.json (file hashes)
             manifest = self._create_manifest(temp_dir)
@@ -564,6 +577,153 @@ class PassGenerator:
             pkpass_data = self._create_pkpass_zip(temp_dir)
             
             return pkpass_data
+
+    def _extract_color_palette_from_pdf_images(self, pdf_bytes: Optional[bytes]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """Extract a color palette by rasterizing the first page and quantizing.
+        Returns (bg, fg, label) in rgb(r, g, b) or (None, None, None) on failure.
+        """
+        try:
+            image: Optional[Image.Image] = None
+            if pdf_bytes:
+                try:
+                    # Prefer PyMuPDF for speed
+                    import fitz  # type: ignore
+                    doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+                    if doc.page_count > 0:
+                        page = doc.load_page(0)
+                        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                        image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                except Exception:
+                    image = None
+                
+                if image is None:
+                    try:
+                        from pdf2image import convert_from_bytes  # type: ignore
+                        pages = convert_from_bytes(pdf_bytes, first_page=1, last_page=1)
+                        if pages:
+                            image = pages[0].convert('RGB')
+                    except Exception:
+                        image = None
+            
+            if image is None:
+                return None, None, None
+            
+            # Resize for efficiency
+            small = image.copy()
+            small.thumbnail((256, 256))
+            # Quantize to get dominant colors
+            palette = small.convert('P', palette=Image.ADAPTIVE, colors=6)
+            palette_colors = palette.getcolors(256) or []
+            # Map palette indexes back to RGB
+            rgb_palette = palette.getpalette()[:18]  # 6 colors * 3
+            color_counts: List[Tuple[int, Tuple[int, int, int]]] = []
+            for count, idx in palette_colors:
+                r = rgb_palette[idx * 3] if idx * 3 < len(rgb_palette) else 0
+                g = rgb_palette[idx * 3 + 1] if idx * 3 + 1 < len(rgb_palette) else 0
+                b = rgb_palette[idx * 3 + 2] if idx * 3 + 2 < len(rgb_palette) else 0
+                color_counts.append((count, (r, g, b)))
+            # Sort by frequency descending
+            color_counts.sort(reverse=True, key=lambda x: x[0])
+            # Choose first non-white-ish as background
+            bg_rgb = None
+            for _, (r, g, b) in color_counts:
+                if (r + g + b) / 3 < 245:  # avoid near-white
+                    bg_rgb = (r, g, b)
+                    break
+            if bg_rgb is None:
+                bg_rgb = color_counts[0][1] if color_counts else (0, 122, 255)
+            # Choose foreground contrasting with bg
+            def luminance(c: Tuple[int, int, int]) -> float:
+                r, g, b = [x / 255.0 for x in c]
+                return 0.2126 * r + 0.7152 * g + 0.0722 * b
+            bg_l = luminance(bg_rgb)
+            fg_rgb = (255, 255, 255) if bg_l < 0.6 else (0, 0, 0)
+            label_rgb = (255, 255, 255) if bg_l < 0.4 else (0, 0, 0)
+            return (
+                f"rgb({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]})",
+                f"rgb({fg_rgb[0]}, {fg_rgb[1]}, {fg_rgb[2]})",
+                f"rgb({label_rgb[0]}, {label_rgb[1]}, {label_rgb[2]})",
+            )
+        except Exception as e:
+            print(f"⚠️  Palette extraction failed: {e}")
+            return None, None, None
+
+    def _generate_dynamic_assets(self, temp_dir: str, pdf_bytes: Optional[bytes], pass_info: Dict[str, Any], bg_color: str, fg_color: str) -> None:
+        """Generate per-pass icon and thumbnail images.
+        Creates icon.png, icon@2x.png, icon@3x.png and thumbnail.png when possible.
+        """
+        # Parse colors
+        def parse_rgb(s: str) -> Tuple[int, int, int]:
+            m = re.match(r"rgb\((\d+),\s*(\d+),\s*(\d+)\)", s)
+            if not m:
+                return (0, 122, 255)
+            return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        bg = parse_rgb(bg_color)
+        fg = parse_rgb(fg_color)
+
+        # Determine visual hint from metadata
+        token = (pass_info.get('event_type') or pass_info.get('title') or '').lower()
+        if 'flight' in token or 'air' in token:
+            abbrev = 'FLY'
+        elif 'concert' in token or 'music' in token or 'show' in token:
+            abbrev = 'MUS'
+        elif 'sport' in token or 'stadium' in token or 'game' in token:
+            abbrev = 'SPT'
+        elif 'train' in token or 'rail' in token:
+            abbrev = 'RAIL'
+        elif 'hotel' in token:
+            abbrev = 'HTL'
+        elif 'movie' in token or 'theater' in token:
+            abbrev = 'MOV'
+        elif pass_info.get('barcode') or pass_info.get('primary_barcode'):
+            abbrev = 'TKT'
+        else:
+            abbrev = 'DOC'
+
+        # Generate icon images (29/58/87)
+        for size in [29, 58, 87]:
+            img = Image.new('RGB', (size, size), bg)
+            # Draw abbreviation centered
+            try:
+                from PIL import ImageDraw, ImageFont
+                draw = ImageDraw.Draw(img)
+                # Use a basic font; size proportional
+                font_size = max(10, int(size * 0.42))
+                try:
+                    font = ImageFont.truetype("Arial.ttf", font_size)
+                except Exception:
+                    font = ImageFont.load_default()
+                text_w, text_h = draw.textbbox((0, 0), abbrev, font=font)[2:]
+                draw.text(((size - text_w) / 2, (size - text_h) / 2), abbrev, fill=fg, font=font)
+            except Exception:
+                pass
+            out_name = 'icon.png' if size == 29 else (f"icon@2x.png" if size == 58 else f"icon@3x.png")
+            img.save(os.path.join(temp_dir, out_name), format='PNG')
+
+        # Generate thumbnail from first page if available
+        thumb = None
+        if pdf_bytes:
+            try:
+                # Try PyMuPDF
+                import fitz  # type: ignore
+                doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+                if doc.page_count:
+                    page = doc.load_page(0)
+                    pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+                    thumb = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            except Exception:
+                thumb = None
+            if thumb is None:
+                try:
+                    from pdf2image import convert_from_bytes  # type: ignore
+                    pages = convert_from_bytes(pdf_bytes, first_page=1, last_page=1)
+                    if pages:
+                        thumb = pages[0].convert('RGB')
+                except Exception:
+                    thumb = None
+        if thumb is not None:
+            thumb.thumbnail((180, 180))
+            thumb.save(os.path.join(temp_dir, 'thumbnail.png'), format='PNG')
     
     def _check_certificates_available(self) -> bool:
         """Check if all required certificate files are available.
