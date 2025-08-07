@@ -63,34 +63,42 @@ class ShareViewController: SLComposeServiceViewController {
             let pdfData = try Data(contentsOf: url)
             let filename = url.lastPathComponent
             
-            // Pass data to main app via shared container or URL scheme
-            let sharedData: [String: Any] = [
+            // Save to shared container (App Group)
+            guard let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet") else {
+                showError("Unable to access shared container")
+                return
+            }
+
+            // Write the raw PDF to a known file name
+            let pdfOutURL = sharedContainer.appendingPathComponent("shared.pdf")
+            do {
+                try pdfData.write(to: pdfOutURL, options: .atomic)
+            } catch {
+                showError("Error saving PDF: \(error.localizedDescription)")
+                return
+            }
+
+            // Write lightweight metadata JSON (no raw Data types)
+            let metadata: [String: Any] = [
                 "filename": filename,
-                "data": pdfData,
                 "timestamp": Date().timeIntervalSince1970
             ]
-            
-            // Save to shared container (App Group)
-            if let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet") {
-                let sharedFile = sharedContainer.appendingPathComponent("shared_pdf.json")
-                
-                do {
-                    let jsonData = try JSONSerialization.data(withJSONObject: sharedData)
-                    try jsonData.write(to: sharedFile)
-                    
-                    // Update UI to show success
-                    DispatchQueue.main.async { [weak self] in
-                        self?.placeholder = "PDF saved! Opening Add2Wallet..."
-                    }
-                    
-                    // Open main app
-                    openMainApp()
-                } catch {
-                    showError("Error saving PDF: \(error.localizedDescription)")
-                }
-            } else {
-                showError("Unable to access shared container")
+            let metadataURL = sharedContainer.appendingPathComponent("shared_pdf.json")
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: metadata, options: [])
+                try jsonData.write(to: metadataURL, options: .atomic)
+            } catch {
+                showError("Error saving metadata: \(error.localizedDescription)")
+                return
             }
+
+            // Update UI to show success
+            DispatchQueue.main.async { [weak self] in
+                self?.placeholder = "PDF saved! Opening Add2Wallet..."
+            }
+
+            // Open main app
+            openMainApp()
             
         } catch {
             showError("Error reading PDF: \(error.localizedDescription)")
@@ -103,19 +111,20 @@ class ShareViewController: SLComposeServiceViewController {
             self?.placeholder = "Opening Add2Wallet..."
         }
         
-        // Simple approach: just try to open the URL
-        if let url = URL(string: "add2wallet://share-pdf") {
-            extensionContext?.open(url, completionHandler: { success in
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                    self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-                }
-            })
-        } else {
-            // If URL creation fails, just close
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        // Use NSExtensionContext open to host app via URL scheme
+        guard let url = URL(string: "add2wallet://share-pdf") else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                 self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
             }
+            return
         }
+
+        extensionContext?.open(url, completionHandler: { [weak self] _ in
+            // Close the extension regardless; host app will pick up file on launch
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self?.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+            }
+        })
     }
     
     private func showError(_ message: String) {
