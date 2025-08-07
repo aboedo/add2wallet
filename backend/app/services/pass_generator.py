@@ -703,9 +703,11 @@ class PassGenerator:
             signature = pkcs7.PKCS7SignatureBuilder().set_data(
                 manifest_data
             ).add_signer(
-                pass_cert, private_key, hashes.SHA256()  # Use SHA256 as required by cryptography
+                pass_cert, private_key, hashes.SHA256()  # Cryptography library requires SHA256
             ).add_certificate(
-                wwdr_cert
+                pass_cert  # Add the pass certificate to the chain
+            ).add_certificate(
+                wwdr_cert  # Add WWDR certificate to complete the chain
             ).sign(
                 serialization.Encoding.DER, options
             )
