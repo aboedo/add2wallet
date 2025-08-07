@@ -189,37 +189,69 @@ class PassGenerator:
     
     def create_pass_from_pdf_data(self, 
                                  pdf_data: bytes, 
-                                 filename: str) -> bytes:
+                                 filename: str,
+                                 ai_metadata: Dict[str, Any] = None) -> Tuple[bytes, List[Dict[str, Any]]]:
         """Create an intelligent pass from PDF data.
         
         Args:
             pdf_data: Raw PDF bytes
             filename: Original filename
+            ai_metadata: AI-extracted metadata (optional)
             
         Returns:
-            The .pkpass file as bytes
+            Tuple of (.pkpass file as bytes, list of detected barcodes)
         """
         print(f"🔍 Analyzing PDF: {filename}")
         
-        # Extract text content from PDF
-        pdf_text = self._extract_pdf_text(pdf_data)
-        print(f"📝 Extracted {len(pdf_text)} characters of text")
+        # Step 1: Extract barcodes from PDF
+        barcodes = []
+        try:
+            from app.services.barcode_extractor import barcode_extractor
+            barcodes = barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
+            print(f"📊 Found {len(barcodes)} barcodes in PDF")
+        except Exception as e:
+            print(f"⚠️ Barcode extraction failed: {e}")
         
-        # Analyze PDF content to extract pass information
-        pass_info = self._extract_pass_info(pdf_text)
-        print(f"🎯 Extracted info: {pass_info}")
+        # Step 2: Use AI metadata if available, otherwise fall back to basic extraction
+        if ai_metadata and ai_metadata.get('ai_processed'):
+            print(f"🤖 Using AI-extracted metadata (confidence: {ai_metadata.get('confidence_score', 'unknown')})")
+            pass_info = ai_metadata
+        else:
+            print("🔄 Falling back to basic PDF analysis")
+            # Extract text content from PDF
+            pdf_text = self._extract_pdf_text(pdf_data)
+            print(f"📝 Extracted {len(pdf_text)} characters of text")
+            
+            # Analyze PDF content to extract pass information
+            pass_info = self._extract_pass_info(pdf_text)
+            print(f"🎯 Extracted info: {pass_info}")
         
-        # Analyze colors for dynamic theming
-        bg_color, fg_color, label_color = self._analyze_pdf_colors(pdf_data)
+        # Step 3: Merge barcode data with pass info
+        if barcodes:
+            primary_barcode = barcode_extractor.get_primary_barcode(barcodes)
+            if primary_barcode:
+                print(f"🎫 Using primary barcode: {primary_barcode['type']} - {primary_barcode['data'][:50]}...")
+                pass_info['primary_barcode'] = primary_barcode
+                # Use barcode data if no other barcode data was found
+                if not pass_info.get('barcode_data'):
+                    pass_info['barcode_data'] = primary_barcode['data']
+        
+        # Step 4: Analyze colors for dynamic theming
+        bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
         print(f"🎨 Color theme: bg={bg_color}, fg={fg_color}")
         
-        # Use extracted title or fallback to filename
-        title = pass_info.get('title') or filename.replace('.pdf', '').replace('_', ' ').title()
+        # Step 5: Use AI-extracted title or fallback
+        title = (pass_info.get('title') or 
+                pass_info.get('event_name') or 
+                filename.replace('.pdf', '').replace('_', ' ').title())
         
-        # Use extracted description or create one
-        description = pass_info.get('description') or f"Digital pass from {filename}"
+        # Step 6: Use AI-extracted description or create one
+        description = (pass_info.get('description') or 
+                      pass_info.get('event_description') or 
+                      f"Digital pass from {filename}")
         
-        return self.create_enhanced_pass(
+        # Step 7: Generate the enhanced pass with barcode
+        pkpass_data = self.create_enhanced_pass(
             title=title,
             description=description,
             pass_info=pass_info,
@@ -227,6 +259,8 @@ class PassGenerator:
             fg_color=fg_color,
             label_color=label_color
         )
+        
+        return pkpass_data, barcodes
     
     def create_enhanced_pass(self, 
                             title: str,
@@ -253,18 +287,25 @@ class PassGenerator:
         # Extract identifiers from certificate
         pass_type_id, team_id = self._extract_certificate_identifiers()
         
-        # Build pass fields dynamically based on extracted info
+        # Build pass fields dynamically based on AI-extracted info
         header_fields = []
         primary_fields = []
         secondary_fields = []
         auxiliary_fields = []
         
-        # Header field - always show document type or title
-        if pass_info.get('title'):
+        # Header field - use event type for better categorization
+        event_type = pass_info.get('event_type', '').upper()
+        if event_type and event_type != 'OTHER':
+            header_fields.append({
+                "key": "header",
+                "label": event_type,
+                "value": title[:25]  # Limit length for header
+            })
+        elif pass_info.get('event_name'):
             header_fields.append({
                 "key": "header",
                 "label": "EVENT",
-                "value": title[:25]  # Limit length for header
+                "value": title[:25]
             })
         else:
             header_fields.append({
@@ -280,7 +321,8 @@ class PassGenerator:
             "value": title
         })
         
-        # Secondary fields - date and time if available
+        # Secondary fields - prioritize most relevant information
+        # Date and time
         if pass_info.get('date'):
             secondary_fields.append({
                 "key": "date",
@@ -295,14 +337,66 @@ class PassGenerator:
                 "value": pass_info['time']
             })
         
-        # Auxiliary fields - venue and other details
-        if pass_info.get('venue'):
+        # Seat/gate information (important for tickets)
+        if pass_info.get('seat_info'):
+            secondary_fields.append({
+                "key": "seat",
+                "label": "Seat",
+                "value": pass_info['seat_info']
+            })
+        elif pass_info.get('gate_info'):
+            secondary_fields.append({
+                "key": "gate",
+                "label": "Gate",
+                "value": pass_info['gate_info']
+            })
+        
+        # Auxiliary fields - venue and additional details
+        if pass_info.get('venue_name'):
+            auxiliary_fields.append({
+                "key": "venue",
+                "label": "Venue",
+                "value": pass_info['venue_name']
+            })
+        elif pass_info.get('venue'):  # Fallback to old field name
             auxiliary_fields.append({
                 "key": "venue",
                 "label": "Venue",
                 "value": pass_info['venue']
             })
-            
+        
+        # Add performer/artist for entertainment events
+        if pass_info.get('performer_artist'):
+            auxiliary_fields.append({
+                "key": "artist",
+                "label": "Artist",
+                "value": pass_info['performer_artist']
+            })
+        
+        # Add confirmation number if available
+        if pass_info.get('confirmation_number'):
+            auxiliary_fields.append({
+                "key": "confirmation",
+                "label": "Confirmation",
+                "value": pass_info['confirmation_number']
+            })
+        
+        # Add price if available
+        if pass_info.get('price'):
+            auxiliary_fields.append({
+                "key": "price",
+                "label": "Price",
+                "value": pass_info['price']
+            })
+        
+        # Add AI processing indicator if enhanced
+        if pass_info.get('ai_processed'):
+            auxiliary_fields.append({
+                "key": "ai_enhanced",
+                "label": "Enhanced",
+                "value": "AI Processed"
+            })
+        
         # Always add generation info
         auxiliary_fields.append({
             "key": "generated",
@@ -329,6 +423,51 @@ class PassGenerator:
                 "auxiliaryFields": auxiliary_fields
             }
         }
+        
+        # Add barcode to the pass if available
+        primary_barcode = pass_info.get('primary_barcode')
+        if primary_barcode:
+            barcode_format = primary_barcode.get('format', 'PKBarcodeFormatQR')
+            barcode_data = primary_barcode.get('data', '')
+            
+            if barcode_data:
+                pass_json['barcode'] = {
+                    "format": barcode_format,
+                    "message": barcode_data,
+                    "messageEncoding": "iso-8859-1"
+                }
+                
+                # Also add to barcodes array for iOS 9+ compatibility
+                pass_json['barcodes'] = [{
+                    "format": barcode_format,
+                    "message": barcode_data,
+                    "messageEncoding": "iso-8859-1"
+                }]
+                
+                print(f"🎫 Added barcode to pass: {barcode_format} with {len(barcode_data)} characters")
+        else:
+            # Fallback: try to use barcode_data from AI extraction
+            barcode_data = (pass_info.get('barcode_data') or 
+                           pass_info.get('barcode_numbers') or 
+                           pass_info.get('confirmation_number'))
+            
+            if barcode_data and len(str(barcode_data)) > 5:  # Must be meaningful length
+                # Default to QR code format for text data
+                pass_json['barcode'] = {
+                    "format": "PKBarcodeFormatQR",
+                    "message": str(barcode_data),
+                    "messageEncoding": "iso-8859-1"
+                }
+                
+                pass_json['barcodes'] = [{
+                    "format": "PKBarcodeFormatQR", 
+                    "message": str(barcode_data),
+                    "messageEncoding": "iso-8859-1"
+                }]
+                
+                print(f"🎫 Added fallback QR code with extracted data: {str(barcode_data)[:50]}...")
+            else:
+                print("⚠️ No barcode data found - pass will not have scannable code")
         
         # Create temporary directory for pass files
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -598,6 +737,40 @@ class PassGenerator:
         except Exception as e:
             print(f"❌ Error extracting PDF text: {e}")
             return ""
+    
+    def _analyze_pdf_colors_enhanced(self, pdf_data: bytes, pass_info: Dict[str, Any]) -> Tuple[str, str, str]:
+        """Enhanced PDF color analysis using AI metadata.
+        
+        Args:
+            pdf_data: Raw PDF bytes
+            pass_info: AI-extracted pass information
+            
+        Returns:
+            tuple: (background_color, foreground_color, label_color)
+        """
+        # Use AI metadata for better color decisions
+        event_type = pass_info.get('event_type', '').lower()
+        event_name = pass_info.get('event_name', '').lower()
+        venue_type = pass_info.get('venue_type', '').lower()
+        
+        # Enhanced color theming based on event type and context
+        if event_type == 'flight' or 'airline' in event_name or 'airport' in venue_type:
+            return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Aviation blue
+        elif event_type == 'concert' or 'music' in event_name or 'concert' in venue_type:
+            return "rgb(255, 45, 85)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Concert red
+        elif event_type == 'sports' or 'stadium' in venue_type:
+            return "rgb(52, 199, 89)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Sports green
+        elif event_type == 'train' or 'railway' in event_name:
+            return "rgb(48, 176, 199)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Rail teal
+        elif event_type == 'hotel' or 'reservation' in event_name:
+            return "rgb(142, 142, 147)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Hotel gray
+        elif event_type == 'movie' or 'theater' in venue_type:
+            return "rgb(94, 92, 230)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Theater purple
+        elif event_type == 'conference' or 'business' in event_name:
+            return "rgb(50, 173, 230)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Business blue
+        else:
+            # Fall back to original color analysis
+            return self._analyze_pdf_colors(pdf_data)
     
     def _analyze_pdf_colors(self, pdf_data: bytes) -> Tuple[str, str, str]:
         """Analyze PDF to suggest color palette.

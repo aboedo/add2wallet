@@ -5,11 +5,17 @@ from typing import Optional
 import uuid
 import os
 import shutil
+import asyncio
 from pathlib import Path
+from dotenv import load_dotenv
 
 from app.models.responses import UploadResponse, ErrorResponse, StatusResponse
 from app.services.pdf_validator import PDFValidator
 from app.services.pass_generator import pass_generator
+from app.services.ai_service import ai_service
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(title="Add2Wallet API", version="1.0.0")
 
@@ -69,37 +75,73 @@ async def upload_pdf(
     with open(file_path, "wb") as f:
         f.write(contents)
     
-    # Generate Apple Wallet pass immediately
+    # Initialize job in processing state
+    jobs[job_id] = {
+        "user_id": user_id,
+        "status": "processing",
+        "progress": 10,
+        "file_path": str(file_path),
+        "filename": file.filename
+    }
+    
+    # Process PDF with AI and generate Apple Wallet pass
     try:
-        pkpass_data = pass_generator.create_pass_from_pdf_data(contents, file.filename)
+        # Step 1: Extract text from PDF for AI analysis
+        from app.services.pass_generator import PassGenerator
+        temp_generator = PassGenerator()
+        pdf_text = temp_generator._extract_pdf_text(contents)
+        
+        # Update progress
+        jobs[job_id]["progress"] = 30
+        
+        # Step 2: AI analysis of PDF content
+        ai_metadata = None
+        try:
+            ai_metadata = await ai_service.analyze_pdf_content(pdf_text, file.filename)
+            jobs[job_id]["progress"] = 70
+            jobs[job_id]["ai_metadata"] = ai_metadata
+            print(f"✅ AI analysis completed for {file.filename}")
+        except Exception as ai_error:
+            print(f"⚠️ AI analysis failed, using fallback: {ai_error}")
+            # Continue with basic extraction
+            jobs[job_id]["progress"] = 50
+        
+        # Step 3: Generate enhanced pass with AI metadata and barcode extraction
+        pkpass_data, detected_barcodes = pass_generator.create_pass_from_pdf_data(
+            contents, 
+            file.filename,
+            ai_metadata
+        )
         
         # Save the pass file
         pass_path = UPLOAD_DIR / f"{job_id}.pkpass"
         with open(pass_path, "wb") as f:
             f.write(pkpass_data)
         
-        # Store job information
-        jobs[job_id] = {
-            "user_id": user_id,
+        # Update job information with completion
+        jobs[job_id].update({
             "status": "completed",
             "progress": 100,
-            "file_path": str(file_path),
             "pass_path": str(pass_path),
-            "filename": file.filename
-        }
+            "detected_barcodes": detected_barcodes,
+            "barcode_count": len(detected_barcodes)
+        })
         
-        return UploadResponse(job_id=job_id, status="completed", pass_url=f"/pass/{job_id}")
+        return UploadResponse(
+            job_id=job_id, 
+            status="completed", 
+            pass_url=f"/pass/{job_id}",
+            ai_metadata=ai_metadata
+        )
         
     except Exception as e:
         # If pass generation fails, mark job as failed
-        jobs[job_id] = {
-            "user_id": user_id,
+        jobs[job_id].update({
             "status": "failed",
             "progress": 0,
-            "file_path": str(file_path),
-            "filename": file.filename,
             "error": str(e)
-        }
+        })
+        print(f"❌ Pass generation failed: {e}")
         
         return UploadResponse(job_id=job_id, status="failed")
 
@@ -121,7 +163,8 @@ async def get_status(
         job_id=job_id,
         status=job["status"],
         progress=job["progress"],
-        result_url=f"/pass/{job_id}" if job["status"] == "completed" else None
+        result_url=f"/pass/{job_id}" if job["status"] == "completed" else None,
+        ai_metadata=job.get("ai_metadata")
     )
 
 @app.get("/pass/{job_id}")
