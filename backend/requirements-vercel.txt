@@ -1,0 +1,19 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+PyPDF2==3.0.1
+Pillow==10.1.0
+aiofiles==23.2.1
+cryptography==41.0.7
+openai==1.51.2
+python-dotenv==1.0.0
+requests==2.31.0
+numpy<2.0
+# Binary dependencies handled differently in Vercel
+# opencv-python==4.8.1.78  # Not compatible with Vercel serverless
+# pyzbar==0.1.9             # Not compatible with Vercel serverless  
+# pdf2image==1.16.3         # Not compatible with Vercel serverless
+# pymupdf==1.23.14          # Not compatible with Vercel serverless

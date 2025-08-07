@@ -38,7 +38,7 @@ enum NetworkError: Error, LocalizedError {
 }
 
 class NetworkService {
-    private let baseURL = "http://192.168.68.66:8000"
+    private let baseURL = "https://add2wallet-backend-production.up.railway.app"
     private let session = URLSession.shared
     
     func uploadPDF(data: Data, filename: String) -> AnyPublisher<UploadResponse, Error> {
@@ -51,7 +51,7 @@ class NetworkService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.setValue("development-api-key", forHTTPHeaderField: "X-API-Key")
+        request.setValue("add2wallet-prod-4fafa87d63f30ecc38e1a156bcb240d6", forHTTPHeaderField: "X-API-Key")
         
         var body = Data()
         
@@ -104,7 +104,7 @@ class NetworkService {
         }
         
         var request = URLRequest(url: url)
-        request.setValue("development-api-key", forHTTPHeaderField: "X-API-Key")
+        request.setValue("add2wallet-prod-4fafa87d63f30ecc38e1a156bcb240d6", forHTTPHeaderField: "X-API-Key")
         
         return session.dataTaskPublisher(for: request)
             .tryMap { data, response in

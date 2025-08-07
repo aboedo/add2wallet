@@ -5,13 +5,24 @@ import os
 import logging
 import tempfile
 from typing import List, Tuple, Optional, Dict, Any
+
+# Import all dependencies - should be available in properly configured environment
 import cv2
 import numpy as np
 from pyzbar import pyzbar
-from PIL import Image
-import fitz  # PyMuPDF
-import PyPDF2
 from pdf2image import convert_from_bytes
+
+# Always available imports
+from PIL import Image
+try:
+    import fitz  # PyMuPDF
+    HAS_PYMUPDF = True
+except ImportError:
+    print("⚠️ PyMuPDF not available")
+    HAS_PYMUPDF = False
+    fitz = None
+
+import PyPDF2
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -40,15 +51,18 @@ class BarcodeExtractor:
         """
         logger.info(f"🔍 Starting barcode extraction from {filename}")
         
+        # All dependencies should be available with proper configuration
+        
         barcodes = []
         
         # Method 1: Try PyMuPDF for vector-based barcodes (fastest)
-        try:
-            pymupdf_barcodes = self._extract_with_pymupdf(pdf_data)
-            barcodes.extend(pymupdf_barcodes)
-            logger.info(f"📊 PyMuPDF found {len(pymupdf_barcodes)} barcodes")
-        except Exception as e:
-            logger.warning(f"⚠️ PyMuPDF extraction failed: {e}")
+        if HAS_PYMUPDF:
+            try:
+                pymupdf_barcodes = self._extract_with_pymupdf(pdf_data)
+                barcodes.extend(pymupdf_barcodes)
+                logger.info(f"📊 PyMuPDF found {len(pymupdf_barcodes)} barcodes")
+            except Exception as e:
+                logger.warning(f"⚠️ PyMuPDF extraction failed: {e}")
         
         # Method 2: Convert PDF to images and scan (more thorough)
         try:
@@ -82,6 +96,9 @@ class BarcodeExtractor:
         Returns:
             List of detected barcodes
         """
+        if not HAS_PYMUPDF:
+            return []
+            
         barcodes = []
         
         # Open PDF with PyMuPDF

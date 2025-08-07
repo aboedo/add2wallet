@@ -5,7 +5,7 @@ import os
 import tempfile
 import zipfile
 import shutil
-import subprocess
+# subprocess removed for Vercel compatibility
 import re
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple
@@ -570,6 +570,12 @@ class PassGenerator:
         Returns:
             True if certificates are available for signing
         """
+        # First check for environment variables (for Vercel deployment)
+        if os.getenv('PASS_CERT_PEM') and os.getenv('PASS_KEY_PEM') and os.getenv('WWDR_CERT_PEM'):
+            print("✅ Certificates found in environment variables - signing enabled")
+            return True
+            
+        # Fallback to file-based certificates
         required_files = ['pass.pem', 'key.pem']
         
         # Check basic required files
@@ -603,9 +609,15 @@ class PassGenerator:
             return "pass.com.andresboedo.add2wallet", "H9DPH4DQG7"
         
         try:
-            pass_cert_path = os.path.join(self.certificates_path, 'pass.pem')
-            with open(pass_cert_path, 'rb') as f:
-                pass_cert = x509.load_pem_x509_certificate(f.read())
+            # Load certificate from environment or file
+            if os.getenv('PASS_CERT_PEM'):
+                import base64
+                pass_cert_data = base64.b64decode(os.getenv('PASS_CERT_PEM'))
+                pass_cert = x509.load_pem_x509_certificate(pass_cert_data)
+            else:
+                pass_cert_path = os.path.join(self.certificates_path, 'pass.pem')
+                with open(pass_cert_path, 'rb') as f:
+                    pass_cert = x509.load_pem_x509_certificate(f.read())
             
             # Extract UID from certificate subject (this is the passTypeIdentifier)
             pass_type_id = None
@@ -641,52 +653,62 @@ class PassGenerator:
             return b""
         
         try:
-            # Load certificates
-            pass_cert_path = os.path.join(self.certificates_path, 'pass.pem')
-            key_path = os.path.join(self.certificates_path, 'key.pem')
-            wwdr_cert_path = os.path.join(self.certificates_path, 'wwdr.pem')
-            
             # Read the manifest file
             with open(manifest_path, 'rb') as f:
                 manifest_data = f.read()
             
-            # Load the pass certificate
-            with open(pass_cert_path, 'rb') as f:
-                pass_cert = x509.load_pem_x509_certificate(f.read())
-            
-            # Load the private key
-            with open(key_path, 'rb') as f:
-                private_key = serialization.load_pem_private_key(f.read(), password=None)
-            
-            # Load the WWDR certificate - use G4 for passes issued by G4
-            wwdrg4_cert_path = os.path.join(self.certificates_path, 'wwdrg4.pem')
-            if os.path.exists(wwdrg4_cert_path):
-                with open(wwdrg4_cert_path, 'rb') as f:
-                    wwdr_cert = x509.load_pem_x509_certificate(f.read())
-                print("🔗 Using WWDR G4 certificate for signing")
-            else:
-                # Fallback to regular WWDR certificate
-                with open(wwdr_cert_path, 'rb') as f:
-                    wwdr_cert = x509.load_pem_x509_certificate(f.read())
-                print("🔗 Using default WWDR certificate for signing")
-            
-            # Try using OpenSSL command line for more reliable signing
-            signature = self._sign_manifest_with_openssl(manifest_path)
-            if not signature:
-                # Fallback to Python cryptography library
-                with open(manifest_path, 'rb') as f:
-                    manifest_data = f.read()
+            # Load certificates from environment variables or files
+            if os.getenv('PASS_CERT_PEM'):
+                # Load from environment variables (Vercel deployment)
+                import base64
+                pass_cert_data = base64.b64decode(os.getenv('PASS_CERT_PEM'))
+                pass_key_data = base64.b64decode(os.getenv('PASS_KEY_PEM'))  
+                wwdr_cert_data = base64.b64decode(os.getenv('WWDR_CERT_PEM'))
                 
-                options = [pkcs7.PKCS7Options.DetachedSignature]
-                signature = pkcs7.PKCS7SignatureBuilder().set_data(
-                    manifest_data
-                ).add_signer(
-                    pass_cert, private_key, hashes.SHA256()  # Use SHA256 as required by cryptography
-                ).add_certificate(
-                    wwdr_cert
-                ).sign(
-                    serialization.Encoding.DER, options
-                )
+                pass_cert = x509.load_pem_x509_certificate(pass_cert_data)
+                private_key = serialization.load_pem_private_key(pass_key_data, password=None)
+                wwdr_cert = x509.load_pem_x509_certificate(wwdr_cert_data)
+                print("🔗 Using certificates from environment variables")
+            else:
+                # Load from files (local development)
+                pass_cert_path = os.path.join(self.certificates_path, 'pass.pem')
+                key_path = os.path.join(self.certificates_path, 'key.pem')
+                
+                # Load the pass certificate
+                with open(pass_cert_path, 'rb') as f:
+                    pass_cert = x509.load_pem_x509_certificate(f.read())
+                
+                # Load the private key
+                with open(key_path, 'rb') as f:
+                    private_key = serialization.load_pem_private_key(f.read(), password=None)
+                
+                # Load the WWDR certificate - use G4 for passes issued by G4
+                wwdrg4_cert_path = os.path.join(self.certificates_path, 'wwdrg4.pem')
+                if os.path.exists(wwdrg4_cert_path):
+                    with open(wwdrg4_cert_path, 'rb') as f:
+                        wwdr_cert = x509.load_pem_x509_certificate(f.read())
+                    print("🔗 Using WWDR G4 certificate for signing")
+                else:
+                    # Fallback to regular WWDR certificate
+                    wwdr_cert_path = os.path.join(self.certificates_path, 'wwdr.pem')
+                    with open(wwdr_cert_path, 'rb') as f:
+                        wwdr_cert = x509.load_pem_x509_certificate(f.read())
+                    print("🔗 Using default WWDR certificate for signing")
+            
+            # Use Python cryptography library for signing (Vercel compatible)
+            with open(manifest_path, 'rb') as f:
+                manifest_data = f.read()
+            
+            options = [pkcs7.PKCS7Options.DetachedSignature]
+            signature = pkcs7.PKCS7SignatureBuilder().set_data(
+                manifest_data
+            ).add_signer(
+                pass_cert, private_key, hashes.SHA256()  # Use SHA256 as required by cryptography
+            ).add_certificate(
+                wwdr_cert
+            ).sign(
+                serialization.Encoding.DER, options
+            )
             
             return signature
             
@@ -714,73 +736,8 @@ class PassGenerator:
         finally:
             os.unlink(temp_path)
     
-    def _sign_manifest_with_openssl(self, manifest_path: str) -> bytes:
-        """Sign manifest using OpenSSL command line for better compatibility.
-        
-        Args:
-            manifest_path: Path to the manifest.json file
-            
-        Returns:
-            The signature bytes, or empty bytes if signing fails
-        """
-        if not self.signing_enabled:
-            return b""
-        
-        try:
-            pass_cert_path = os.path.join(self.certificates_path, 'pass.pem')
-            key_path = os.path.join(self.certificates_path, 'key.pem')
-            
-            # Determine which WWDR certificate to use
-            wwdrg4_cert_path = os.path.join(self.certificates_path, 'wwdrg4.pem')
-            wwdr_cert_path = os.path.join(self.certificates_path, 'wwdr.pem')
-            
-            if os.path.exists(wwdrg4_cert_path):
-                wwdr_path = wwdrg4_cert_path
-            else:
-                wwdr_path = wwdr_cert_path
-            
-            # Create a temporary file for the signature
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.der') as sig_file:
-                sig_path = sig_file.name
-            
-            # For Apple Wallet, we need to create the signature in a specific way
-            # First, let's try the exact OpenSSL approach Apple expects
-            cmd = [
-                'openssl', 'smime', '-sign',
-                '-binary',
-                '-signer', pass_cert_path,
-                '-inkey', key_path,
-                '-certfile', wwdr_path,
-                '-in', manifest_path,
-                '-out', sig_path,
-                '-outform', 'DER'
-            ]
-            
-            print(f"🔐 Signing with OpenSSL: {' '.join(cmd)}")
-            
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            
-            if result.returncode == 0:
-                # Read the signature
-                with open(sig_path, 'rb') as f:
-                    signature = f.read()
-                
-                print(f"✅ OpenSSL signing successful: {len(signature)} bytes")
-                
-                # Clean up
-                os.unlink(sig_path)
-                
-                return signature
-            else:
-                print(f"❌ OpenSSL signing failed: {result.stderr}")
-                # Clean up
-                if os.path.exists(sig_path):
-                    os.unlink(sig_path)
-                return b""
-                
-        except Exception as e:
-            print(f"❌ Error with OpenSSL signing: {e}")
-            return b""
+    # OpenSSL subprocess method removed for Vercel compatibility
+    # Signing is now handled entirely through Python cryptography library
     
     def _extract_pdf_text(self, pdf_data: bytes) -> str:
         """Extract text content from PDF.

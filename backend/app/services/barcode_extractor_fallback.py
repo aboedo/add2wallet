@@ -6,9 +6,16 @@ import logging
 import tempfile
 from typing import List, Tuple, Optional, Dict, Any
 import re
-import fitz  # PyMuPDF
 import PyPDF2
 from PIL import Image
+
+# Try to import PyMuPDF, but don't fail if it's not available (Vercel serverless)
+try:
+    import fitz  # PyMuPDF
+    HAS_PYMUPDF = True
+except ImportError:
+    HAS_PYMUPDF = False
+    fitz = None
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -119,6 +126,10 @@ class FallbackBarcodeExtractor:
         """
         barcodes = []
         
+        if not HAS_PYMUPDF:
+            logger.warning("⚠️ PyMuPDF not available, skipping image-based barcode detection")
+            return []
+            
         try:
             # Use PyMuPDF to extract images and analyze them
             doc = fitz.open(stream=pdf_data, filetype="pdf")

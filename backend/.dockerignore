@@ -1,0 +1,39 @@
+# Virtual environments
+venv/
+env/
+.env
+.venv
+
+# Git
+.git/
+.gitignore
+
+# Development files
+README.md
+CERTIFICATE_SETUP.md
+monitor_server.py
+setup_certificates.sh
+
+# Test files
+tests/
+*_test.py
+test_*.py
+
+# Vercel files
+.vercel/
+vercel.json
+.vercelignore
+api/
+
+# iOS project
+ios/
+
+# Cache and temporary files
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
+
+# Keep only required uploads (remove test files if they're large)
+uploads/*.pdf
+uploads/*.pkpass

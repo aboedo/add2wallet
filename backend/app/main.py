@@ -39,6 +39,40 @@ jobs = {}
 async def root():
     return {"message": "Add2Wallet API is running", "version": "1.0.0"}
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to test basic functionality"""
+    health_status = {
+        "status": "healthy",
+        "timestamp": "2025-08-07T18:28:00Z",
+        "services": {}
+    }
+    
+    # Test AI service
+    try:
+        ai_status = "enabled" if ai_service.ai_enabled else "disabled"
+        health_status["services"]["ai"] = ai_status
+    except Exception as e:
+        health_status["services"]["ai"] = f"error: {str(e)}"
+    
+    # Test pass generator
+    try:
+        from app.services.pass_generator import PassGenerator
+        generator = PassGenerator()
+        health_status["services"]["pass_generator"] = "initialized"
+        health_status["services"]["signing"] = "enabled" if generator.signing_enabled else "disabled"
+    except Exception as e:
+        health_status["services"]["pass_generator"] = f"error: {str(e)}"
+    
+    # Test barcode extractor
+    try:
+        from app.services.barcode_extractor import barcode_extractor
+        health_status["services"]["barcode_extractor"] = "initialized"
+    except Exception as e:
+        health_status["services"]["barcode_extractor"] = f"error: {str(e)}"
+    
+    return health_status
+
 @app.post("/upload", response_model=UploadResponse)
 async def upload_pdf(
     file: UploadFile = File(...),
@@ -48,8 +82,9 @@ async def upload_pdf(
 ):
     """Upload a PDF file for processing into an Apple Wallet pass."""
     
-    # Basic authentication check for development
-    if x_api_key != "development-api-key":
+    # Basic authentication check
+    expected_api_key = os.getenv("API_KEY", "development-api-key")
+    if x_api_key != expected_api_key:
         raise HTTPException(status_code=401, detail="Invalid API key")
     
     # Validate file type
@@ -86,10 +121,17 @@ async def upload_pdf(
     
     # Process PDF with AI and generate Apple Wallet pass
     try:
+        print(f"🔄 Starting processing for {file.filename}")
+        
         # Step 1: Extract text from PDF for AI analysis
-        from app.services.pass_generator import PassGenerator
-        temp_generator = PassGenerator()
-        pdf_text = temp_generator._extract_pdf_text(contents)
+        try:
+            from app.services.pass_generator import PassGenerator
+            temp_generator = PassGenerator()
+            pdf_text = temp_generator._extract_pdf_text(contents)
+            print(f"📝 PDF text extracted: {len(pdf_text)} characters")
+        except Exception as e:
+            print(f"❌ Error extracting PDF text: {e}")
+            raise HTTPException(status_code=400, detail=f"Failed to extract PDF text: {str(e)}")
         
         # Update progress
         jobs[job_id]["progress"] = 30
@@ -107,11 +149,16 @@ async def upload_pdf(
             jobs[job_id]["progress"] = 50
         
         # Step 3: Generate enhanced pass(es) with AI metadata and barcode extraction
-        pkpass_files, detected_barcodes, ticket_info = pass_generator.create_pass_from_pdf_data(
-            contents, 
-            file.filename,
-            ai_metadata
-        )
+        try:
+            pkpass_files, detected_barcodes, ticket_info = pass_generator.create_pass_from_pdf_data(
+                contents, 
+                file.filename,
+                ai_metadata
+            )
+            print(f"🎫 Generated {len(pkpass_files)} pass files")
+        except Exception as e:
+            print(f"❌ Error generating passes: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to generate passes: {str(e)}")
         
         # Save pass files
         pass_paths = []

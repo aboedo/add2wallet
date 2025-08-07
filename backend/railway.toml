@@ -1,0 +1,10 @@
+[build]
+builder = "dockerfile"
+buildCommand = "docker build -t add2wallet-backend ."
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+
+[environments.production]
+variables = {}

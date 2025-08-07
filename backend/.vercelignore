@@ -1,0 +1,37 @@
+# Virtual environments
+venv/
+env/
+.env
+.venv
+__pycache__/
+*.pyc
+
+# Development files
+.git/
+.gitignore
+README.md
+CERTIFICATE_SETUP.md
+
+# Test files
+tests/
+*_test.py
+test_*.py
+
+# Development tools
+monitor_server.py
+setup_certificates.sh
+
+# Large binary dependencies we don't need
+uploads/*.pdf
+uploads/*.pkpass
+
+# iOS project (not needed for backend)
+ios/
+
+# Local development files
+.env.example
+requirements-vercel.txt
+
+# Cache and temporary files
+.pytest_cache/
+*.log

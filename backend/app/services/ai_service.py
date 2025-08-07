@@ -33,7 +33,11 @@ class AIService:
         
         if self.ai_enabled:
             try:
-                self.client = OpenAI(api_key=self.api_key)
+                # Initialize with minimal configuration for serverless environments
+                self.client = OpenAI(
+                    api_key=self.api_key,
+                    timeout=30.0
+                )
                 logger.info("🤖 AI service initialized successfully with OpenAI")
             except Exception as e:
                 logger.error(f"❌ Failed to initialize OpenAI client: {e}")
