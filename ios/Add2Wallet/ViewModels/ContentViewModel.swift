@@ -6,11 +6,25 @@ import PassKit
 class ContentViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var statusMessage: String?
+    @Published var funnyPhrase: String = ""
     @Published var hasError = false
     @Published var showingDocumentPicker = false
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
+    private var phraseTimer: AnyCancellable?
+    private let phrases: [String] = [
+        "Sharpening digital scissors ✂️",
+        "Teaching the pass to be classy 🧣",
+        "Taming barcodes in the wild 🦓",
+        "Politely asking pixels to line up 📐",
+        "Squeezing the PDF into your Wallet 💼",
+        "Convincing Apple to like this pass 🍏",
+        "Adding just a pinch of magic ✨",
+        "Enrolling pass in wallet etiquette school 🎓",
+        "Ironing out the manifest wrinkles 🧺",
+        "Signing with a very fancy pen 🖋️",
+    ]
     
     init() {
         // Listen for shared PDFs from the Share Extension
@@ -58,14 +72,16 @@ class ContentViewModel: ObservableObject {
     func processPDF(data: Data, filename: String) {
         isProcessing = true
         statusMessage = "Processing \(filename)..."
+        startPhraseCycling()
         hasError = false
         
         networkService.uploadPDF(data: data, filename: filename)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
-                    self?.isProcessing = false
                     if case .failure(let error) = completion {
+                        self?.isProcessing = false
+                        self?.stopPhraseCycling()
                         self?.statusMessage = "Error: \(error.localizedDescription)"
                         self?.hasError = true
                     }
@@ -74,6 +90,8 @@ class ContentViewModel: ObservableObject {
                     if response.status == "completed", let passUrl = response.passUrl {
                         self?.downloadAndOpenPass(passUrl: passUrl)
                     } else {
+                        self?.isProcessing = false
+                        self?.stopPhraseCycling()
                         self?.statusMessage = "Pass generation failed. Status: \(response.status)"
                         self?.hasError = true
                     }
@@ -90,6 +108,8 @@ class ContentViewModel: ObservableObject {
             .sink(
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
+                        self?.isProcessing = false
+                        self?.stopPhraseCycling()
                         self?.statusMessage = "Error downloading pass: \(error.localizedDescription)"
                         self?.hasError = true
                     }
@@ -133,10 +153,34 @@ class ContentViewModel: ObservableObject {
                 object: nil,
                 userInfo: ["passViewController": passVC!, "tempURL": tempURL]
             )
+            isProcessing = false
+            stopPhraseCycling()
             
         } catch {
+            isProcessing = false
+            stopPhraseCycling()
             statusMessage = "Error creating pass: \(error.localizedDescription)"
             hasError = true
         }
+    }
+
+    private func startPhraseCycling() {
+        // Immediately set a phrase
+        funnyPhrase = phrases.randomElement() ?? "Getting things ready..."
+        phraseTimer?.cancel()
+        phraseTimer = Timer.publish(every: 1.8, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                var next = phrases.randomElement() ?? "Almost there..."
+                if next == funnyPhrase { next = phrases.shuffled().first ?? next }
+                funnyPhrase = next
+            }
+    }
+
+    private func stopPhraseCycling() {
+        phraseTimer?.cancel()
+        phraseTimer = nil
+        funnyPhrase = ""
     }
 }
