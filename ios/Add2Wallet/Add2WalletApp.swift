@@ -26,13 +26,15 @@ struct Add2WalletApp: App {
         }
         
         let sharedFile = sharedContainer.appendingPathComponent("shared_pdf.json")
-        
-        if FileManager.default.fileExists(atPath: sharedFile.path) {
+        let pdfFile = sharedContainer.appendingPathComponent("shared.pdf")
+
+        if FileManager.default.fileExists(atPath: sharedFile.path),
+           FileManager.default.fileExists(atPath: pdfFile.path) {
             do {
                 let jsonData = try Data(contentsOf: sharedFile)
                 if let sharedData = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-                   let filename = sharedData["filename"] as? String,
-                   let pdfData = sharedData["data"] as? Data {
+                   let filename = sharedData["filename"] as? String {
+                    let pdfData = try Data(contentsOf: pdfFile)
                     
                     // Process the shared PDF
                     NotificationCenter.default.post(
@@ -42,7 +44,8 @@ struct Add2WalletApp: App {
                     )
                     
                     // Clean up the shared file
-                    try FileManager.default.removeItem(at: sharedFile)
+                    try? FileManager.default.removeItem(at: sharedFile)
+                    try? FileManager.default.removeItem(at: pdfFile)
                 }
             } catch {
                 // Silent error handling
