@@ -225,6 +225,8 @@ class BarcodeExtractor:
                         'format': self._normalize_barcode_format(barcode_type),
                         'page': page_num,
                         'method': method,
+                        'encoding': 'utf-8',
+                        'raw_bytes': bytes(barcode.data),
                         'position': {
                             'x': rect.left,
                             'y': rect.top,
@@ -248,7 +250,8 @@ class BarcodeExtractor:
                                 'format': self._normalize_barcode_format(barcode.type),
                                 'page': page_num,
                                 'method': method,
-                                'encoding': encoding
+                                'encoding': encoding,
+                                'raw_bytes': bytes(barcode.data)
                             }
                             barcodes.append(barcode_info)
                             break
@@ -351,26 +354,42 @@ class BarcodeExtractor:
         if not barcodes:
             return barcodes
         
-        # Group by data content
-        data_groups = {}
+        # Group by (data, page) to preserve identical codes on different pages
+        grouped: Dict[tuple, List[Dict[str, Any]]] = {}
         for barcode in barcodes:
-            data = barcode['data']
-            if data not in data_groups:
-                data_groups[data] = []
-            data_groups[data].append(barcode)
-        
-        # Keep the highest confidence barcode from each group
-        result = []
-        for data, group in data_groups.items():
-            # Sort by confidence (highest first)
-            group.sort(key=lambda x: x.get('confidence', 0), reverse=True)
-            best_barcode = group[0]
-            
-            # Add detection count information
-            best_barcode['detection_count'] = len(group)
-            best_barcode['methods_used'] = list(set(bc.get('method', 'unknown') for bc in group))
-            
-            result.append(best_barcode)
+            key = (barcode.get('data'), barcode.get('page'))
+            grouped.setdefault(key, []).append(barcode)
+
+        result: List[Dict[str, Any]] = []
+        for (_data, _page), group in grouped.items():
+            # Cluster by spatial distance on the same page to keep distinct instances far apart
+            clusters: List[List[Dict[str, Any]]] = []
+            distance_threshold = 120  # pixels between centers
+
+            def center(bc: Dict[str, Any]) -> tuple:
+                pos = bc.get('position') or {}
+                return (pos.get('x', 0) + pos.get('width', 0) / 2.0, pos.get('y', 0) + pos.get('height', 0) / 2.0)
+
+            for bc in group:
+                placed = False
+                cx, cy = center(bc)
+                for cluster in clusters:
+                    # Compare with first element in cluster
+                    c0x, c0y = center(cluster[0])
+                    if ((cx - c0x) ** 2 + (cy - c0y) ** 2) ** 0.5 < distance_threshold:
+                        cluster.append(bc)
+                        placed = True
+                        break
+                if not placed:
+                    clusters.append([bc])
+
+            # From each cluster, keep the highest confidence barcode
+            for cluster in clusters:
+                cluster.sort(key=lambda x: x.get('confidence', 0), reverse=True)
+                best = cluster[0]
+                best['detection_count'] = len(cluster)
+                best['methods_used'] = list(set(bc.get('method', 'unknown') for bc in cluster))
+                result.append(best)
         
         # Sort by confidence for final result
         result.sort(key=lambda x: x.get('confidence', 0), reverse=True)

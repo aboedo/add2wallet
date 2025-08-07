@@ -24,6 +24,11 @@ struct ContentView: View {
                                 .frame(height: 320)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.secondary.opacity(0.2)))
+
+                            if let details = viewModel.passMetadata {
+                                PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
+                                    .transition(.opacity)
+                            }
                             HStack(spacing: 12) {
                                 Button(role: .cancel) {
                                     viewModel.clearSelection()
@@ -99,6 +104,14 @@ struct ContentView: View {
                        let passVC = userInfo["passViewController"] as? PKAddPassesViewController {
                         self.passViewController = passVC
                     }
+                }
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("ResetPassUIState"),
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    self.passViewController = nil
+                    self.showingAddPassVC = false
                 }
             }
             .sheet(isPresented: $showingAddPassVC) {
@@ -182,6 +195,66 @@ struct ProcessingView: View {
             rotateRing = true
             pulseCenter = true
             phraseOpacity = 1.0
+        }
+    }
+}
+
+import MapKit
+
+struct PassDetailsView: View {
+    let metadata: EnhancedPassMetadata
+    let ticketCount: Int?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Pass Details")
+                .font(.headline)
+            Group {
+                keyValueRow("Type", metadata.eventType)
+                keyValueRow("Title", metadata.title ?? metadata.eventName)
+                keyValueRow("Description", metadata.description ?? metadata.eventDescription)
+                keyValueRow("Date", metadata.date)
+                keyValueRow("Time", metadata.time)
+                keyValueRow("Venue", metadata.venueName)
+                keyValueRow("Address", metadata.venueAddress)
+                keyValueRow("City", metadata.city)
+                keyValueRow("Region", metadata.stateCountry)
+                keyValueRow("Seat", metadata.seatInfo)
+                keyValueRow("Barcode", metadata.barcodeData)
+                keyValueRow("Price", metadata.price)
+                keyValueRow("Confirmation", metadata.confirmationNumber)
+                keyValueRow("Gate", metadata.gateInfo)
+                if let ticketCount, ticketCount > 1 {
+                    keyValueRow("Number of passes", String(ticketCount))
+                }
+            }
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+
+            if let lat = metadata.latitude, let lon = metadata.longitude {
+                Map(position: .constant(.region(MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                ))))
+                .frame(height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
+                )
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    @ViewBuilder
+    private func keyValueRow(_ key: String, _ value: String?) -> some View {
+        if let value = value, !value.isEmpty {
+            HStack(alignment: .top) {
+                Text("\(key):").fontWeight(.semibold).foregroundColor(.primary)
+                Text(value).multilineTextAlignment(.leading)
+            }
         }
     }
 }

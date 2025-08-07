@@ -10,6 +10,8 @@ class ContentViewModel: ObservableObject {
     @Published var hasError = false
     @Published var showingDocumentPicker = false
     @Published var selectedFileURL: URL?
+    @Published var passMetadata: EnhancedPassMetadata?
+    @Published var ticketCount: Int? = nil
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
@@ -66,6 +68,9 @@ class ContentViewModel: ObservableObject {
                 .appendingPathExtension("pdf")
             try data.write(to: tempURL, options: [.atomic])
             selectedFileURL = tempURL
+            // Reset any previously generated pass UI state/metadata
+            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+            passMetadata = nil
             statusMessage = "Ready to upload \(url.lastPathComponent)"
             hasError = false
         } catch {
@@ -93,6 +98,9 @@ class ContentViewModel: ObservableObject {
         selectedFileURL = nil
         statusMessage = nil
         hasError = false
+        passMetadata = nil
+        ticketCount = nil
+        NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
     }
     
     func processPDF(data: Data, filename: String) {
@@ -113,6 +121,8 @@ class ContentViewModel: ObservableObject {
                     }
                 },
                 receiveValue: { [weak self] response in
+                    self?.passMetadata = response.aiMetadata
+                    self?.ticketCount = response.ticketCount
                     if response.status == "completed", let passUrl = response.passUrl {
                         self?.downloadAndOpenPass(passUrl: passUrl)
                     } else {
