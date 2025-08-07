@@ -25,9 +25,15 @@ class PDFValidator:
             if len(pdf_reader.pages) == 0:
                 return False, "PDF has no pages"
             
-            # Check if PDF is encrypted (we don't support encrypted PDFs yet)
+            # Check if PDF is encrypted and requires password
             if pdf_reader.is_encrypted:
-                return False, "Encrypted PDFs are not supported"
+                # Try to decrypt with empty password (handles PDFs with user restrictions only)
+                try:
+                    if not pdf_reader.decrypt(''):
+                        return False, "Password-protected PDFs are not supported"
+                except Exception:
+                    # If decryption fails, treat as password-protected
+                    return False, "Password-protected PDFs are not supported"
             
             # Try to extract text from first page (basic validation)
             try:
