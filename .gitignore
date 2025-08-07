@@ -39,6 +39,8 @@ backend/*.log
 # Environment
 .env
 *.env
+backend/.env.production
+backend/.env.railway
 
 # IDE
 .vscode/
