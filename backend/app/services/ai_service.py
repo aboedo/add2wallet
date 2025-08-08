@@ -226,9 +226,15 @@ class AIService:
         venue_name = event_info.get('venue_name', '')
         venue_address = event_info.get('venue_address', '')
         city = event_info.get('city', '')
+        state_country = event_info.get('state_country', '')
+        event_name = event_info.get('event_name', '')
+        date = event_info.get('date', '')
         
-        # Create search query for location
-        location_query = f"{venue_name} {venue_address} {city}".strip()
+        # Create search query for location (fallback to event name when venue info missing)
+        base_parts = [venue_name, venue_address, city, state_country]
+        if not any(p.strip() for p in base_parts):
+            base_parts = [event_name, city, state_country, date]
+        location_query = " ".join([p for p in base_parts if p and p.strip()])
         
         # Check cache first
         cache_key = f"location:{location_query}"
