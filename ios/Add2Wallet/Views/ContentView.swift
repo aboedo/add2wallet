@@ -55,14 +55,6 @@ struct ContentView: View {
                         .padding(.top, 24)
                     }
                     
-                    if let message = viewModel.statusMessage {
-                        Text(message)
-                            .font(.caption)
-                            .foregroundColor(viewModel.hasError ? .red : .green)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                    }
-                    
                     Spacer(minLength: 80)
                     }
                     .padding()
@@ -70,6 +62,13 @@ struct ContentView: View {
 
                 // Fixed bottom action bar
                 VStack(spacing: 8) {
+                    if let message = viewModel.statusMessage, !message.isEmpty {
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundColor(viewModel.hasError ? .red : .green)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                    }
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         HStack(spacing: 12) {
                             Button(role: .cancel) {
