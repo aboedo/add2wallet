@@ -35,12 +35,12 @@ class PDFValidator:
                     # If decryption fails, treat as password-protected
                     return False, "Password-protected PDFs are not supported"
             
-            # Try to extract text from first page (basic validation)
+            # Optional: try to extract text from first page, but do not fail if it doesn't work
             try:
-                first_page = pdf_reader.pages[0]
-                text = first_page.extract_text()
-            except Exception as e:
-                return False, f"Cannot extract text from PDF: {str(e)}"
+                _ = pdf_reader.pages[0].extract_text()
+            except Exception:
+                # Some valid PDFs (image-only, special encodings) cannot extract text; still consider valid
+                pass
             
             return True, ""
             
