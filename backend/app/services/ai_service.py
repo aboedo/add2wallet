@@ -147,7 +147,8 @@ class AIService:
         }}
 
         Important: 
-        - Only include information that is clearly present in the text
+        - For most fields, include information that is clearly present in the text
+        - For the "title" and "color_palette" you may reasonably infer from context/branding; do NOT use the raw filename, barcodes, or ID-like strings as the title
         - Use null for missing information
         - Standardize date/time formats
         - Be precise with venue names and addresses

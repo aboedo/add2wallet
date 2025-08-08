@@ -108,7 +108,7 @@ class ContentViewModel: ObservableObject {
     
     func processPDF(data: Data, filename: String) {
         isProcessing = true
-        statusMessage = "Processing \(filename)..."
+        statusMessage = "Processing..."
         startPhraseCycling()
         hasError = false
         

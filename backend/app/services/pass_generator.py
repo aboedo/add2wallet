@@ -513,7 +513,7 @@ class PassGenerator:
             "value": datetime.now().strftime("%b %d, %Y")
         })
         
-        # Create pass.json with enhanced content
+            # Create pass.json with enhanced content
             pass_json = {
             "formatVersion": 1,
             "passTypeIdentifier": pass_type_id,
@@ -532,6 +532,15 @@ class PassGenerator:
                 "auxiliaryFields": auxiliary_fields
             }
         }
+
+            # If AI provided brand colors, keep them for downstream tools (non-standard key ignored by PassKit)
+            brand_colors = None
+            if isinstance(pass_info, dict):
+                palette = pass_info.get('color_palette') or {}
+                if isinstance(palette, dict) and palette.get('brand_colors'):
+                    brand_colors = palette.get('brand_colors')
+            if brand_colors:
+                pass_json['a2w_brandColors'] = brand_colors
         
         # Add barcode to the pass if available
         primary_barcode = pass_info.get('primary_barcode')
