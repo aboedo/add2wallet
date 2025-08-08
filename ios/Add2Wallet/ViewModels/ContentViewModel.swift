@@ -63,9 +63,12 @@ class ContentViewModel: ObservableObject {
 
         do {
             let data = try Data(contentsOf: url)
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension("pdf")
+            // Preserve original filename to help backend/AI infer better titles
+            let originalName = url.lastPathComponent
+            let tempDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            let tempURL = tempDir.appendingPathComponent(originalName)
             try data.write(to: tempURL, options: [.atomic])
             selectedFileURL = tempURL
             // Reset any previously generated pass UI state/metadata

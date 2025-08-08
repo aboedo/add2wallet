@@ -312,6 +312,7 @@ class PassGenerator:
             # Use AI-extracted title or fallback, then sanitize to avoid code-like titles
             base_title = (pass_info.get('title') or 
                          pass_info.get('event_name') or 
+                         (pass_info.get('venue_name') if isinstance(pass_info, dict) else None) or 
                          filename.replace('.pdf', '').replace('_', ' ').title())
             base_title = self._sanitize_title(base_title, fallback_name=pass_info.get('event_name') or filename)
             
