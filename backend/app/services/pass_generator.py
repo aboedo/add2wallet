@@ -309,10 +309,11 @@ class PassGenerator:
             # Analyze colors for dynamic theming
             bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
             
-            # Use AI-extracted title or fallback
+            # Use AI-extracted title or fallback, then sanitize to avoid code-like titles
             base_title = (pass_info.get('title') or 
                          pass_info.get('event_name') or 
                          filename.replace('.pdf', '').replace('_', ' ').title())
+            base_title = self._sanitize_title(base_title, fallback_name=pass_info.get('event_name') or filename)
             
             # Customize title for multiple tickets
             if total_tickets > 1:
@@ -320,10 +321,15 @@ class PassGenerator:
             else:
                 title = base_title
             
-            # Use AI-extracted description or create one
+            # Use AI-extracted description or create one, then sanitize if it looks like a UUID/code
             base_description = (pass_info.get('description') or 
                                pass_info.get('event_description') or 
                                f"Digital pass from {filename}")
+            base_description = self._sanitize_description(
+                base_description,
+                pass_info=pass_info,
+                filename=filename
+            )
             
             # Customize description for multiple tickets
             if total_tickets > 1:
@@ -501,14 +507,14 @@ class PassGenerator:
         })
         
         # Create pass.json with enhanced content
-        pass_json = {
+            pass_json = {
             "formatVersion": 1,
             "passTypeIdentifier": pass_type_id,
             "serialNumber": f"enhanced-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "teamIdentifier": team_id,
             "organizationName": organization,
-            "description": description,
-            "logoText": title[:20],  # Shorter for logo text
+                "description": description,
+                "logoText": title[:20],  # Shorter for logo text
             "foregroundColor": fg_color,
             "backgroundColor": bg_color,
             "labelColor": label_color,
@@ -1171,6 +1177,62 @@ class PassGenerator:
             info['description'] = " • ".join(desc_parts)
         
         return info
+
+    def _sanitize_title(self, title: str, fallback_name: Optional[str] = None) -> str:
+        """Ensure the pass title is human-friendly and not a code/UUID.
+        Falls back to a cleaned name when it looks like a code.
+        """
+        try:
+            import re as _re
+            if not title or not title.strip():
+                cleaned = (fallback_name or "Ticket").replace("_", " ").strip()
+                return cleaned[:30] if cleaned else "Ticket"
+
+            cleaned = _re.sub(r"\s+", " ", title.replace("_", " ")).strip()
+
+            # UUID pattern
+            uuid_re = _re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+            if uuid_re.match(cleaned):
+                cleaned_fb = (fallback_name or "Ticket").replace("_", " ").strip()
+                return cleaned_fb[:30] if cleaned_fb else "Ticket"
+
+            # Too few letters (likely a code)
+            letters_only = _re.sub(r"[^A-Za-z]", "", cleaned)
+            if len(letters_only) < 3:
+                cleaned_fb = (fallback_name or "Ticket").replace("_", " ").strip()
+                return cleaned_fb[:30] if cleaned_fb else "Ticket"
+
+            # Suspicious tokens suggesting fare classes or codes
+            suspicious = ["ADULT", "CHILD", "SENIOR", "INFANT", "YOUTH", "ZONE", "SEAT", "CLASS"]
+            if any(tok in cleaned.upper() for tok in suspicious):
+                cleaned_fb = (fallback_name or "Ticket").replace("_", " ").strip()
+                return cleaned_fb[:30] if cleaned_fb else "Ticket"
+
+            return cleaned[:30]
+        except Exception:
+            return (fallback_name or "Ticket")[:30] if fallback_name else "Ticket"
+
+    def _sanitize_description(self, description: str, pass_info: Dict[str, Any], filename: str) -> str:
+        """Avoid showing UUIDs/codes as subtitle. Prefer human info like date/venue.
+        """
+        try:
+            import re as _re
+            desc = (description or "").strip()
+            looks_like_uuid = _re.match(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", desc) is not None
+            mostly_code = len(_re.sub(r"[A-Za-z]", "", desc)) > len(_re.sub(r"[^A-Za-z]", "", desc))
+            if not desc or looks_like_uuid or mostly_code:
+                parts: list[str] = []
+                if pass_info.get('date'):
+                    parts.append(str(pass_info['date']))
+                if pass_info.get('time'):
+                    parts.append(str(pass_info['time']))
+                if pass_info.get('venue_name') or pass_info.get('venue'):
+                    parts.append(str(pass_info.get('venue_name') or pass_info.get('venue')))
+                fallback = " • ".join(parts) if parts else f"Digital pass from {filename}"
+                return fallback[:80]
+            return desc[:80]
+        except Exception:
+            return f"Digital pass from {filename}"[:80]
 
 
 # Global instance
