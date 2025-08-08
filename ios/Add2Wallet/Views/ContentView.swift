@@ -83,7 +83,7 @@ struct ContentView: View {
                             Button {
                                 viewModel.uploadSelected()
                             } label: {
-                                Label("Upload", systemImage: "arrow.up.circle")
+                                Label("Create Pass", systemImage: "arrow.up.circle")
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.borderedProminent)
@@ -218,6 +218,7 @@ struct PassDetailsView: View {
     let metadata: EnhancedPassMetadata
     let ticketCount: Int?
     private let keyWidth: CGFloat = 120
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -256,6 +257,26 @@ struct PassDetailsView: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
                 )
+
+                HStack(spacing: 8) {
+                    Button {
+                        openInAppleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
+                    } label: {
+                        Label("Open in Apple Maps", systemImage: "map")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button {
+                        openInGoogleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
+                    } label: {
+                        Label("Open in Google Maps", systemImage: "map.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .font(.footnote)
+                .padding(.top, 6)
             }
         }
         .padding()
@@ -276,6 +297,29 @@ struct PassDetailsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    private func openInAppleMaps(coordinate: CLLocationCoordinate2D, name: String) {
+        let query = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Location"
+        if let url = URL(string: "http://maps.apple.com/?ll=\(coordinate.latitude),\(coordinate.longitude)&q=\(query)") {
+            openURL(url)
+        }
+    }
+
+    private func openInGoogleMaps(coordinate: CLLocationCoordinate2D, name: String) {
+        let query = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Location"
+        let appURL = URL(string: "comgooglemaps://?q=\(query)&center=\(coordinate.latitude),\(coordinate.longitude)&zoom=16")
+        let webURL = URL(string: "https://maps.google.com/?q=\(query)&ll=\(coordinate.latitude),\(coordinate.longitude)&z=16")
+
+        if let appURL = appURL {
+            openURL(appURL) { accepted in
+                if !accepted, let webURL = webURL {
+                    openURL(webURL)
+                }
+            }
+        } else if let webURL = webURL {
+            openURL(webURL)
         }
     }
 }
