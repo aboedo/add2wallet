@@ -30,23 +30,6 @@ struct ContentView: View {
                                 PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
                                     .transition(.opacity)
                             }
-                            HStack(spacing: 12) {
-                                Button(role: .cancel) {
-                                    viewModel.clearSelection()
-                                } label: {
-                                    Label("Cancel", systemImage: "xmark")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                
-                                Button {
-                                    viewModel.uploadSelected()
-                                } label: {
-                                    Label("Upload", systemImage: "arrow.up.circle")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                            }
                         }
                         .padding(.top, 8)
                     } else if viewModel.isProcessing {
