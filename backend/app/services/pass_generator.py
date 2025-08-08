@@ -227,6 +227,15 @@ class PassGenerator:
         except Exception as e:
             print(f"⚠️ Barcode extraction failed: {e}")
         
+        # Sort barcodes by page then by detected area (descending)
+        try:
+            def area(bc: Dict[str, Any]) -> int:
+                pos = bc.get('position') or {}
+                return int((pos.get('width') or 0) * (pos.get('height') or 0))
+            barcodes.sort(key=lambda bc: (bc.get('page') or 0, -area(bc)))
+        except Exception:
+            pass
+
         # Step 2: Use AI metadata if available, otherwise fall back to basic extraction
         if ai_metadata and ai_metadata.get('ai_processed'):
             print(f"🤖 Using AI-extracted metadata (confidence: {ai_metadata.get('confidence_score', 'unknown')})")
@@ -503,8 +512,6 @@ class PassGenerator:
             "foregroundColor": fg_color,
             "backgroundColor": bg_color,
             "labelColor": label_color,
-            # Add a default expiration if date is available; otherwise, 90 days from now
-            "expirationDate": self._compute_expiration_date(pass_info),
             "generic": {
                 "headerFields": header_fields,
                 "primaryFields": primary_fields,
@@ -649,7 +656,7 @@ class PassGenerator:
                 except Exception:
                     return None, None, None
 
-            # Accumulate color counts across pages
+            # Accumulate color counts across pages, weight by saturation
             color_counter: Counter = Counter()
             for img in images:
                 small = img.copy()
@@ -661,7 +668,11 @@ class PassGenerator:
                     r = palette_list[idx * 3] if idx * 3 < len(palette_list) else 0
                     g = palette_list[idx * 3 + 1] if idx * 3 + 1 < len(palette_list) else 0
                     b = palette_list[idx * 3 + 2] if idx * 3 + 2 < len(palette_list) else 0
-                    color_counter[(r, g, b)] += count
+                    # Compute simple saturation to prefer vivid colors
+                    maxc, minc = max(r, g, b), min(r, g, b)
+                    sat = (maxc - minc) / 255.0 if maxc > 0 else 0.0
+                    weight = int(count * (0.6 + 0.4 * sat))  # 0.6..1.0 multiplier
+                    color_counter[(r, g, b)] += weight
 
             if not color_counter:
                 return None, None, None

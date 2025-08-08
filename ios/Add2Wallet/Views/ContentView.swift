@@ -9,8 +9,9 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 16) {
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 16) {
                     VStack(spacing: 4) {
                         Text("Add2Wallet")
                             .font(.largeTitle).fontWeight(.bold)
@@ -79,6 +80,33 @@ struct ContentView: View {
                             .padding(.horizontal)
                     }
                     
+                    Spacer(minLength: 80)
+                    }
+                    .padding()
+                }
+
+                // Fixed bottom action bar
+                VStack(spacing: 8) {
+                    if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
+                        HStack(spacing: 12) {
+                            Button(role: .cancel) {
+                                viewModel.clearSelection()
+                            } label: {
+                                Label("Cancel", systemImage: "xmark")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+
+                            Button {
+                                viewModel.uploadSelected()
+                            } label: {
+                                Label("Upload", systemImage: "arrow.up.circle")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+
                     if passViewController != nil {
                         Button(action: { showingAddPassVC = true }) {
                             Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
@@ -89,9 +117,11 @@ struct ContentView: View {
                                 .cornerRadius(10)
                         }
                     }
-                    Spacer(minLength: 12)
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+                .background(.thinMaterial)
             }
             .navigationBarHidden(true)
             .onAppear {
@@ -204,6 +234,7 @@ import MapKit
 struct PassDetailsView: View {
     let metadata: EnhancedPassMetadata
     let ticketCount: Int?
+    private let keyWidth: CGFloat = 120
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -232,10 +263,11 @@ struct PassDetailsView: View {
             .foregroundColor(.secondary)
 
             if let lat = metadata.latitude, let lon = metadata.longitude {
-                Map(position: .constant(.region(MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
-                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                ))))
+                let coord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                Map {
+                    Marker(metadata.venueName ?? "Venue", coordinate: coord)
+                }
+                .mapStyle(.standard)
                 .frame(height: 140)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
@@ -251,9 +283,15 @@ struct PassDetailsView: View {
     @ViewBuilder
     private func keyValueRow(_ key: String, _ value: String?) -> some View {
         if let value = value, !value.isEmpty {
-            HStack(alignment: .top) {
-                Text("\(key):").fontWeight(.semibold).foregroundColor(.primary)
-                Text(value).multilineTextAlignment(.leading)
+            HStack(alignment: .top, spacing: 8) {
+                Text("\(key):")
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                    .frame(width: keyWidth, alignment: .leading)
+                Text(value)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
