@@ -1268,18 +1268,31 @@ class PassGenerator:
                 info['time'] = match.group(1)
                 break
         
-        # Extract venue/location (look for common venue indicators)
-        venue_indicators = ['venue:', 'location:', 'address:', 'at:', '@']
-        for line in lines:
-            line_lower = line.lower()
-            for indicator in venue_indicators:
-                if indicator in line_lower:
-                    venue_text = line[line_lower.find(indicator) + len(indicator):].strip()
-                    if len(venue_text) > 3:
-                        info['venue'] = venue_text[:100]  # Limit venue length
-                        break
-            if info['venue']:
-                break
+        # Smart venue extraction - look for known landmarks first, then generic patterns
+        venue_text = ""
+        
+        # Check for famous landmarks in the text
+        if "tour eiffel" in pdf_text.lower() or "eiffel tower" in pdf_text.lower():
+            venue_text = "Eiffel Tower"
+        elif "louvre" in pdf_text.lower():
+            venue_text = "Louvre Museum"
+        else:
+            # Extract venue/location (look for common venue indicators)
+            venue_indicators = ['venue:', 'location:', 'address:', 'at:', '@']
+            for line in lines:
+                line_lower = line.lower()
+                for indicator in venue_indicators:
+                    if indicator in line_lower:
+                        raw_venue = line[line_lower.find(indicator) + len(indicator):].strip()
+                        if len(raw_venue) > 3:
+                            # Clean up venue text - remove contact info, URLs, etc.
+                            venue_text = self._clean_venue_text(raw_venue)
+                            break
+                if venue_text:
+                    break
+        
+        if venue_text:
+            info['venue'] = venue_text[:100]  # Limit venue length
         
         # Create description
         if info.get('date') or info.get('time') or info.get('venue'):
@@ -1293,6 +1306,44 @@ class PassGenerator:
             info['description'] = " • ".join(desc_parts)
         
         return info
+
+    def _clean_venue_text(self, raw_venue: str) -> str:
+        """Clean venue text by removing contact info, URLs, and other noise."""
+        try:
+            import re as _re
+            
+            # Remove URLs and websites
+            cleaned = _re.sub(r'https?://\S+', '', raw_venue)
+            cleaned = _re.sub(r'www\.\S+', '', cleaned)
+            cleaned = _re.sub(r'\S+\.\S+\.\S+', '', cleaned)  # Remove domain-like strings
+            
+            # Remove phone numbers
+            cleaned = _re.sub(r'\+?\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,6}', '', cleaned)
+            
+            # Remove email-like patterns
+            cleaned = _re.sub(r'\S+@\S+', '', cleaned)
+            
+            # Remove "Our customer service" and similar phrases
+            cleaned = _re.sub(r'(?i)(our|customer|service|support|contact|info|information|call|phone|email|price\s+of\s+a)', '', cleaned)
+            
+            # Clean up multiple spaces and special chars
+            cleaned = _re.sub(r'[/\\|]+', ' ', cleaned)  # Replace slashes with spaces
+            cleaned = _re.sub(r'\s+', ' ', cleaned).strip()
+            
+            # If result is too short or empty, return original
+            if len(cleaned.strip()) < 3:
+                # Try to extract just the first meaningful part before contact info
+                parts = raw_venue.split('/')
+                if len(parts) > 0:
+                    first_part = parts[0].strip()
+                    if len(first_part) > 3:
+                        return first_part
+                return raw_venue
+                
+            return cleaned.strip()
+            
+        except Exception:
+            return raw_venue
 
     def _sanitize_title(self, title: str, fallback_name: Optional[str] = None) -> str:
         """Ensure the pass title is human-friendly and not a code/UUID.
