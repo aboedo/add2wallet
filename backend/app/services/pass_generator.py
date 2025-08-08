@@ -1221,11 +1221,26 @@ class PassGenerator:
         if not lines:
             return info
         
-        # Extract title (usually one of the first meaningful lines)
-        for line in lines[:5]:
-            if len(line) > 3 and not re.match(r'^[\d\s\-\+\(\)]+$', line):
-                info['title'] = line[:50]  # Limit title length
-                break
+        # Use AI service heuristics for better title extraction
+        try:
+            from app.services.ai_service import ai_service
+            title = ai_service._basic_title_heuristics(pdf_text, "document.pdf")
+            if title and title != "Digital Ticket":
+                info['title'] = title
+            else:
+                # Fallback to first meaningful line approach
+                for line in lines[:8]:  # Check more lines
+                    # Skip obvious field labels and short codes
+                    if (len(line) > 5 and 
+                        not re.match(r'^[\d\s\-\+\(\):]+$', line) and 
+                        not line.lower().startswith(('commande', 'ticket', 'date', 'acheté', 'order'))):
+                        info['title'] = line[:50]
+                        break
+                # If still no good title found, use fallback
+                if not info['title']:
+                    info['title'] = "Event Ticket"
+        except Exception:
+            info['title'] = "Event Ticket"
         
         # Extract dates (look for various date formats)
         date_patterns = [
