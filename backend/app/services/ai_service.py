@@ -95,6 +95,8 @@ class AIService:
             
         except Exception as e:
             logger.error(f"❌ Error in AI analysis: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return self._create_fallback_metadata(pdf_text, filename)
     
     async def _extract_pdf_metadata(self, pdf_text: str, filename: str) -> Dict[str, Any]:
@@ -114,7 +116,7 @@ class AIService:
         You are preparing content for an Apple Wallet pass. Analyze the following PDF content and extract structured information suitable for a user-facing Wallet pass. This appears to be from a file named "{filename}".
 
         PDF Content:
-        {pdf_text[:4000]}  # Limit content to avoid token limits
+        {pdf_text[:4000].replace('{', '{{').replace('}', '}}')}
 
         Extract the following information and return as JSON:
         {{
@@ -234,7 +236,7 @@ class AIService:
                 "- If it's a ticket, include the event or park name; if a boarding pass, include airline and 'Boarding Pass'.\n"
                 "- If multiple options, choose the most user-friendly and informative.\n\n"
                 f"Existing data (JSON): {json.dumps(context)[:1800]}\n\n"
-                f"Relevant PDF text excerpt (truncated):\n{pdf_text[:2000]}\n\n"
+                f"Relevant PDF text excerpt (truncated):\n{pdf_text[:2000].replace('{', '{{').replace('}', '}}')}\n\n"
                 "Return JSON: {\n  \"title\": \"string\",\n  \"confidence\": 0-100\n}"
             )
 
@@ -530,9 +532,19 @@ class AIService:
         """
         text = pdf_text or ""
         t = text.lower()
+        
+        # Museum/attraction patterns
+        if "louvre" in t or "musée du louvre" in t:
+            return "Louvre Museum"
+        if "musée" in t and "billet" in t:  # Generic museum ticket in French
+            return "Museum Ticket"
+        if "museo" in t and ("entrada" in t or "ticket" in t):  # Spanish
+            return "Museum Ticket"
+        if "museum" in t and "ticket" in t:
+            return "Museum Ticket"
+        
         # Disneyland / Disney World
         if "disneyland" in t or "disney california adventure" in t:
-            # Try to infer multi-day
             if re.search(r"\b(2|two)[ -]?day\b", t):
                 return "Disneyland 2-Day Ticket"
             if re.search(r"\b(3|three)[ -]?day\b", t):
@@ -544,12 +556,18 @@ class AIService:
             return "Walt Disney World Ticket"
         if "universal studios" in t or "islands of adventure" in t:
             return "Universal Studios Ticket"
+        
+        # Transportation
         if "boarding" in t and ("airlines" in t or "airline" in t or re.search(r"\bflight\b", t)):
-            # Extract airline code/name if present
             m = re.search(r"\b([A-Z]{2})\s?\d{2,4}\b", pdf_text)
             if m:
                 return f"Boarding Pass {m.group(1)}"
             return "Boarding Pass"
+        
+        # Generic patterns
+        if "billet" in t or "entrada" in t or "ticket" in t:
+            return "Event Ticket"
+        
         # Fallback to cleaned filename
         base = filename.replace('.pdf', '').replace('_', ' ').strip()
         base = re.sub(r"\s+", " ", base)
