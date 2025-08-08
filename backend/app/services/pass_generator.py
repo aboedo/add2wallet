@@ -306,8 +306,14 @@ class PassGenerator:
                     pass_info['barcode_data'] = ticket_barcode['data']
                 print(f"🎫 Ticket {ticket_num}: Using barcode {ticket_barcode['type']} - {ticket_barcode['data'][:50]}...")
             
-            # Analyze colors for dynamic theming
-            bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
+            # Analyze colors for dynamic theming; prefer AI-provided palette if present
+            ai_bg = pass_info.get('background_color') or (pass_info.get('color_palette') or {}).get('background_color') if isinstance(pass_info, dict) else None
+            ai_fg = pass_info.get('foreground_color') or (pass_info.get('color_palette') or {}).get('foreground_color') if isinstance(pass_info, dict) else None
+            ai_label = pass_info.get('label_color') or (pass_info.get('color_palette') or {}).get('label_color') if isinstance(pass_info, dict) else None
+            if ai_bg and ai_fg and ai_label:
+                bg_color, fg_color, label_color = ai_bg, ai_fg, ai_label
+            else:
+                bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
             
             # Use AI-extracted title or fallback, then sanitize to avoid code-like titles
             base_title = (pass_info.get('title') or 

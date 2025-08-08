@@ -136,6 +136,12 @@ class AIService:
             "price": "Ticket price if mentioned",
             "confirmation_number": "Booking/confirmation number",
             "gate_info": "Gate, platform, or check-in info",
+            "color_palette": {
+                "background_color": "Recommended background color (hex like #0057FF or rgb(r, g, b))",
+                "foreground_color": "Recommended text color for contrast (hex or rgb)",
+                "label_color": "Recommended label color (hex or rgb)",
+                "brand_colors": ["Optional list of brand colors (hex)"]
+            },
             "additional_info": "Any other relevant details",
             "confidence_score": "0-100 indicating extraction confidence"
         }}
@@ -150,6 +156,7 @@ class AIService:
         - Extract any long numerical strings that could be barcodes
         - Identify ticket numbers, confirmation codes, and reference IDs
         - For the "title", pick what a user expects to see on their Apple Wallet card (e.g., 'Disneyland Park Ticket', 'Boarding Pass: Delta DL123', 'Concert: Artist Name') rather than internal codes like 'ADULT', 'ZONE 1', or alphanumeric SKUs/UUIDs
+        - For the "color_palette", choose colors that match the brand/event while ensuring contrast for readability; return hex or rgb formats.
         """
 
         try:
