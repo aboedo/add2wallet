@@ -154,7 +154,7 @@ class AIService:
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                 messages=[
                     {
                         "role": "system", 
@@ -230,7 +230,7 @@ class AIService:
             )
 
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                 messages=[
                     {"role": "system", "content": "You generate short, clean titles for Wallet passes."},
                     {"role": "user", "content": prompt},
@@ -335,7 +335,7 @@ class AIService:
             """
 
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                 messages=[
                     {
                         "role": "system",
