@@ -533,9 +533,9 @@ class PassGenerator:
             # Prefer raw bytes to preserve exact payload; fall back to text
             raw_bytes = primary_barcode.get('raw_bytes')
             barcode_data = primary_barcode.get('data', '')
-            
+
+            # If we have bytes, use ISO-8859-1 mapping for PassKit fidelity
             if raw_bytes is not None and isinstance(raw_bytes, (bytes, bytearray)):
-                # Decode bytes with ISO-8859-1 to preserve 1:1 byte mapping in PassKit
                 try:
                     message_text = bytes(raw_bytes).decode('latin-1')
                 except Exception:
@@ -552,20 +552,19 @@ class PassGenerator:
                 }]
                 print(f"🎫 Added barcode preserving raw bytes via latin-1 ({len(raw_bytes)} bytes, format {barcode_format})")
             elif barcode_data:
+                # Avoid accidental whitespace/newlines differences vs. source
+                normalized = str(barcode_data).replace('\r\n', '\n').strip('\n')
                 pass_json['barcode'] = {
                     "format": barcode_format,
-                    "message": barcode_data,
+                    "message": normalized,
                     "messageEncoding": "iso-8859-1"
                 }
-                
-                # Also add to barcodes array for iOS 9+ compatibility
                 pass_json['barcodes'] = [{
                     "format": barcode_format,
-                    "message": barcode_data,
+                    "message": normalized,
                     "messageEncoding": "iso-8859-1"
                 }]
-                
-                print(f"🎫 Added barcode to pass: {barcode_format} with {len(barcode_data)} characters")
+                print(f"🎫 Added barcode to pass: {barcode_format} with {len(normalized)} characters")
         else:
             # Fallback: try to use barcode_data from AI extraction
             barcode_data = (pass_info.get('barcode_data') or 
