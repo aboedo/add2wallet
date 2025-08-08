@@ -239,6 +239,10 @@ class PassGenerator:
         # Step 2: Use AI metadata if available, otherwise fall back to basic extraction
         if ai_metadata and ai_metadata.get('ai_processed'):
             print(f"🤖 Using AI-extracted metadata (confidence: {ai_metadata.get('confidence_score', 'unknown')})")
+            print(f"📋 AI metadata fields: {list(ai_metadata.keys())}")
+            print(f"📍 Event: {ai_metadata.get('event_name', 'N/A')}, Title: {ai_metadata.get('title', 'N/A')}")
+            print(f"📅 Date: {ai_metadata.get('date', 'N/A')}, Time: {ai_metadata.get('time', 'N/A')}")
+            print(f"🏛️ Venue: {ai_metadata.get('venue_name', 'N/A')}")
             base_pass_info = ai_metadata
         else:
             print("🔄 Falling back to basic PDF analysis")
@@ -307,13 +311,34 @@ class PassGenerator:
                 print(f"🎫 Ticket {ticket_num}: Using barcode {ticket_barcode['type']} - {ticket_barcode['data'][:50]}...")
             
             # Analyze colors for dynamic theming; prefer AI-provided palette if present
-            ai_bg = pass_info.get('background_color') or (pass_info.get('color_palette') or {}).get('background_color') if isinstance(pass_info, dict) else None
-            ai_fg = pass_info.get('foreground_color') or (pass_info.get('color_palette') or {}).get('foreground_color') if isinstance(pass_info, dict) else None
-            ai_label = pass_info.get('label_color') or (pass_info.get('color_palette') or {}).get('label_color') if isinstance(pass_info, dict) else None
+            ai_bg = None
+            ai_fg = None
+            ai_label = None
+            
+            # Extract colors from AI metadata - check color_palette first
+            if isinstance(pass_info, dict):
+                color_palette = pass_info.get('color_palette')
+                if isinstance(color_palette, dict):
+                    ai_bg = color_palette.get('background_color')
+                    ai_fg = color_palette.get('foreground_color') 
+                    ai_label = color_palette.get('label_color')
+                    print(f"🎨 Found AI color palette: bg={ai_bg}, fg={ai_fg}, label={ai_label}")
+                
+                # Fall back to direct color fields if palette not found
+                if not ai_bg:
+                    ai_bg = pass_info.get('background_color')
+                if not ai_fg:
+                    ai_fg = pass_info.get('foreground_color')
+                if not ai_label:
+                    ai_label = pass_info.get('label_color')
+            
+            # Use AI colors if all three are present, otherwise analyze PDF
             if ai_bg and ai_fg and ai_label:
                 bg_color, fg_color, label_color = ai_bg, ai_fg, ai_label
+                print(f"✅ Using AI-provided colors")
             else:
                 bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
+                print(f"🔄 Using fallback color analysis")
             
             # Use AI-extracted title or fallback, then sanitize to avoid code-like titles
             base_title = (pass_info.get('title') or 
@@ -402,6 +427,9 @@ class PassGenerator:
         secondary_fields = []
         auxiliary_fields = []
         
+        print(f"🏗️ Building pass fields for: {title}")
+        print(f"   Available metadata fields: {[k for k in pass_info.keys() if pass_info.get(k)]}")
+        
         # Header field - use event type for better categorization
         event_type = pass_info.get('event_type', '').upper()
         if event_type and event_type != 'OTHER':
@@ -410,18 +438,21 @@ class PassGenerator:
                 "label": event_type,
                 "value": title[:25]  # Limit length for header
             })
+            print(f"   Added header: {event_type}")
         elif pass_info.get('event_name'):
             header_fields.append({
                 "key": "header",
                 "label": "EVENT",
                 "value": title[:25]
             })
+            print(f"   Added header: EVENT")
         else:
             header_fields.append({
                 "key": "header", 
                 "label": "DOCUMENT",
                 "value": "Digital Pass"
             })
+            print(f"   Added header: DOCUMENT")
         
         # Primary field - main title
         primary_fields.append({
@@ -438,6 +469,7 @@ class PassGenerator:
                 "label": "Date",
                 "value": pass_info['date']
             })
+            print(f"   Added date: {pass_info['date']}")
             
         if pass_info.get('time'):
             secondary_fields.append({
@@ -445,6 +477,7 @@ class PassGenerator:
                 "label": "Time",
                 "value": pass_info['time']
             })
+            print(f"   Added time: {pass_info['time']}")
         
         # Seat/gate information (important for tickets)
         if pass_info.get('seat_info'):
@@ -453,12 +486,14 @@ class PassGenerator:
                 "label": "Seat",
                 "value": pass_info['seat_info']
             })
+            print(f"   Added seat: {pass_info['seat_info']}")
         elif pass_info.get('gate_info'):
             secondary_fields.append({
                 "key": "gate",
                 "label": "Gate",
                 "value": pass_info['gate_info']
             })
+            print(f"   Added gate: {pass_info['gate_info']}")
         
         # Auxiliary fields - venue and additional details
         if pass_info.get('venue_name'):
@@ -467,12 +502,14 @@ class PassGenerator:
                 "label": "Venue",
                 "value": pass_info['venue_name']
             })
+            print(f"   Added venue: {pass_info['venue_name']}")
         elif pass_info.get('venue'):  # Fallback to old field name
             auxiliary_fields.append({
                 "key": "venue",
                 "label": "Venue",
                 "value": pass_info['venue']
             })
+            print(f"   Added venue (fallback): {pass_info['venue']}")
         
         # Add performer/artist for entertainment events
         if pass_info.get('performer_artist'):
@@ -481,6 +518,16 @@ class PassGenerator:
                 "label": "Artist",
                 "value": pass_info['performer_artist']
             })
+            print(f"   Added artist: {pass_info['performer_artist']}")
+        
+        # Add organizer if no performer/artist
+        elif pass_info.get('organizer'):
+            auxiliary_fields.append({
+                "key": "organizer",
+                "label": "Organizer",
+                "value": pass_info['organizer']
+            })
+            print(f"   Added organizer: {pass_info['organizer']}")
         
         # Add confirmation number if available
         if pass_info.get('confirmation_number'):
@@ -489,6 +536,7 @@ class PassGenerator:
                 "label": "Confirmation",
                 "value": pass_info['confirmation_number']
             })
+            print(f"   Added confirmation: {pass_info['confirmation_number']}")
         
         # Add price if available
         if pass_info.get('price'):
@@ -497,6 +545,24 @@ class PassGenerator:
                 "label": "Price",
                 "value": pass_info['price']
             })
+            print(f"   Added price: {pass_info['price']}")
+        
+        # Add location/city if available but venue wasn't added
+        if not pass_info.get('venue_name') and not pass_info.get('venue'):
+            if pass_info.get('city'):
+                auxiliary_fields.append({
+                    "key": "location",
+                    "label": "Location",
+                    "value": pass_info['city']
+                })
+                print(f"   Added city: {pass_info['city']}")
+            elif pass_info.get('venue_address'):
+                auxiliary_fields.append({
+                    "key": "address",
+                    "label": "Address",
+                    "value": pass_info['venue_address'][:50]  # Limit length
+                })
+                print(f"   Added address: {pass_info['venue_address'][:50]}")
         
         # Add AI processing indicator if enhanced
         if pass_info.get('ai_processed'):
@@ -513,15 +579,17 @@ class PassGenerator:
             "value": datetime.now().strftime("%b %d, %Y")
         })
         
-            # Create pass.json with enhanced content
-            pass_json = {
+        print(f"   Total fields: {len(header_fields)} header, {len(primary_fields)} primary, {len(secondary_fields)} secondary, {len(auxiliary_fields)} auxiliary")
+        
+        # Create pass.json with enhanced content
+        pass_json = {
             "formatVersion": 1,
             "passTypeIdentifier": pass_type_id,
             "serialNumber": f"enhanced-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "teamIdentifier": team_id,
             "organizationName": organization,
-                "description": description,
-                "logoText": title[:20],  # Shorter for logo text
+            "description": description,
+            "logoText": title[:20],  # Shorter for logo text
             "foregroundColor": fg_color,
             "backgroundColor": bg_color,
             "labelColor": label_color,
@@ -533,14 +601,14 @@ class PassGenerator:
             }
         }
 
-            # If AI provided brand colors, keep them for downstream tools (non-standard key ignored by PassKit)
-            brand_colors = None
-            if isinstance(pass_info, dict):
-                palette = pass_info.get('color_palette') or {}
-                if isinstance(palette, dict) and palette.get('brand_colors'):
-                    brand_colors = palette.get('brand_colors')
-            if brand_colors:
-                pass_json['a2w_brandColors'] = brand_colors
+        # If AI provided brand colors, keep them for downstream tools (non-standard key ignored by PassKit)
+        brand_colors = None
+        if isinstance(pass_info, dict):
+            palette = pass_info.get('color_palette') or {}
+            if isinstance(palette, dict) and palette.get('brand_colors'):
+                brand_colors = palette.get('brand_colors')
+        if brand_colors:
+            pass_json['a2w_brandColors'] = brand_colors
         
         # Add barcode to the pass if available
         primary_barcode = pass_info.get('primary_barcode')
@@ -1209,33 +1277,41 @@ class PassGenerator:
             if _re.fullmatch(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", cleaned) or \
                _re.fullmatch(r"[0-9a-fA-F]{32}", cleaned):
                 cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                print(f"⚠️ Title looks like UUID, using fallback: {cleaned_fb}")
                 return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
 
-            # Too few letters (likely a code)
+            # Too few letters (likely a code) - but be more lenient
             letters_only = _re.sub(r"[^A-Za-z]", "", cleaned)
-            if len(letters_only) < 3:
+            if len(letters_only) < 2:  # Changed from 3 to 2
                 cleaned_fb = (fallback_name or "Ticket").replace("_", " ").strip()
+                print(f"⚠️ Title has too few letters, using fallback: {cleaned_fb}")
                 return cleaned_fb[:30] if cleaned_fb else "Ticket"
 
             # Obvious code-like: long single token without spaces
-            if " " not in cleaned and len(cleaned) >= 16:
+            if " " not in cleaned and len(cleaned) >= 20:  # Changed from 16 to 20
                 cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                print(f"⚠️ Title looks like a long code, using fallback: {cleaned_fb}")
                 return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
 
-            # Heuristic: mostly digits/hex characters
+            # Heuristic: mostly digits/hex characters - be more lenient
             hex_chars = len(_re.findall(r"[0-9A-Fa-f]", cleaned))
-            if hex_chars / max(1, len(cleaned)) > 0.7:
+            if hex_chars / max(1, len(cleaned)) > 0.8:  # Changed from 0.7 to 0.8
                 cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                print(f"⚠️ Title is mostly hex chars, using fallback: {cleaned_fb}")
                 return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
 
-            # Suspicious tokens suggesting fare classes or codes
+            # Only reject if title is ONLY these suspicious tokens, not if it contains them as part of a larger title
             suspicious = ["ADULT", "CHILD", "SENIOR", "INFANT", "YOUTH", "ZONE", "SEAT", "CLASS", "TYPE", "FARE"]
-            if any(tok in cleaned.upper() for tok in suspicious):
+            upper_cleaned = cleaned.upper().strip()
+            if upper_cleaned in suspicious:  # Changed from 'any tok in' to exact match
                 cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                print(f"⚠️ Title is just a fare class '{upper_cleaned}', using fallback: {cleaned_fb}")
                 return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
 
+            print(f"✅ Using sanitized title: {cleaned[:30]}")
             return cleaned[:30]
-        except Exception:
+        except Exception as e:
+            print(f"❌ Title sanitization error: {e}")
             return (fallback_name or "Digital Pass")[:30] if fallback_name else "Digital Pass"
 
     def _sanitize_description(self, description: str, pass_info: Dict[str, Any], filename: str) -> str:
