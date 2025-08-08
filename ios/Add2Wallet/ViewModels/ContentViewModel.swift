@@ -121,15 +121,21 @@ class ContentViewModel: ObservableObject {
                     }
                 },
                 receiveValue: { [weak self] response in
-                    self?.passMetadata = response.aiMetadata
-                    self?.ticketCount = response.ticketCount
+                    guard let self else { return }
+                    self.passMetadata = response.aiMetadata
+                    self.ticketCount = response.ticketCount
                     if response.status == "completed", let passUrl = response.passUrl {
-                        self?.downloadAndOpenPass(passUrl: passUrl)
+                        let count = response.ticketCount ?? 1
+                        if count > 1 {
+                            self.downloadAndOpenMultiplePasses(passUrl: passUrl, count: count)
+                        } else {
+                            self.downloadAndOpenPass(passUrl: passUrl)
+                        }
                     } else {
-                        self?.isProcessing = false
-                        self?.stopPhraseCycling()
-                        self?.statusMessage = "Pass generation failed. Status: \(response.status)"
-                        self?.hasError = true
+                        self.isProcessing = false
+                        self.stopPhraseCycling()
+                        self.statusMessage = "Pass generation failed. Status: \(response.status)"
+                        self.hasError = true
                     }
                 }
             )
@@ -196,6 +202,68 @@ class ContentViewModel: ObservableObject {
             isProcessing = false
             stopPhraseCycling()
             statusMessage = "Error creating pass: \(error.localizedDescription)"
+            hasError = true
+        }
+    }
+
+    private func downloadAndOpenMultiplePasses(passUrl: String, count: Int) {
+        statusMessage = "Downloading passes..."
+
+        let publishers: [AnyPublisher<(Int, Data), Error>] = (1...count).map { index in
+            let urlWithQuery = "\(passUrl)?ticket_number=\(index)"
+            return networkService
+                .downloadPass(from: urlWithQuery)
+                .map { (index, $0) }
+                .eraseToAnyPublisher()
+        }
+
+        Publishers.MergeMany(publishers)
+            .collect()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let error) = completion {
+                        self?.isProcessing = false
+                        self?.stopPhraseCycling()
+                        self?.statusMessage = "Error downloading passes: \(error.localizedDescription)"
+                        self?.hasError = true
+                    }
+                },
+                receiveValue: { [weak self] indexed in
+                    let sorted = indexed.sorted { $0.0 < $1.0 }.map { $0.1 }
+                    self?.openPassesInWallet(passDatas: sorted)
+                }
+            )
+            .store(in: &cancellables)
+    }
+
+    private func openPassesInWallet(passDatas: [Data]) {
+        do {
+            // Save each pass to a temporary file (optional; PassKit can take Data directly)
+            let passes: [PKPass] = try passDatas.map { try PKPass(data: $0) }
+
+            guard PKPassLibrary.isPassLibraryAvailable() else {
+                statusMessage = "Apple Wallet is not available on this device"
+                hasError = true
+                return
+            }
+
+            let passVC = PKAddPassesViewController(passes: passes)
+
+            statusMessage = "Passes ready! Tap to add to Wallet"
+            hasError = false
+
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PassReadyToAdd"),
+                object: nil,
+                userInfo: ["passViewController": passVC!]
+            )
+            isProcessing = false
+            stopPhraseCycling()
+        } catch {
+            isProcessing = false
+            stopPhraseCycling()
+            statusMessage = "Error creating passes: \(error.localizedDescription)"
             hasError = true
         }
     }
