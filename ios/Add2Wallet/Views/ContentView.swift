@@ -83,7 +83,7 @@ struct ContentView: View {
                             Button {
                                 viewModel.uploadSelected()
                             } label: {
-                                Label("Create Pass", systemImage: "arrow.up.circle")
+                                Label("Create Pass", systemImage: "wallet.pass")
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.borderedProminent)
