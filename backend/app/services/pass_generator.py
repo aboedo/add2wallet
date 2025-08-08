@@ -1187,13 +1187,13 @@ class PassGenerator:
                 cleaned = (fallback_name or "Ticket").replace("_", " ").strip()
                 return cleaned[:30] if cleaned else "Ticket"
 
-            cleaned = _re.sub(r"\s+", " ", title.replace("_", " ")).strip()
+            cleaned = _re.sub(r"\s+", " ", title.replace("_", " ")).strip().strip('"')
 
-            # UUID pattern
-            uuid_re = _re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-            if uuid_re.match(cleaned):
-                cleaned_fb = (fallback_name or "Ticket").replace("_", " ").strip()
-                return cleaned_fb[:30] if cleaned_fb else "Ticket"
+            # UUID patterns (hyphenated and compact 32-hex)
+            if _re.fullmatch(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", cleaned) or \
+               _re.fullmatch(r"[0-9a-fA-F]{32}", cleaned):
+                cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
 
             # Too few letters (likely a code)
             letters_only = _re.sub(r"[^A-Za-z]", "", cleaned)
@@ -1201,15 +1201,26 @@ class PassGenerator:
                 cleaned_fb = (fallback_name or "Ticket").replace("_", " ").strip()
                 return cleaned_fb[:30] if cleaned_fb else "Ticket"
 
+            # Obvious code-like: long single token without spaces
+            if " " not in cleaned and len(cleaned) >= 16:
+                cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
+
+            # Heuristic: mostly digits/hex characters
+            hex_chars = len(_re.findall(r"[0-9A-Fa-f]", cleaned))
+            if hex_chars / max(1, len(cleaned)) > 0.7:
+                cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
+
             # Suspicious tokens suggesting fare classes or codes
-            suspicious = ["ADULT", "CHILD", "SENIOR", "INFANT", "YOUTH", "ZONE", "SEAT", "CLASS"]
+            suspicious = ["ADULT", "CHILD", "SENIOR", "INFANT", "YOUTH", "ZONE", "SEAT", "CLASS", "TYPE", "FARE"]
             if any(tok in cleaned.upper() for tok in suspicious):
-                cleaned_fb = (fallback_name or "Ticket").replace("_", " ").strip()
-                return cleaned_fb[:30] if cleaned_fb else "Ticket"
+                cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
+                return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
 
             return cleaned[:30]
         except Exception:
-            return (fallback_name or "Ticket")[:30] if fallback_name else "Ticket"
+            return (fallback_name or "Digital Pass")[:30] if fallback_name else "Digital Pass"
 
     def _sanitize_description(self, description: str, pass_info: Dict[str, Any], filename: str) -> str:
         """Avoid showing UUIDs/codes as subtitle. Prefer human info like date/venue.
