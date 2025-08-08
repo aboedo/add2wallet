@@ -118,9 +118,9 @@ class AIService:
 
         Extract the following information and return as JSON:
         {{
-            "event_type": "concert|flight|hotel|train|movie|conference|sports|other",
-            "event_name": "Full name of event/service",
-            "title": "Short, human-friendly Apple Wallet pass title (max 30 chars). Prefer brand/event names like 'Disneyland Park Ticket' over codes like 'ADULT'/'CHILD' or fare classes. Avoid strings that are mostly numbers, SKUs, or UUIDs.",
+            "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|other",
+            "event_name": "Full name of event/service/attraction (e.g., 'Louvre Museum', 'Eiffel Tower', 'Disney World')",
+            "title": "SHORT title for Apple Wallet (max 25 chars). MUST be the actual venue/attraction/event name, NOT legal text like 'CONDITIONS GENERALES' or 'TERMS AND CONDITIONS'. Examples: 'Louvre Museum', 'Eiffel Tower', 'Disney World', 'Flight AA123'. Extract the MAIN attraction or venue name, not headers or legal sections.",
             "description": "Brief description",
             "date": "Event date (YYYY-MM-DD format if possible)",
             "time": "Event time (HH:MM format if possible)", 
@@ -156,8 +156,9 @@ class AIService:
         - Look carefully for any barcode, QR code, or reference numbers
         - Extract any long numerical strings that could be barcodes
         - Identify ticket numbers, confirmation codes, and reference IDs
-        - For the "title", pick what a user expects to see on their Apple Wallet card (e.g., 'Disneyland Park Ticket', 'Boarding Pass: Delta DL123', 'Concert: Artist Name') rather than internal codes like 'ADULT', 'ZONE 1', or alphanumeric SKUs/UUIDs
-        - For the "color_palette", choose colors that match the brand/event while ensuring contrast for readability; return hex or rgb formats.
+        - For the "title", extract the ACTUAL venue/attraction/event name that users would recognize (e.g., 'Louvre Museum', 'Eiffel Tower', 'Concert: Taylor Swift'). NEVER use document headers like 'CONDITIONS GENERALES', 'TERMS', 'TICKET', etc. Look for the actual place/event name in the document body.
+        - CRITICAL: If you see text like "Musée du Louvre" or "Louvre Museum" anywhere, that's the title, NOT "CONDITIONS GENERALES"
+        - For the "color_palette", set to null - we'll extract from PDF directly
         """
 
         try:

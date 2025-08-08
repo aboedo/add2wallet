@@ -310,33 +310,15 @@ class PassGenerator:
                     pass_info['barcode_data'] = ticket_barcode['data']
                 print(f"🎫 Ticket {ticket_num}: Using barcode {ticket_barcode['type']} - {ticket_barcode['data'][:50]}...")
             
-            # Analyze colors for dynamic theming; prefer AI-provided palette if present
-            ai_bg = None
-            ai_fg = None
-            ai_label = None
+            # Extract colors directly from PDF - this is more accurate than AI guessing
+            print(f"🎨 Extracting colors from PDF...")
+            pdf_bg, pdf_fg, pdf_label = self._extract_color_palette_from_pdf_images(pdf_data)
             
-            # Extract colors from AI metadata - check color_palette first
-            if isinstance(pass_info, dict):
-                color_palette = pass_info.get('color_palette')
-                if isinstance(color_palette, dict):
-                    ai_bg = color_palette.get('background_color')
-                    ai_fg = color_palette.get('foreground_color') 
-                    ai_label = color_palette.get('label_color')
-                    print(f"🎨 Found AI color palette: bg={ai_bg}, fg={ai_fg}, label={ai_label}")
-                
-                # Fall back to direct color fields if palette not found
-                if not ai_bg:
-                    ai_bg = pass_info.get('background_color')
-                if not ai_fg:
-                    ai_fg = pass_info.get('foreground_color')
-                if not ai_label:
-                    ai_label = pass_info.get('label_color')
-            
-            # Use AI colors if all three are present, otherwise analyze PDF
-            if ai_bg and ai_fg and ai_label:
-                bg_color, fg_color, label_color = ai_bg, ai_fg, ai_label
-                print(f"✅ Using AI-provided colors")
+            if pdf_bg and pdf_fg and pdf_label:
+                bg_color, fg_color, label_color = pdf_bg, pdf_fg, pdf_label
+                print(f"✅ Using PDF-extracted colors: bg={bg_color}")
             else:
+                # Fall back to smart defaults based on content type
                 bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
                 print(f"🔄 Using fallback color analysis")
             
@@ -673,14 +655,8 @@ class PassGenerator:
             else:
                 print("⚠️ No barcode data found - pass will not have scannable code")
         
-        # Improve color palette with image-based extraction when possible
-        try:
-            auto_bg, auto_fg, auto_label = self._extract_color_palette_from_pdf_images(pdf_bytes)
-            if auto_bg and auto_fg and auto_label:
-                bg_color, fg_color, label_color = auto_bg, auto_fg, auto_label
-        except Exception as _:
-            # Keep previously computed colors
-            pass
+        # Color palette has already been extracted earlier in the process
+        # No need to re-extract here
 
         # Create temporary directory for pass files
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -716,9 +692,8 @@ class PassGenerator:
             return pkpass_data
 
     def _extract_color_palette_from_pdf_images(self, pdf_bytes: Optional[bytes]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        """Extract dominant colors by rasterizing pages and counting occurrences.
-        Considers multiple pages; chooses the most frequent non-white-ish as background,
-        then sets foreground/label for contrast.
+        """Extract dominant colors by rasterizing pages and counting pixel occurrences.
+        Finds the most common non-white/black color as background.
         Returns (bg, fg, label) in rgb(r, g, b) or (None, None, None) on failure.
         """
         try:
@@ -730,69 +705,105 @@ class PassGenerator:
             try:
                 import fitz  # type: ignore
                 doc = fitz.open(stream=pdf_bytes, filetype='pdf')
-                page_limit = min(doc.page_count, 3)
+                # Look at first 2 pages max for performance
+                page_limit = min(doc.page_count, 2)
                 for i in range(page_limit):
                     page = doc.load_page(i)
-                    pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+                    # Higher resolution for better color extraction
+                    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
                     images.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
-            except Exception:
+                doc.close()
+            except Exception as e:
+                print(f"PyMuPDF failed: {e}")
                 images = []
 
             if not images:
                 try:
                     from pdf2image import convert_from_bytes  # type: ignore
-                    images = [im.convert('RGB') for im in convert_from_bytes(pdf_bytes, first_page=1, last_page=3)]
-                except Exception:
+                    images = [im.convert('RGB') for im in convert_from_bytes(pdf_bytes, first_page=1, last_page=2, dpi=150)]
+                except Exception as e:
+                    print(f"pdf2image failed: {e}")
                     return None, None, None
 
-            # Accumulate color counts across pages, weight by saturation
+            # Accumulate color counts across all pages
             color_counter: Counter = Counter()
+            
             for img in images:
-                small = img.copy()
-                small.thumbnail((256, 256))
-                pal = small.convert('P', palette=Image.ADAPTIVE, colors=12)
-                pal_colors = pal.getcolors(512) or []
-                palette_list = pal.getpalette()
-                for count, idx in pal_colors:
-                    r = palette_list[idx * 3] if idx * 3 < len(palette_list) else 0
-                    g = palette_list[idx * 3 + 1] if idx * 3 + 1 < len(palette_list) else 0
-                    b = palette_list[idx * 3 + 2] if idx * 3 + 2 < len(palette_list) else 0
-                    # Compute simple saturation to prefer vivid colors
-                    maxc, minc = max(r, g, b), min(r, g, b)
-                    sat = (maxc - minc) / 255.0 if maxc > 0 else 0.0
-                    weight = int(count * (0.6 + 0.4 * sat))  # 0.6..1.0 multiplier
-                    color_counter[(r, g, b)] += weight
+                # Resize for faster processing but keep enough detail
+                img.thumbnail((400, 400))
+                
+                # Convert to limited palette to group similar colors
+                quantized = img.convert('P', palette=Image.ADAPTIVE, colors=16)
+                palette = quantized.getpalette()
+                
+                # Count each color's occurrence
+                for pixel in quantized.getdata():
+                    if palette and pixel * 3 + 2 < len(palette):
+                        r = palette[pixel * 3]
+                        g = palette[pixel * 3 + 1]
+                        b = palette[pixel * 3 + 2]
+                        color_counter[(r, g, b)] += 1
 
             if not color_counter:
                 return None, None, None
 
-            # Filter out near-white/near-black extremes with small counts
-            def is_near_white(c: Tuple[int, int, int]) -> bool:
+            # Filter out white, black, and very light grays
+            def is_background_color(c: Tuple[int, int, int]) -> bool:
                 r, g, b = c
-                return (r + g + b) / 3 >= 245
+                # Skip whites and very light colors
+                if min(r, g, b) > 240:  # Very light/white
+                    return False
+                # Skip pure blacks
+                if max(r, g, b) < 15:  # Very dark/black
+                    return False
+                # Skip very light grays (high brightness, low saturation)
+                brightness = (r + g + b) / 3
+                if brightness > 230:  # Too light
+                    return False
+                return True
 
-            def is_near_black(c: Tuple[int, int, int]) -> bool:
-                r, g, b = c
-                return (r + g + b) / 3 <= 10
-
-            ranked = [item for item in color_counter.most_common() if not is_near_white(item[0])]
-            bg_rgb = ranked[0][0] if ranked else list(color_counter.keys())[0]
-
-            # Foreground choice by contrast ratio
+            # Find dominant non-white/black color
+            valid_colors = [(color, count) for color, count in color_counter.most_common() 
+                           if is_background_color(color)]
+            
+            if not valid_colors:
+                # No valid colors found, use a safe default
+                print("No dominant colors found, using defaults")
+                return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"
+            
+            # Use the most common valid color as background
+            bg_rgb = valid_colors[0][0]
+            
+            # Calculate luminance for contrast
             def luminance(c: Tuple[int, int, int]) -> float:
                 r, g, b = [x / 255.0 for x in c]
+                # Use relative luminance formula
+                r = r / 12.92 if r <= 0.03928 else ((r + 0.055) / 1.055) ** 2.4
+                g = g / 12.92 if g <= 0.03928 else ((g + 0.055) / 1.055) ** 2.4
+                b = b / 12.92 if b <= 0.03928 else ((b + 0.055) / 1.055) ** 2.4
                 return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
             bg_l = luminance(bg_rgb)
-            fg_rgb = (255, 255, 255) if bg_l < 0.6 else (0, 0, 0)
-            label_rgb = (255, 255, 255) if bg_l < 0.4 else (0, 0, 0)
+            
+            # Choose foreground colors for good contrast
+            if bg_l > 0.5:  # Light background
+                fg_rgb = (0, 0, 0)  # Black text
+                label_rgb = (50, 50, 50)  # Dark gray labels
+            else:  # Dark background
+                fg_rgb = (255, 255, 255)  # White text
+                label_rgb = (255, 255, 255)  # White labels
+            
+            print(f"🎨 Extracted colors - Background: rgb{bg_rgb}, Luminance: {bg_l:.2f}")
+            
             return (
                 f"rgb({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]})",
                 f"rgb({fg_rgb[0]}, {fg_rgb[1]}, {fg_rgb[2]})",
                 f"rgb({label_rgb[0]}, {label_rgb[1]}, {label_rgb[2]})",
             )
         except Exception as e:
-            print(f"⚠️  Palette extraction failed: {e}")
+            print(f"⚠️ Color extraction failed: {e}")
+            import traceback
+            traceback.print_exc()
             return None, None, None
 
     def _generate_dynamic_assets(self, temp_dir: str, pdf_bytes: Optional[bytes], pass_info: Dict[str, Any], bg_color: str, fg_color: str) -> None:
