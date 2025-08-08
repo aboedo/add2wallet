@@ -357,44 +357,30 @@ class BarcodeExtractor:
         if not barcodes:
             return barcodes
         
-        # Group by exact payload bytes (hex) and page to avoid collapsing distinct payloads
-        grouped: Dict[tuple, List[Dict[str, Any]]] = {}
+        # Group by exact payload bytes (hex) to avoid collapsing distinct payloads
+        # Remove page from grouping key to create one pass per unique barcode content
+        grouped: Dict[str, List[Dict[str, Any]]] = {}
         for barcode in barcodes:
             raw_bytes: Optional[bytes] = barcode.get('raw_bytes')  # type: ignore
             payload_key = raw_bytes.hex() if isinstance(raw_bytes, (bytes, bytearray)) else str(barcode.get('data'))
-            key = (payload_key, barcode.get('page'))
-            grouped.setdefault(key, []).append(barcode)
+            grouped.setdefault(payload_key, []).append(barcode)
 
         result: List[Dict[str, Any]] = []
-        for (_data, _page), group in grouped.items():
-            # Cluster by spatial distance on the same page to keep distinct instances far apart
-            clusters: List[List[Dict[str, Any]]] = []
-            distance_threshold = 120  # pixels between centers
-
-            def center(bc: Dict[str, Any]) -> tuple:
-                pos = bc.get('position') or {}
-                return (pos.get('x', 0) + pos.get('width', 0) / 2.0, pos.get('y', 0) + pos.get('height', 0) / 2.0)
-
-            for bc in group:
-                placed = False
-                cx, cy = center(bc)
-                for cluster in clusters:
-                    # Compare with first element in cluster
-                    c0x, c0y = center(cluster[0])
-                    if ((cx - c0x) ** 2 + (cy - c0y) ** 2) ** 0.5 < distance_threshold:
-                        cluster.append(bc)
-                        placed = True
-                        break
-                if not placed:
-                    clusters.append([bc])
-
-            # From each cluster, keep the highest confidence barcode
-            for cluster in clusters:
-                cluster.sort(key=lambda x: x.get('confidence', 0), reverse=True)
-                best = cluster[0]
-                best['detection_count'] = len(cluster)
-                best['methods_used'] = list(set(bc.get('method', 'unknown') for bc in cluster))
-                result.append(best)
+        for payload_key, group in grouped.items():
+            # For each unique barcode payload, keep only the highest confidence instance
+            # Sort by confidence and pick the best one
+            group.sort(key=lambda x: x.get('confidence', 0), reverse=True)
+            best = group[0]
+            
+            # Add metadata about how many instances were found
+            best['detection_count'] = len(group)
+            best['methods_used'] = list(set(bc.get('method', 'unknown') for bc in group))
+            
+            # Add pages where this barcode was found
+            pages_found = sorted(list(set(bc.get('page', 1) for bc in group)))
+            best['pages_found'] = pages_found
+            
+            result.append(best)
         
         # Sort by confidence for final result
         result.sort(key=lambda x: x.get('confidence', 0), reverse=True)
