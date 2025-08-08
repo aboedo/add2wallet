@@ -207,8 +207,11 @@ class BarcodeExtractor:
         barcodes = []
         
         try:
-            # Use pyzbar to detect barcodes
-            detected_barcodes = pyzbar.decode(cv_image)
+            # Use pyzbar to detect barcodes with enhanced options where available
+            try:
+                detected_barcodes = pyzbar.decode(cv_image, symbols=None)
+            except TypeError:
+                detected_barcodes = pyzbar.decode(cv_image)
             
             for barcode in detected_barcodes:
                 try:
@@ -354,10 +357,12 @@ class BarcodeExtractor:
         if not barcodes:
             return barcodes
         
-        # Group by (data, page) to preserve identical codes on different pages
+        # Group by exact payload bytes (hex) and page to avoid collapsing distinct payloads
         grouped: Dict[tuple, List[Dict[str, Any]]] = {}
         for barcode in barcodes:
-            key = (barcode.get('data'), barcode.get('page'))
+            raw_bytes: Optional[bytes] = barcode.get('raw_bytes')  # type: ignore
+            payload_key = raw_bytes.hex() if isinstance(raw_bytes, (bytes, bytearray)) else str(barcode.get('data'))
+            key = (payload_key, barcode.get('page'))
             grouped.setdefault(key, []).append(barcode)
 
         result: List[Dict[str, Any]] = []
