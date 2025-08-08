@@ -111,7 +111,7 @@ class AIService:
             return self._create_fallback_metadata(pdf_text, filename)
         # Design a comprehensive prompt for metadata extraction
         prompt = f"""
-        Analyze the following PDF content and extract structured information. This appears to be from a file named "{filename}".
+        You are preparing content for an Apple Wallet pass. Analyze the following PDF content and extract structured information suitable for a user-facing Wallet pass. This appears to be from a file named "{filename}".
 
         PDF Content:
         {pdf_text[:4000]}  # Limit content to avoid token limits
@@ -120,7 +120,7 @@ class AIService:
         {{
             "event_type": "concert|flight|hotel|train|movie|conference|sports|other",
             "event_name": "Full name of event/service",
-            "title": "Short, human-friendly pass title for users (max 30 chars). Prefer brand/event names like 'Disneyland Park Ticket' over codes like 'ADULT'/'CHILD' or fare classes. Avoid strings that are mostly numbers or SKUs.",
+            "title": "Short, human-friendly Apple Wallet pass title (max 30 chars). Prefer brand/event names like 'Disneyland Park Ticket' over codes like 'ADULT'/'CHILD' or fare classes. Avoid strings that are mostly numbers, SKUs, or UUIDs.",
             "description": "Brief description",
             "date": "Event date (YYYY-MM-DD format if possible)",
             "time": "Event time (HH:MM format if possible)", 
@@ -149,7 +149,7 @@ class AIService:
         - Look carefully for any barcode, QR code, or reference numbers
         - Extract any long numerical strings that could be barcodes
         - Identify ticket numbers, confirmation codes, and reference IDs
-        - For the "title", pick what a user expects to see on their Wallet card (e.g., 'Disneyland Park Ticket', 'Boarding Pass: Delta DL123', 'Concert: Artist Name') rather than internal codes like 'ADULT', 'ZONE 1', or alphanumeric SKUs
+        - For the "title", pick what a user expects to see on their Apple Wallet card (e.g., 'Disneyland Park Ticket', 'Boarding Pass: Delta DL123', 'Concert: Artist Name') rather than internal codes like 'ADULT', 'ZONE 1', or alphanumeric SKUs/UUIDs
         """
 
         try:
