@@ -73,6 +73,23 @@ class AIService:
             # Step 2: Enrich with web search if we have enough information
             enriched_info = await self._enrich_event_data(basic_info)
             logger.info(f"🌐 Enrichment completed with {len(enriched_info)} fields")
+
+            # Step 3: Refine the user-facing title to avoid codes like "ADULT 12 UY"
+            try:
+                title_result = await self._refine_title(pdf_text, enriched_info, filename)
+                if title_result and title_result.get("title"):
+                    enriched_info["title"] = title_result["title"]
+                    if not enriched_info.get("event_name"):
+                        enriched_info["event_name"] = title_result["title"]
+                    enriched_info["title_confidence"] = title_result.get("confidence")
+                    enriched_info["title_refined"] = True
+                    logger.info(f"🏷️ Refined title: {enriched_info['title']}")
+            except Exception as e:
+                logger.warning(f"⚠️ Title refinement failed, using extracted title: {e}")
+                # Best-effort heuristic fallback
+                heuristic_title = self._basic_title_heuristics(pdf_text, filename) or enriched_info.get("title")
+                if heuristic_title:
+                    enriched_info.setdefault("title", heuristic_title)
             
             return enriched_info
             
@@ -103,7 +120,7 @@ class AIService:
         {{
             "event_type": "concert|flight|hotel|train|movie|conference|sports|other",
             "event_name": "Full name of event/service",
-            "title": "Short title for wallet pass",
+            "title": "Short, human-friendly pass title for users (max 30 chars). Prefer brand/event names like 'Disneyland Park Ticket' over codes like 'ADULT'/'CHILD' or fare classes. Avoid strings that are mostly numbers or SKUs.",
             "description": "Brief description",
             "date": "Event date (YYYY-MM-DD format if possible)",
             "time": "Event time (HH:MM format if possible)", 
@@ -132,6 +149,7 @@ class AIService:
         - Look carefully for any barcode, QR code, or reference numbers
         - Extract any long numerical strings that could be barcodes
         - Identify ticket numbers, confirmation codes, and reference IDs
+        - For the "title", pick what a user expects to see on their Wallet card (e.g., 'Disneyland Park Ticket', 'Boarding Pass: Delta DL123', 'Concert: Artist Name') rather than internal codes like 'ADULT', 'ZONE 1', or alphanumeric SKUs
         """
 
         try:
@@ -178,6 +196,58 @@ class AIService:
         except Exception as e:
             logger.error(f"❌ OpenAI API error: {e}")
             return self._create_fallback_metadata(pdf_text, filename)
+
+    async def _refine_title(self, pdf_text: str, metadata: Dict[str, Any], filename: str) -> Dict[str, Any]:
+        """Use OpenAI to generate a concise, user-friendly pass title.
+        Returns dict with keys: title, confidence.
+        """
+        if not self.ai_enabled:
+            return {"title": self._basic_title_heuristics(pdf_text, filename), "confidence": 40}
+
+        try:
+            context = {
+                "filename": filename,
+                "event_type": metadata.get("event_type"),
+                "event_name": metadata.get("event_name"),
+                "venue_name": metadata.get("venue_name"),
+                "date": metadata.get("date"),
+                "time": metadata.get("time"),
+                "existing_title": metadata.get("title"),
+            }
+
+            prompt = (
+                "Create a concise, user-facing title for an Apple Wallet pass.\n"
+                "Rules:\n"
+                "- Max 30 characters.\n"
+                "- Prefer recognizable brand/event names (e.g., 'Disneyland Park Ticket').\n"
+                "- Avoid generic fare labels like 'ADULT', 'CHILD', 'SENIOR', 'ZONE 1', seat/class codes, or random alphanumeric strings.\n"
+                "- Avoid titles that are mostly numbers or SKUs.\n"
+                "- If it's a ticket, include the event or park name; if a boarding pass, include airline and 'Boarding Pass'.\n"
+                "- If multiple options, choose the most user-friendly and informative.\n\n"
+                f"Existing data (JSON): {json.dumps(context)[:1800]}\n\n"
+                f"Relevant PDF text excerpt (truncated):\n{pdf_text[:2000]}\n\n"
+                "Return JSON: {\n  \"title\": \"string\",\n  \"confidence\": 0-100\n}"
+            )
+
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You generate short, clean titles for Wallet passes."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=200,
+            )
+
+            text = response.choices[0].message.content.strip()
+            if "```json" in text:
+                s = text.find("```json") + 7
+                e = text.find("```", s)
+                text = text[s:e].strip()
+            return json.loads(text)
+        except Exception as e:
+            logger.warning(f"Title refinement via AI failed: {e}")
+            return {"title": self._basic_title_heuristics(pdf_text, filename), "confidence": 40}
     
     async def _enrich_event_data(self, basic_info: Dict[str, Any]) -> Dict[str, Any]:
         """Enrich event data with web search and location lookup.
@@ -445,6 +515,41 @@ class AIService:
                 "error": str(e)
             }
     
+    def _basic_title_heuristics(self, pdf_text: str, filename: str) -> str:
+        """Heuristic title picker when AI is unavailable.
+        Focus on user-friendly names and avoid code-like strings.
+        """
+        text = pdf_text or ""
+        t = text.lower()
+        # Disneyland / Disney World
+        if "disneyland" in t or "disney california adventure" in t:
+            # Try to infer multi-day
+            if re.search(r"\b(2|two)[ -]?day\b", t):
+                return "Disneyland 2-Day Ticket"
+            if re.search(r"\b(3|three)[ -]?day\b", t):
+                return "Disneyland 3-Day Ticket"
+            if re.search(r"hopper", t):
+                return "Disneyland Park Hopper"
+            return "Disneyland Park Ticket"
+        if "walt disney world" in t or "magic kingdom" in t or "epcot" in t:
+            return "Walt Disney World Ticket"
+        if "universal studios" in t or "islands of adventure" in t:
+            return "Universal Studios Ticket"
+        if "boarding" in t and ("airlines" in t or "airline" in t or re.search(r"\bflight\b", t)):
+            # Extract airline code/name if present
+            m = re.search(r"\b([A-Z]{2})\s?\d{2,4}\b", pdf_text)
+            if m:
+                return f"Boarding Pass {m.group(1)}"
+            return "Boarding Pass"
+        # Fallback to cleaned filename
+        base = filename.replace('.pdf', '').replace('_', ' ').strip()
+        base = re.sub(r"\s+", " ", base)
+        # Avoid titles that are mostly numbers or codes
+        if len(re.sub(r"[^A-Za-z]", "", base)) < 3:
+            return "Digital Ticket"
+        # Trim to sensible length
+        return base[:30]
+    
     def _create_fallback_metadata(self, pdf_text: str, filename: str) -> Dict[str, Any]:
         """Create fallback metadata using basic pattern matching.
         
@@ -457,15 +562,11 @@ class AIService:
         """
         logger.info("🔄 Using fallback metadata extraction")
         
-        # Use simplified extraction similar to existing pass_generator logic
+        # Use simplified extraction with improved title heuristics
         lines = [line.strip() for line in pdf_text.split('\n') if line.strip()]
         
-        # Extract title from first meaningful line
-        title = filename.replace('.pdf', '').replace('_', ' ').title()
-        for line in lines[:5]:
-            if len(line) > 3 and not re.match(r'^[\d\s\-\+\(\)]+$', line):
-                title = line[:50]
-                break
+        # Prefer heuristic title over naive first line
+        title = self._basic_title_heuristics(pdf_text, filename)
         
         # Basic date extraction
         date_pattern = r'\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\b'
