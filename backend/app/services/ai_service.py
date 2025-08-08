@@ -111,57 +111,55 @@ class AIService:
         """
         if not self.ai_enabled:
             return self._create_fallback_metadata(pdf_text, filename)
-        # Design a comprehensive prompt for metadata extraction
-        prompt = f"""
-        You are preparing content for an Apple Wallet pass. Analyze the following PDF content and extract structured information suitable for a user-facing Wallet pass. This appears to be from a file named "{filename}".
+            
+        # Design a comprehensive prompt for metadata extraction  
+        safe_pdf_text = pdf_text[:4000].replace('{', '{{').replace('}', '}}').replace('%', '%%')
+        
+        prompt = """You are preparing content for an Apple Wallet pass. Analyze the following PDF content and extract structured information suitable for a user-facing Wallet pass. This appears to be from a file named "{}".
 
-        PDF Content:
-        {pdf_text[:4000].replace('{', '{{').replace('}', '}}')}
+PDF Content:
+{}
 
-        Extract the following information and return as JSON:
-        {{
-            "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|other",
-            "event_name": "Full name of event/service/attraction (e.g., 'Louvre Museum', 'Eiffel Tower', 'Disney World')",
-            "title": "SHORT title for Apple Wallet (max 25 chars). MUST be the actual venue/attraction/event name, NOT legal text like 'CONDITIONS GENERALES' or 'TERMS AND CONDITIONS'. Examples: 'Louvre Museum', 'Eiffel Tower', 'Disney World', 'Flight AA123'. Extract the MAIN attraction or venue name, not headers or legal sections.",
-            "description": "Brief description",
-            "date": "Event date (YYYY-MM-DD format if possible)",
-            "time": "Event time (HH:MM format if possible)", 
-            "venue_name": "Venue or location name",
-            "venue_address": "Full address if available",
-            "city": "City name",
-            "state_country": "State/Province/Country",
-            "organizer": "Event organizer or company",
-            "seat_info": "Seat, row, section info",
-            "barcode_data": "Any barcode or QR code text found in the document",
-            "barcode_numbers": "Any numerical codes that might be barcodes",
-            "qr_text": "Any text that appears to be from a QR code",
-            "price": "Ticket price if mentioned",
-            "confirmation_number": "Booking/confirmation number",
-            "gate_info": "Gate, platform, or check-in info",
-            "color_palette": {
-                "background_color": "Recommended background color (hex like #0057FF or rgb(r, g, b))",
-                "foreground_color": "Recommended text color for contrast (hex or rgb)",
-                "label_color": "Recommended label color (hex or rgb)",
-                "brand_colors": ["Optional list of brand colors (hex)"]
-            },
-            "additional_info": "Any other relevant details",
-            "confidence_score": "0-100 indicating extraction confidence"
-        }}
+Extract the following information and return as JSON:
+{{
+    "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|other",
+    "event_name": "Full name of event/service/attraction (e.g., 'Louvre Museum', 'Eiffel Tower', 'Disney World')",
+    "title": "SHORT title for Apple Wallet (max 25 chars). MUST be the actual venue/attraction/event name, NOT legal text like 'CONDITIONS GENERALES' or 'TERMS AND CONDITIONS'. Examples: 'Louvre Museum', 'Eiffel Tower', 'Disney World', 'Flight AA123'. Extract the MAIN attraction or venue name, not headers or legal sections.",
+    "description": "Brief description",
+    "date": "Event date (YYYY-MM-DD format if possible)",
+    "time": "Event time (HH:MM format if possible)", 
+    "venue_name": "Venue or location name - just the venue, not contact info",
+    "venue_address": "Full address if available",
+    "city": "City name",
+    "state_country": "State/Province/Country",
+    "organizer": "Event organizer or company",
+    "seat_info": "Seat, row, section info",
+    "barcode_data": "Any barcode or QR code text found in the document",
+    "barcode_numbers": "Any numerical codes that might be barcodes",
+    "qr_text": "Any text that appears to be from a QR code",
+    "price": "Ticket price if mentioned",
+    "confirmation_number": "Booking/confirmation number",
+    "gate_info": "Gate, platform, or check-in info",
+    "latitude": "GPS latitude if location known",
+    "longitude": "GPS longitude if location known",
+    "additional_info": "Any other relevant details",
+    "confidence_score": "0-100 indicating extraction confidence"
+}}
 
-        Important: 
-        - For most fields, include information that is clearly present in the text
-        - For the "title" and "color_palette" you may reasonably infer from context/branding; do NOT use the raw filename, barcodes, or ID-like strings as the title
-        - Use null for missing information
-        - Standardize date/time formats
-        - Be precise with venue names and addresses
-        - Identify the document type accurately
-        - Look carefully for any barcode, QR code, or reference numbers
-        - Extract any long numerical strings that could be barcodes
-        - Identify ticket numbers, confirmation codes, and reference IDs
-        - For the "title", extract the ACTUAL venue/attraction/event name that users would recognize (e.g., 'Louvre Museum', 'Eiffel Tower', 'Concert: Taylor Swift'). NEVER use document headers like 'CONDITIONS GENERALES', 'TERMS', 'TICKET', etc. Look for the actual place/event name in the document body.
-        - CRITICAL: If you see text like "Musée du Louvre" or "Louvre Museum" anywhere, that's the title, NOT "CONDITIONS GENERALES"
-        - For the "color_palette", set to null - we'll extract from PDF directly
-        """
+Important: 
+- For most fields, include information that is clearly present in the text
+- Use null for missing information
+- Standardize date/time formats
+- For venue_name, extract ONLY the venue name (e.g., 'Eiffel Tower'), not contact info or website URLs
+- Be precise with venue names and addresses
+- Identify the document type accurately
+- Look carefully for any barcode, QR code, or reference numbers
+- Extract any long numerical strings that could be barcodes
+- Identify ticket numbers, confirmation codes, and reference IDs
+- For the "title", extract the ACTUAL venue/attraction/event name that users would recognize (e.g., 'Louvre Museum', 'Eiffel Tower', 'Concert: Taylor Swift'). NEVER use document headers like 'CONDITIONS GENERALES', 'TERMS', 'TICKET', etc. Look for the actual place/event name in the document body.
+- CRITICAL: If you see text like "Tour Eiffel" or "Eiffel Tower" anywhere, that's the title, NOT "CONDITIONS GENERALES"
+- If you recognize famous venues like Eiffel Tower, include approximate GPS coordinates
+""".format(filename, safe_pdf_text)
 
         try:
             response = self.client.chat.completions.create(
@@ -536,6 +534,8 @@ class AIService:
         # Museum/attraction patterns
         if "louvre" in t or "musée du louvre" in t:
             return "Louvre Museum"
+        if "tour eiffel" in t or "eiffel tower" in t or "torre ifel" in filename.lower():
+            return "Eiffel Tower"
         if "musée" in t and "billet" in t:  # Generic museum ticket in French
             return "Museum Ticket"
         if "museo" in t and ("entrada" in t or "ticket" in t):  # Spanish
