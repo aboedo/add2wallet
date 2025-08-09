@@ -17,9 +17,14 @@ struct Add2WalletApp: App {
     }
     
     private func handleURL(_ url: URL) {
+        print("🟢 App: handleURL called with: \(url)")
+        print("🟢 App: URL scheme: \(url.scheme ?? "nil"), host: \(url.host ?? "nil")")
+        print("🟢 App: URL path: \(url.path), isFileURL: \(url.isFileURL)")
+        
         // Handle Universal Links for sharing (links.add2wallet.app/share/token)
         if url.host == "links.add2wallet.app" && url.pathComponents.count >= 3 && url.pathComponents[1] == "share" {
             let token = url.pathComponents[2]
+            print("🟢 App: Handling Universal Link with token: \(token)")
             handleSharedPDFWithToken(token: token)
             return
         }
@@ -27,29 +32,36 @@ struct Add2WalletApp: App {
         // Handle custom URL scheme sharing (add2wallet://share/token)
         if url.scheme == "add2wallet" && url.host == "share" && url.pathComponents.count >= 2 {
             let token = url.pathComponents[1]
+            print("🟢 App: Handling custom URL scheme with token: \(token)")
             handleSharedPDFWithToken(token: token)
             return
         }
         
         // Legacy support for old share-pdf scheme
         if url.scheme == "add2wallet" && url.host == "share-pdf" {
+            print("🟢 App: Handling legacy share-pdf scheme")
             checkForSharedPDF()
             return
         }
         
         // Handle files opened via "Open in Add2Wallet"
         if url.isFileURL {
+            print("🟢 App: Handling file URL: \(url)")
             do {
                 let data = try Data(contentsOf: url)
                 let filename = url.lastPathComponent
+                print("🟢 App: Successfully loaded file data (\(data.count) bytes) for: \(filename)")
                 NotificationCenter.default.post(
                     name: NSNotification.Name("SharedPDFReceived"),
                     object: nil,
                     userInfo: ["filename": filename, "data": data]
                 )
+                print("🟢 App: Posted SharedPDFReceived notification")
             } catch {
-                // ignore in UI for now
+                print("🔴 App: Error loading file: \(error)")
             }
+        } else {
+            print("🟡 App: URL not handled - not a file URL or recognized scheme")
         }
     }
     

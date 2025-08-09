@@ -3,38 +3,64 @@ import MobileCoreServices
 import UniformTypeIdentifiers
 
 class ActionViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        print("🟢 Share Extension: ViewDidLoad called")
+    }
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // Extract PDF data and present option to open app
-        extractPDFAndPresentOption()
+        print("🟢 Share Extension: ViewDidAppear called")
+        // Extract PDF data and immediately open app
+        extractPDFAndOpenApp()
     }
 
-    private func extractPDFAndPresentOption() {
+    private func extractPDFAndOpenApp() {
+        print("🟢 Share Extension: extractPDFAndOpenApp called")
+        
         guard let extensionItems = extensionContext?.inputItems as? [NSExtensionItem] else {
-            showError("No items to share")
+            print("🔴 Share Extension: No extension items found")
+            completeWithError("No items to share")
             return
         }
         
+        print("🟢 Share Extension: Found \(extensionItems.count) extension items")
+        
         // Find PDF attachment
-        for item in extensionItems {
-            guard let attachments = item.attachments else { continue }
+        for (itemIndex, item) in extensionItems.enumerated() {
+            print("🟢 Share Extension: Processing item \(itemIndex)")
+            guard let attachments = item.attachments else { 
+                print("🟡 Share Extension: No attachments in item \(itemIndex)")
+                continue 
+            }
             
-            for provider in attachments {
+            print("🟢 Share Extension: Found \(attachments.count) attachments in item \(itemIndex)")
+            
+            for (attachmentIndex, provider) in attachments.enumerated() {
+                print("🟢 Share Extension: Processing attachment \(attachmentIndex)")
+                let typeIdentifiers = provider.registeredTypeIdentifiers
+                print("🟢 Share Extension: Type identifiers: \(typeIdentifiers)")
+                
                 if provider.hasItemConformingToTypeIdentifier(UTType.pdf.identifier) {
-                    extractPDF(from: provider)
+                    print("🟢 Share Extension: Found PDF attachment!")
+                    extractPDFAndOpenApp(from: provider)
                     return
                 }
             }
         }
         
-        showError("No PDF found to share")
+        print("🔴 Share Extension: No PDF found in any attachments")
+        completeWithError("No PDF found to share")
     }
     
-    private func extractPDF(from provider: NSItemProvider) {
+    private func extractPDFAndOpenApp(from provider: NSItemProvider) {
+        print("🟢 Share Extension: Starting PDF extraction")
         provider.loadItem(forTypeIdentifier: UTType.pdf.identifier, options: nil) { [weak self] (data, error) in
             DispatchQueue.main.async {
+                print("🟢 Share Extension: PDF load completed")
                 if let error = error {
-                    self?.showError("Error loading PDF: \(error.localizedDescription)")
+                    print("🔴 Share Extension: Error loading PDF: \(error)")
+                    self?.completeWithError("Error loading PDF: \(error.localizedDescription)")
                     return
                 }
                 
@@ -42,29 +68,39 @@ class ActionViewController: UIViewController {
                 var filename: String = "shared_document.pdf"
                 
                 if let url = data as? URL {
+                    print("🟢 Share Extension: PDF provided as URL: \(url)")
                     // PDF provided as URL
                     do {
                         pdfData = try Data(contentsOf: url)
                         filename = url.lastPathComponent
+                        print("🟢 Share Extension: Successfully read PDF data (\(pdfData?.count ?? 0) bytes)")
                     } catch {
-                        self?.showError("Error reading PDF: \(error.localizedDescription)")
+                        print("🔴 Share Extension: Error reading PDF from URL: \(error)")
+                        self?.completeWithError("Error reading PDF: \(error.localizedDescription)")
                         return
                     }
                 } else if let dataObject = data as? Data {
+                    print("🟢 Share Extension: PDF provided as raw data (\(dataObject.count) bytes)")
                     // PDF provided as raw data
                     pdfData = dataObject
+                } else {
+                    print("🔴 Share Extension: Unknown data type: \(type(of: data))")
                 }
                 
                 guard let validPDFData = pdfData else {
-                    self?.showError("Invalid PDF data")
+                    print("🔴 Share Extension: No valid PDF data found")
+                    self?.completeWithError("Invalid PDF data")
                     return
                 }
                 
+                print("🟢 Share Extension: Saving PDF to App Group container")
                 // Save PDF to App Group container and generate token
                 if let token = self?.savePDFToAppGroup(data: validPDFData, filename: filename) {
-                    self?.presentOpenAppOption(with: token)
+                    print("🟢 Share Extension: Successfully saved PDF with token: \(token)")
+                    self?.openHostApp(with: token)
                 } else {
-                    self?.showError("Error saving PDF")
+                    print("🔴 Share Extension: Failed to save PDF to App Group")
+                    self?.completeWithError("Error saving PDF")
                 }
             }
         }
@@ -105,23 +141,10 @@ class ActionViewController: UIViewController {
         }
     }
 
-    private func presentOpenAppOption(with token: String) {
-        let alert = UIAlertController(title: "Add to Wallet", message: "Open Add2Wallet to convert this PDF to an Apple Wallet pass.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
-            self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-        })
-        alert.addAction(UIAlertAction(title: "Open App", style: .default) { _ in
-            self.openHostApp(with: token)
-        })
-        present(alert, animated: true)
-    }
-    
-    private func showError(_ message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
-            self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-        })
-        present(alert, animated: true)
+    private func completeWithError(_ message: String) {
+        // In a production app, you might want to log this error
+        print("Share Extension Error: \(message)")
+        self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
     }
 
     private func openHostApp(with token: String) {

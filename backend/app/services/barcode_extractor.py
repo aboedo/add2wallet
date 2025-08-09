@@ -9,8 +9,20 @@ import math
 from typing import List, Tuple, Optional, Dict, Any, Set
 
 # Required dependencies - no fallbacks
+import os
 import cv2
 import numpy as np
+
+# Set library path for macOS before importing pyzbar
+zbar_paths = [
+    '/opt/homebrew/lib',
+    '/opt/homebrew/Cellar/zbar/0.23.93_2/lib',
+    '/usr/local/lib'
+]
+existing_path = os.environ.get('DYLD_LIBRARY_PATH', '')
+new_path = ':'.join(zbar_paths + ([existing_path] if existing_path else []))
+os.environ['DYLD_LIBRARY_PATH'] = new_path
+
 from pyzbar import pyzbar
 from pdf2image import convert_from_bytes
 from PIL import Image

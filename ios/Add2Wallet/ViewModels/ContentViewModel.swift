@@ -36,10 +36,14 @@ class ContentViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
+            print("🟢 ContentViewModel: SharedPDFReceived notification received")
             if let userInfo = notification.userInfo,
                let filename = userInfo["filename"] as? String,
                let data = userInfo["data"] as? Data {
-                self?.processPDF(data: data, filename: filename)
+                print("🟢 ContentViewModel: Processing shared PDF: \(filename) (\(data.count) bytes)")
+                self?.handleSharedPDF(data: data, filename: filename)
+            } else {
+                print("🔴 ContentViewModel: Invalid notification userInfo")
             }
         }
     }
@@ -104,6 +108,37 @@ class ContentViewModel: ObservableObject {
         passMetadata = nil
         ticketCount = nil
         NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+    }
+    
+    private func handleSharedPDF(data: Data, filename: String) {
+        print("🟢 ContentViewModel: handleSharedPDF called with \(filename)")
+        // Create a temporary file for preview
+        do {
+            let tempDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            let tempURL = tempDir.appendingPathComponent(filename)
+            try data.write(to: tempURL, options: [.atomic])
+            
+            print("🟢 ContentViewModel: Created temporary file at: \(tempURL)")
+            
+            // Set the file URL for preview
+            selectedFileURL = tempURL
+            
+            // Reset any previous state
+            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+            passMetadata = nil
+            statusMessage = "Processing shared PDF..."
+            hasError = false
+            
+            print("🟢 ContentViewModel: Starting PDF processing...")
+            // Immediately process the PDF
+            processPDF(data: data, filename: filename)
+        } catch {
+            print("🔴 ContentViewModel: Error handling shared PDF: \(error)")
+            statusMessage = "Error handling shared PDF: \(error.localizedDescription)"
+            hasError = true
+        }
     }
     
     func processPDF(data: Data, filename: String) {

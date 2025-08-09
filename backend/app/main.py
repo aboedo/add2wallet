@@ -1,5 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Header
-from fastapi.responses import Response
+from fastapi.responses import Response, RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import uuid
@@ -38,6 +38,71 @@ jobs = {}
 @app.get("/")
 async def root():
     return {"message": "Add2Wallet API is running", "version": "1.0.0"}
+
+@app.get("/share/{token}")
+async def handle_universal_link_sharing(token: str):
+    """Handle Universal Link sharing from iOS Share Extension"""
+    
+    # Validate token format (UUID)
+    try:
+        uuid.UUID(token)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid sharing token")
+    
+    # This endpoint is designed to work with Universal Links
+    # When accessed via browser, it should redirect to the iOS app with the token
+    # When accessed by the iOS app directly, it can return metadata
+    
+    # Check if this is coming from an iOS device
+    user_agent = "unknown"
+    
+    # For iOS devices, redirect to the custom URL scheme as a fallback
+    # This creates a seamless flow: Universal Link -> App opens -> App handles token
+    ios_app_url = f"add2wallet://share/{token}"
+    
+    # For web browsers, return a simple page with app store link and instructions
+    return RedirectResponse(
+        url=ios_app_url,
+        status_code=302
+    )
+
+@app.get("/share/{token}/metadata")
+async def get_sharing_metadata(token: str):
+    """Get metadata for a shared PDF token"""
+    
+    # Validate token format (UUID)
+    try:
+        uuid.UUID(token)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid sharing token")
+    
+    # This endpoint could be used by the iOS app to get metadata about
+    # the shared PDF before processing, but for now we'll keep the
+    # file-based approach that's already implemented
+    
+    return JSONResponse({
+        "token": token,
+        "status": "valid",
+        "message": "Open the Add2Wallet app to process this PDF"
+    })
+
+@app.get("/.well-known/apple-app-site-association")
+async def apple_app_site_association():
+    """Serve the apple-app-site-association file for Universal Links"""
+    
+    association_file_path = Path(__file__).parent.parent / "apple-app-site-association"
+    
+    if not association_file_path.exists():
+        raise HTTPException(status_code=404, detail="Association file not found")
+    
+    with open(association_file_path, "r") as f:
+        content = f.read()
+    
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Type": "application/json"}
+    )
 
 @app.get("/health")
 async def health_check():
