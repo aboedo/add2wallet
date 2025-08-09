@@ -4,13 +4,42 @@ import io
 import os
 import logging
 import tempfile
-from typing import List, Tuple, Optional, Dict, Any
+import base64
+import math
+from typing import List, Tuple, Optional, Dict, Any, Set
 
-# Import all dependencies - should be available in properly configured environment
-import cv2
-import numpy as np
-from pyzbar import pyzbar
-from pdf2image import convert_from_bytes
+# Import dependencies with fallback handling
+try:
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    print("⚠️ OpenCV not available")
+    HAS_CV2 = False
+    cv2 = None
+
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    print("⚠️ NumPy not available")
+    HAS_NUMPY = False
+    np = None
+
+try:
+    from pyzbar import pyzbar
+    HAS_PYZBAR = True
+except ImportError:
+    print("⚠️ pyzbar not available - will use fallback detection")
+    HAS_PYZBAR = False
+    pyzbar = None
+
+try:
+    from pdf2image import convert_from_bytes
+    HAS_PDF2IMAGE = True
+except ImportError:
+    print("⚠️ pdf2image not available")
+    HAS_PDF2IMAGE = False
+    convert_from_bytes = None
 
 # Always available imports
 from PIL import Image
@@ -38,6 +67,13 @@ class BarcodeExtractor:
             'UPC_A', 'UPC_E', 'ITF', 'QRCODE', 'DATAMATRIX', 'PDF417',
             'AZTEC'
         }
+        
+        # Format groups for ordered detection
+        self.format_groups = [
+            {'AZTEC'},  # Try Aztec first
+            {'QRCODE'},  # Then QR
+            {'CODE128', 'CODE39', 'CODE93', 'EAN8', 'EAN13', 'UPC_A', 'UPC_E', 'CODABAR', 'ITF', 'PDF417', 'DATAMATRIX'}  # Then 1D codes
+        ]
     
     def extract_barcodes_from_pdf(self, pdf_data: bytes, filename: str) -> List[Dict[str, Any]]:
         """Extract all barcodes from a PDF file using multiple methods.
@@ -51,41 +87,117 @@ class BarcodeExtractor:
         """
         logger.info(f"🔍 Starting barcode extraction from {filename}")
         
-        # All dependencies should be available with proper configuration
-        
         barcodes = []
         
-        # Method 1: Try PyMuPDF for vector-based barcodes (fastest)
-        if HAS_PYMUPDF:
+        # If we have the full dependency stack, use advanced detection
+        if HAS_PYZBAR and HAS_CV2 and HAS_NUMPY:
+            logger.info("🚀 Using advanced barcode detection with format prioritization")
+            
+            # Method 1: Try PyMuPDF for vector-based barcodes (fastest)
+            if HAS_PYMUPDF:
+                try:
+                    pymupdf_barcodes = self._extract_with_pymupdf(pdf_data)
+                    barcodes.extend(pymupdf_barcodes)
+                    logger.info(f"📊 PyMuPDF found {len(pymupdf_barcodes)} barcodes")
+                except Exception as e:
+                    logger.warning(f"⚠️ PyMuPDF extraction failed: {e}")
+            
+            # Method 2: Convert PDF to images and scan (more thorough)
             try:
-                pymupdf_barcodes = self._extract_with_pymupdf(pdf_data)
-                barcodes.extend(pymupdf_barcodes)
-                logger.info(f"📊 PyMuPDF found {len(pymupdf_barcodes)} barcodes")
+                image_barcodes = self._extract_from_images(pdf_data)
+                # Avoid duplicates by checking barcode data
+                existing_data = {bc['data'] for bc in barcodes}
+                new_barcodes = [bc for bc in image_barcodes if bc['data'] not in existing_data]
+                barcodes.extend(new_barcodes)
+                logger.info(f"🖼️ Image scanning found {len(new_barcodes)} additional barcodes")
             except Exception as e:
-                logger.warning(f"⚠️ PyMuPDF extraction failed: {e}")
+                logger.warning(f"⚠️ Image-based extraction failed: {e}")
+            
+            # Method 3: Enhanced image processing for difficult barcodes
+            if not barcodes:
+                try:
+                    enhanced_barcodes = self._extract_with_enhancement(pdf_data)
+                    barcodes.extend(enhanced_barcodes)
+                    logger.info(f"🔧 Enhanced processing found {len(enhanced_barcodes)} barcodes")
+                except Exception as e:
+                    logger.warning(f"⚠️ Enhanced extraction failed: {e}")
         
-        # Method 2: Convert PDF to images and scan (more thorough)
-        try:
-            image_barcodes = self._extract_from_images(pdf_data)
-            # Avoid duplicates by checking barcode data
-            existing_data = {bc['data'] for bc in barcodes}
-            new_barcodes = [bc for bc in image_barcodes if bc['data'] not in existing_data]
-            barcodes.extend(new_barcodes)
-            logger.info(f"🖼️ Image scanning found {len(new_barcodes)} additional barcodes")
-        except Exception as e:
-            logger.warning(f"⚠️ Image-based extraction failed: {e}")
-        
-        # Method 3: Enhanced image processing for difficult barcodes
-        if not barcodes:
+        else:
+            # Fallback to text-based detection but apply Aztec logic
+            logger.warning("⚠️ Missing dependencies for advanced detection, using hybrid fallback approach")
             try:
-                enhanced_barcodes = self._extract_with_enhancement(pdf_data)
-                barcodes.extend(enhanced_barcodes)
-                logger.info(f"🔧 Enhanced processing found {len(enhanced_barcodes)} barcodes")
+                from app.services.barcode_extractor_fallback import fallback_barcode_extractor
+                fallback_barcodes = fallback_barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
+                
+                # Apply our Aztec logic to fallback results
+                barcodes = self._apply_aztec_logic_to_fallback(fallback_barcodes, filename)
+                logger.info(f"🔄 Applied Aztec logic to {len(fallback_barcodes)} fallback barcodes, result: {len(barcodes)}")
             except Exception as e:
-                logger.warning(f"⚠️ Enhanced extraction failed: {e}")
+                logger.warning(f"⚠️ Fallback extraction failed: {e}")
+        
+        # Apply context-aware mixed Aztec/QR handling before deduplication
+        if barcodes:
+            barcodes = self._handle_mixed_aztec_qr(barcodes, filename)
         
         logger.info(f"✅ Total barcodes extracted: {len(barcodes)}")
         return self._deduplicate_barcodes(barcodes)
+    
+    def decode_with_formats(self, image: np.ndarray, formats: Set[str], try_harder: bool = True) -> List[Dict[str, Any]]:
+        """Decode barcodes from image with specific format constraints.
+        
+        Args:
+            image: OpenCV image array
+            formats: Set of barcode formats to try (e.g., {'AZTEC'})
+            try_harder: Enable enhanced detection (unused with pyzbar, kept for ZXing compatibility)
+            
+        Returns:
+            List of detected barcodes matching the specified formats
+        """
+        barcodes = []
+        
+        try:
+            # Use pyzbar to detect all barcodes, then filter by formats
+            detected_barcodes = pyzbar.decode(image)
+            
+            for barcode in detected_barcodes:
+                if barcode.type in formats:
+                    try:
+                        # Try UTF-8 first
+                        try:
+                            barcode_data = barcode.data.decode('utf-8')
+                            encoding = 'utf-8'
+                        except UnicodeDecodeError:
+                            # Fallback to ISO-8859-1
+                            barcode_data = barcode.data.decode('iso-8859-1')
+                            encoding = 'iso-8859-1'
+                        
+                        # Get barcode position
+                        rect = barcode.rect
+                        
+                        barcode_info = {
+                            'data': barcode_data,
+                            'type': barcode.type,
+                            'format': self._normalize_barcode_format(barcode.type),
+                            'encoding': encoding,
+                            'raw_bytes': bytes(barcode.data),
+                            'bytes_b64': base64.b64encode(barcode.data).decode('ascii'),
+                            'bbox': [rect.left, rect.top, rect.width, rect.height],
+                            'area': rect.width * rect.height,
+                            'confidence': self._calculate_confidence(barcode),
+                            'center_distance': self._calculate_center_distance(image, rect)
+                        }
+                        
+                        barcodes.append(barcode_info)
+                        logger.debug(f"📱 Found {barcode.type} with format filter: {barcode_data[:50]}...")
+                        
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error processing barcode: {e}")
+                        continue
+                        
+        except Exception as e:
+            logger.warning(f"⚠️ Barcode detection failed: {e}")
+        
+        return barcodes
     
     def _extract_with_pymupdf(self, pdf_data: bytes) -> List[Dict[str, Any]]:
         """Extract barcodes using PyMuPDF (fast, works with vector graphics).
@@ -123,7 +235,7 @@ class BarcodeExtractor:
         return barcodes
     
     def _extract_from_images(self, pdf_data: bytes) -> List[Dict[str, Any]]:
-        """Extract barcodes by converting PDF to images.
+        """Extract barcodes by converting PDF to images with fallback DPI.
         
         Args:
             pdf_data: Raw PDF bytes
@@ -133,21 +245,52 @@ class BarcodeExtractor:
         """
         barcodes = []
         
-        # Convert PDF to images
-        images = convert_from_bytes(
-            pdf_data,
-            dpi=300,  # High DPI for better barcode detection
-            fmt='RGB',
-            thread_count=2
-        )
-        
-        for page_num, image in enumerate(images, 1):
-            # Convert PIL to OpenCV
-            cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-            
-            # Detect barcodes
-            page_barcodes = self._decode_barcodes(cv_image, page_num)
-            barcodes.extend(page_barcodes)
+        # Try 400 DPI first
+        for dpi in [400, 600]:
+            try:
+                logger.debug(f"🔍 Trying rasterization at {dpi} DPI")
+                
+                # Convert PDF to images
+                images = convert_from_bytes(
+                    pdf_data,
+                    dpi=dpi,
+                    fmt='RGB',
+                    thread_count=2
+                )
+                
+                page_barcodes = []
+                for page_num, image in enumerate(images, 1):
+                    # Convert PIL to OpenCV
+                    cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+                    
+                    # Try enhanced preprocessing if no barcodes found yet
+                    if not barcodes:
+                        processed_images = self._preprocess_for_barcode_detection(cv_image)
+                        
+                        for proc_name, proc_image in processed_images.items():
+                            method_name = f"rasterized_{dpi}dpi_{proc_name}"
+                            detected = self._decode_barcodes(proc_image, page_num, method_name)
+                            page_barcodes.extend(detected)
+                            
+                            # Early exit if we found barcodes
+                            if detected:
+                                break
+                    else:
+                        # Standard detection
+                        method_name = f"rasterized_{dpi}dpi"
+                        detected = self._decode_barcodes(cv_image, page_num, method_name)
+                        page_barcodes.extend(detected)
+                
+                barcodes.extend(page_barcodes)
+                
+                # If we found barcodes, don't try higher DPI
+                if barcodes:
+                    logger.info(f"✅ Found barcodes at {dpi} DPI")
+                    break
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Rasterization at {dpi} DPI failed: {e}")
+                continue
         
         return barcodes
     
@@ -194,7 +337,7 @@ class BarcodeExtractor:
         return barcodes
     
     def _decode_barcodes(self, cv_image: np.ndarray, page_num: int, method: str = "standard") -> List[Dict[str, Any]]:
-        """Decode barcodes from an OpenCV image.
+        """Decode barcodes from an OpenCV image using ordered format detection.
         
         Args:
             cv_image: OpenCV image array
@@ -204,70 +347,39 @@ class BarcodeExtractor:
         Returns:
             List of detected barcodes
         """
-        barcodes = []
+        return self._try_formats(cv_image, self.format_groups, page_num, method)
+    
+    def _try_formats(self, image: np.ndarray, format_groups: List[Set[str]], page_num: int, method: str) -> List[Dict[str, Any]]:
+        """Try format groups in order until barcodes are found.
         
-        try:
-            # Use pyzbar to detect barcodes with enhanced options where available
-            try:
-                detected_barcodes = pyzbar.decode(cv_image, symbols=None)
-            except TypeError:
-                detected_barcodes = pyzbar.decode(cv_image)
+        Args:
+            image: OpenCV image array
+            format_groups: List of format sets to try in order
+            page_num: Page number for logging
+            method: Detection method used
             
-            for barcode in detected_barcodes:
-                try:
-                    # Decode barcode data
-                    barcode_data = barcode.data.decode('utf-8')
-                    barcode_type = barcode.type
-                    
-                    # Get barcode position
-                    rect = barcode.rect
-                    
-                    barcode_info = {
-                        'data': barcode_data,
-                        'type': barcode_type,
-                        'format': self._normalize_barcode_format(barcode_type),
-                        'page': page_num,
-                        'method': method,
-                        'encoding': 'utf-8',
-                        'raw_bytes': bytes(barcode.data),
-                        'position': {
-                            'x': rect.left,
-                            'y': rect.top,
-                            'width': rect.width,
-                            'height': rect.height
-                        },
-                        'confidence': self._calculate_confidence(barcode)
-                    }
-                    
-                    barcodes.append(barcode_info)
-                    logger.debug(f"📱 Found {barcode_type} on page {page_num}: {barcode_data[:50]}...")
-                    
-                except UnicodeDecodeError:
-                    # Try different encodings
-                    for encoding in ['latin-1', 'ascii', 'cp1252']:
-                        try:
-                            barcode_data = barcode.data.decode(encoding)
-                            barcode_info = {
-                                'data': barcode_data,
-                                'type': barcode.type,
-                                'format': self._normalize_barcode_format(barcode.type),
-                                'page': page_num,
-                                'method': method,
-                                'encoding': encoding,
-                                'raw_bytes': bytes(barcode.data)
-                            }
-                            barcodes.append(barcode_info)
-                            break
-                        except UnicodeDecodeError:
-                            continue
-                except Exception as e:
-                    logger.warning(f"⚠️ Error processing barcode: {e}")
-                    continue
-                    
-        except Exception as e:
-            logger.warning(f"⚠️ Barcode detection failed on page {page_num}: {e}")
+        Returns:
+            List of detected barcodes from first successful format group
+        """
+        for group in format_groups:
+            barcodes = self.decode_with_formats(image, group, try_harder=True)
+            
+            if barcodes:
+                # Add page and method info
+                for barcode in barcodes:
+                    barcode['page'] = page_num
+                    barcode['method'] = method
+                    barcode['source'] = 'embedded-image' if 'pymupdf' in method else 'rasterized-page'
+                    barcode['dpi'] = 300 if 'enhanced' in method else 150  # Estimate DPI based on method
+                
+                # Choose best barcode(s) if multiple found in this group
+                selected_barcodes = self._choose_best_barcodes(barcodes)
+                
+                logger.debug(f"📱 Found {len(selected_barcodes)} barcode(s) on page {page_num} with format group {group}")
+                return selected_barcodes
         
-        return barcodes
+        logger.debug(f"📱 No barcodes found on page {page_num} with any format group")
+        return []
     
     def _enhance_contrast(self, image: np.ndarray) -> np.ndarray:
         """Enhance image contrast."""
@@ -295,6 +407,86 @@ class BarcodeExtractor:
         """Apply Gaussian blur to reduce noise."""
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         return cv2.GaussianBlur(gray, (3, 3), 0)
+    
+    def _preprocess_for_barcode_detection(self, image: np.ndarray) -> Dict[str, np.ndarray]:
+        """Apply various preprocessing techniques for better barcode detection.
+        
+        Args:
+            image: Original OpenCV image
+            
+        Returns:
+            Dictionary of processed images with method names
+        """
+        processed = {}
+        
+        # Convert to grayscale first
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        processed['grayscale'] = gray
+        
+        # Otsu thresholding
+        try:
+            _, otsu_thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            processed['otsu'] = otsu_thresh
+        except Exception:
+            pass
+        
+        # Light unsharp mask
+        try:
+            gaussian = cv2.GaussianBlur(gray, (3, 3), 1.0)
+            unsharp = cv2.addWeighted(gray, 1.5, gaussian, -0.5, 0)
+            processed['unsharp'] = unsharp
+        except Exception:
+            pass
+        
+        # Simple deskew attempt (basic rotation detection)
+        try:
+            deskewed = self._simple_deskew(gray)
+            if deskewed is not None:
+                processed['deskewed'] = deskewed
+        except Exception:
+            pass
+        
+        return processed
+    
+    def _simple_deskew(self, image: np.ndarray) -> Optional[np.ndarray]:
+        """Simple deskew using Hough line detection.
+        
+        Args:
+            image: Grayscale image
+            
+        Returns:
+            Deskewed image or None if deskewing fails
+        """
+        try:
+            # Edge detection
+            edges = cv2.Canny(image, 50, 150, apertureSize=3)
+            
+            # Hough line detection
+            lines = cv2.HoughLines(edges, 1, np.pi/180, threshold=100)
+            
+            if lines is not None and len(lines) > 0:
+                # Find the most common angle
+                angles = []
+                for rho, theta in lines[:10]:  # Use first 10 lines
+                    angle = np.degrees(theta) - 90
+                    angles.append(angle)
+                
+                # Use median angle
+                if angles:
+                    median_angle = np.median(angles)
+                    
+                    # Only rotate if angle is significant (> 1 degree)
+                    if abs(median_angle) > 1:
+                        h, w = image.shape[:2]
+                        center = (w // 2, h // 2)
+                        rotation_matrix = cv2.getRotationMatrix2D(center, median_angle, 1.0)
+                        rotated = cv2.warpAffine(image, rotation_matrix, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+                        return rotated
+            
+        except Exception:
+            pass
+        
+        return None
     
     def _normalize_barcode_format(self, barcode_type: str) -> str:
         """Normalize barcode format for Apple Wallet.
@@ -344,6 +536,177 @@ class BarcodeExtractor:
             confidence += 10
         
         return min(confidence, 100)
+    
+    def _calculate_center_distance(self, image: np.ndarray, rect) -> float:
+        """Calculate distance from barcode center to image center.
+        
+        Args:
+            image: OpenCV image array
+            rect: Barcode rectangle
+            
+        Returns:
+            Distance from barcode center to image center
+        """
+        img_height, img_width = image.shape[:2]
+        img_center_x, img_center_y = img_width / 2, img_height / 2
+        
+        barcode_center_x = rect.left + rect.width / 2
+        barcode_center_y = rect.top + rect.height / 2
+        
+        distance = math.sqrt((barcode_center_x - img_center_x) ** 2 + (barcode_center_y - img_center_y) ** 2)
+        return distance
+    
+    def _choose_best_barcodes(self, barcodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Choose the best barcode(s) from multiple candidates of the same format.
+        
+        Args:
+            barcodes: List of barcodes of the same format
+            
+        Returns:
+            List containing the best barcode(s)
+        """
+        if not barcodes:
+            return []
+        
+        if len(barcodes) == 1:
+            return barcodes
+        
+        # Sort by confidence (highest first), then by area (largest first), then by centrality (lowest distance first)
+        sorted_barcodes = sorted(barcodes, key=lambda x: (
+            -x.get('confidence', 0),     # Higher confidence first (negative for descending)
+            -x.get('area', 0),           # Larger area first (negative for descending)
+            x.get('center_distance', float('inf'))  # Lower distance first (ascending)
+        ))
+        
+        # For now, return only the best one. In the future, this could be enhanced to return
+        # multiple barcodes if they have significantly different content
+        return [sorted_barcodes[0]]
+    
+    def _handle_mixed_aztec_qr(self, all_barcodes: List[Dict[str, Any]], filename: str = "") -> List[Dict[str, Any]]:
+        """Handle special case where both Aztec and QR codes are present.
+        
+        Args:
+            all_barcodes: List of all detected barcodes from all methods
+            filename: PDF filename for context hints
+            
+        Returns:
+            List with preferred barcode(s)
+        """
+        if not all_barcodes:
+            return []
+        
+        # Separate Aztec and QR codes
+        aztec_codes = [bc for bc in all_barcodes if bc['type'] == 'AZTEC']
+        qr_codes = [bc for bc in all_barcodes if bc['type'] == 'QRCODE']
+        others = [bc for bc in all_barcodes if bc['type'] not in ['AZTEC', 'QRCODE']]
+        
+        # If both Aztec and QR are present, apply preference logic
+        if aztec_codes and qr_codes:
+            filename_lower = filename.lower()
+            
+            # Check for context hints that prefer Aztec
+            aztec_hints = ['aztec', 'billet', 'ticket', 'pass', 'code']
+            has_aztec_hint = any(hint in filename_lower for hint in aztec_hints)
+            
+            if has_aztec_hint:
+                logger.info(f"📍 Preferring Aztec code due to filename context: {filename}")
+                return aztec_codes + others
+            else:
+                # Choose based on largest area
+                best_aztec = max(aztec_codes, key=lambda x: x.get('area', 0))
+                best_qr = max(qr_codes, key=lambda x: x.get('area', 0))
+                
+                if best_aztec.get('area', 0) >= best_qr.get('area', 0):
+                    logger.info(f"📍 Preferring Aztec code due to larger area")
+                    return aztec_codes + others
+                else:
+                    logger.info(f"📍 Preferring QR code due to larger area")
+                    return qr_codes + others
+        
+        # Default case: return all barcodes (ordered detection already handled this)
+        return all_barcodes
+    
+    def _apply_aztec_logic_to_fallback(self, fallback_barcodes: List[Dict[str, Any]], filename: str) -> List[Dict[str, Any]]:
+        """Apply Aztec detection logic to fallback barcode results.
+        
+        Args:
+            fallback_barcodes: Barcodes detected by fallback extractor
+            filename: PDF filename for context
+            
+        Returns:
+            Processed barcodes with Aztec logic applied
+        """
+        if not fallback_barcodes:
+            return []
+        
+        logger.info(f"🔄 Applying Aztec logic to {len(fallback_barcodes)} fallback barcodes")
+        
+        # The fallback extractor typically assigns all codes as 'QRCODE' type
+        # We need to intelligently reassign types based on context and content
+        
+        processed_barcodes = []
+        for barcode in fallback_barcodes:
+            # Create enhanced barcode structure
+            enhanced_barcode = {
+                'data': barcode.get('data', ''),
+                'type': self._infer_barcode_type_from_content(barcode.get('data', ''), filename),
+                'format': 'PKBarcodeFormatQR',  # Will be updated based on type
+                'encoding': barcode.get('encoding', 'utf-8'),
+                'raw_bytes': barcode.get('data', '').encode('utf-8'),
+                'bytes_b64': base64.b64encode(barcode.get('data', '').encode('utf-8')).decode('ascii'),
+                'bbox': barcode.get('position', {}).get('bbox', [0, 0, 100, 100]),
+                'area': barcode.get('confidence', 50) * 100,  # Use confidence as area proxy
+                'confidence': barcode.get('confidence', 70),
+                'center_distance': 50.0,  # Default center distance
+                'page': barcode.get('page', 1),
+                'method': 'fallback_with_aztec_logic',
+                'source': 'text-analysis',
+                'dpi': 150
+            }
+            
+            # Update format based on inferred type
+            enhanced_barcode['format'] = self._normalize_barcode_format(enhanced_barcode['type'])
+            
+            processed_barcodes.append(enhanced_barcode)
+            
+            logger.debug(f"📱 Processed fallback barcode: {enhanced_barcode['type']} - {enhanced_barcode['data'][:50]}...")
+        
+        return processed_barcodes
+    
+    def _infer_barcode_type_from_content(self, data: str, filename: str) -> str:
+        """Infer the likely barcode type from content and context.
+        
+        Args:
+            data: Barcode data content
+            filename: PDF filename for context hints
+            
+        Returns:
+            Inferred barcode type
+        """
+        if not data:
+            return 'QRCODE'
+        
+        # Check filename for Aztec hints
+        filename_lower = filename.lower()
+        aztec_hints = ['aztec', 'billet', 'ticket', 'pass']
+        
+        if any(hint in filename_lower for hint in aztec_hints):
+            logger.info(f"🎯 Inferring AZTEC type due to filename hint: {filename}")
+            return 'AZTEC'
+        
+        # Check content characteristics that might suggest Aztec vs QR
+        # Aztec codes often contain structured data for tickets/passes
+        if any(keyword in data.lower() for keyword in ['ticket', 'boarding', 'seat', 'flight', 'train', 'event']):
+            logger.info(f"🎯 Inferring AZTEC type due to content keywords: {data[:50]}...")
+            return 'AZTEC'
+        
+        # Long alphanumeric strings might be Aztec (common for tickets)
+        if len(data) > 20 and any(c.isalpha() for c in data) and any(c.isdigit() for c in data):
+            logger.info(f"🎯 Inferring AZTEC type due to long alphanumeric content")
+            return 'AZTEC'
+        
+        # Default to QR for general purpose
+        return 'QRCODE'
     
     def _deduplicate_barcodes(self, barcodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Remove duplicate barcodes based on data content.
