@@ -38,27 +38,27 @@ def test_upload_pdf_success():
     assert "job_id" in json_response
     assert json_response["status"] == "processing"
 
-def test_upload_aztec_pdf_integration():
-    """Test uploading the actual Aztec PDF through the API."""
+def test_upload_data_matrix_pdf_integration():
+    """Test uploading the actual Data Matrix PDF through the API."""
     import os
     
     # Ensure API key is set for test
     os.environ["API_KEY"] = "development-api-key"
     
-    # Path to the test Aztec PDF
-    test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
+    # Path to the test Data Matrix PDF
+    test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_data_matrix.pdf")
     
     if not os.path.exists(test_file):
-        pytest.skip(f"Aztec test file not found: {test_file}")
+        pytest.skip(f"Data Matrix test file not found: {test_file}")
     
     # Read the test PDF
     with open(test_file, 'rb') as f:
         pdf_content = f.read()
     
-    files = {"file": ("pass_with_aztec_code.pdf", pdf_content, "application/pdf")}
+    files = {"file": ("pass_with_data_matrix.pdf", pdf_content, "application/pdf")}
     data = {
-        "user_id": "test-user-aztec",
-        "session_token": "test-token-aztec"
+        "user_id": "test-user-datamatrix",
+        "session_token": "test-token-datamatrix"
     }
     headers = {"X-API-Key": "development-api-key"}
     
@@ -72,10 +72,10 @@ def test_upload_aztec_pdf_integration():
     # If completed immediately, check ticket count
     if json_response["status"] == "completed":
         assert "ticket_count" in json_response
-        # Should find at least 1 ticket (ideally 3 for the 3 Aztec codes)
+        # Should find at least 1 ticket
         assert json_response["ticket_count"] >= 1
         
-        print(f"✅ Aztec upload test: Found {json_response['ticket_count']} ticket(s)")
+        print(f"✅ Data Matrix upload test: Found {json_response['ticket_count']} ticket(s)")
         
         # Test downloading the tickets
         job_id = json_response["job_id"]

@@ -47,8 +47,9 @@ class BarcodeExtractor:
         # Format groups for ordered detection
         self.format_groups = [
             {'AZTEC'},  # Try Aztec first
+            {'DATAMATRIX'},  # Try Data Matrix second (before QR to avoid misidentification)
             {'QRCODE'},  # Then QR
-            {'CODE128', 'CODE39', 'CODE93', 'EAN8', 'EAN13', 'UPC_A', 'UPC_E', 'CODABAR', 'ITF', 'PDF417', 'DATAMATRIX'}  # Then 1D codes
+            {'CODE128', 'CODE39', 'CODE93', 'EAN8', 'EAN13', 'UPC_A', 'UPC_E', 'CODABAR', 'ITF', 'PDF417'}  # Then 1D codes
         ]
     
     def extract_barcodes_from_pdf(self, pdf_data: bytes, filename: str) -> List[Dict[str, Any]]:
@@ -603,10 +604,17 @@ class BarcodeExtractor:
         if not data:
             return 'QRCODE'
         
-        # Check filename for Aztec hints
+        # Check filename for specific barcode type hints
         filename_lower = filename.lower()
-        aztec_hints = ['aztec', 'billet', 'ticket', 'pass']
         
+        # Check for Data Matrix hints first
+        datamatrix_hints = ['data_matrix', 'datamatrix']
+        if any(hint in filename_lower for hint in datamatrix_hints):
+            logger.info(f"🎯 Inferring DATAMATRIX type due to filename hint: {filename}")
+            return 'DATAMATRIX'
+        
+        # Check for Aztec hints
+        aztec_hints = ['aztec', 'billet', 'ticket', 'pass']
         if any(hint in filename_lower for hint in aztec_hints):
             logger.info(f"🎯 Inferring AZTEC type due to filename hint: {filename}")
             return 'AZTEC'

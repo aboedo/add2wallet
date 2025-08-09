@@ -8,6 +8,7 @@ ios/DerivedData/
 ios/*.pbxuser
 ios/!default.pbxuser
 ios/*.mode1v3
+ios/.build
 ios/!default.mode1v3
 ios/*.mode2v3
 ios/!default.mode2v3

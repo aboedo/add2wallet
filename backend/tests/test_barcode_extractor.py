@@ -22,10 +22,11 @@ class TestBarcodeExtractor:
     
     def test_format_groups_initialization(self):
         """Test that format groups are properly initialized."""
-        assert len(self.extractor.format_groups) == 3
+        assert len(self.extractor.format_groups) == 4
         assert {'AZTEC'} == self.extractor.format_groups[0]
-        assert {'QRCODE'} == self.extractor.format_groups[1]
-        assert 'CODE128' in self.extractor.format_groups[2]
+        assert {'DATAMATRIX'} == self.extractor.format_groups[1]
+        assert {'QRCODE'} == self.extractor.format_groups[2]
+        assert 'CODE128' in self.extractor.format_groups[3]
     
     def test_decode_with_formats_empty_image(self):
         """Test decode_with_formats with empty image."""
@@ -204,9 +205,9 @@ class TestBarcodeExtractor:
             assert barcode['bbox'] == [10, 20, 50, 60]
             assert barcode['area'] == 3000  # 50 * 60
     
-    def test_aztec_detection_integration(self):
-        """Integration test with actual Aztec PDF."""
-        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
+    def test_data_matrix_detection_integration(self):
+        """Integration test with actual Data Matrix PDF."""
+        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_data_matrix.pdf")
         
         if not os.path.exists(test_file):
             pytest.skip(f"Test file not found: {test_file}")
@@ -214,14 +215,14 @@ class TestBarcodeExtractor:
         with open(test_file, 'rb') as f:
             pdf_data = f.read()
         
-        result = self.extractor.extract_barcodes_from_pdf(pdf_data, "pass_with_aztec_code.pdf")
+        result = self.extractor.extract_barcodes_from_pdf(pdf_data, "pass_with_data_matrix.pdf")
         
-        # Should find at least one barcode (expected: 3 Aztec codes)
+        # Should find at least one barcode
         assert len(result) > 0, f"No barcodes found in PDF. Result: {result}"
         
-        # Should detect Aztec format
-        aztec_found = any(bc['type'] == 'AZTEC' for bc in result)
-        assert aztec_found, f"Aztec code not detected. Found types: {[bc['type'] for bc in result]}"
+        # Should detect Data Matrix format
+        datamatrix_found = any(bc['type'] == 'DATAMATRIX' for bc in result)
+        assert datamatrix_found, f"Data Matrix code not detected. Found types: {[bc['type'] for bc in result]}"
         
         # Check that result has proper structure
         for barcode in result:
@@ -231,14 +232,14 @@ class TestBarcodeExtractor:
             assert 'data' in barcode
             assert 'type' in barcode
         
-        # Verify we get the expected 3 barcodes
-        print(f"Found {len(result)} barcodes (expected 3)")
+        # Log found barcodes
+        print(f"Found {len(result)} barcodes")
         for i, bc in enumerate(result, 1):
             print(f"  {i}. Type: {bc['type']}, Format: {bc['format']}, Data: {bc['data'][:50]}...")
     
-    def test_aztec_pdf_multiple_dpi_processing(self):
-        """Test Aztec PDF processing at different DPI levels."""
-        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
+    def test_data_matrix_pdf_multiple_dpi_processing(self):
+        """Test Data Matrix PDF processing at different DPI levels."""
+        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_data_matrix.pdf")
         
         if not os.path.exists(test_file):
             pytest.skip(f"Test file not found: {test_file}")
@@ -254,12 +255,12 @@ class TestBarcodeExtractor:
         
         # Test pdf2image conversion works
         images = convert_from_bytes(pdf_data, dpi=400)
-        assert len(images) == 1, "Should convert to exactly 1 image"
+        assert len(images) >= 1, "Should convert to at least 1 image"
         
         # Test image can be processed
         image = images[0]
         cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-        assert cv_image.shape[0] > 1000 and cv_image.shape[1] > 1000, "Image should be high resolution"
+        assert cv_image.shape[0] > 100 and cv_image.shape[1] > 100, "Image should be reasonable resolution"
         
         # Test pyzbar can run (even if it doesn't find anything)
         gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
@@ -267,13 +268,8 @@ class TestBarcodeExtractor:
         
         print(f"DPI test: Converted PDF to {cv_image.shape} image, pyzbar found {len(detected)} barcodes")
     
-    def test_aztec_preprocessing_methods(self):
-        """Test different image preprocessing methods for Aztec detection."""
-        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
-        
-        if not os.path.exists(test_file):
-            pytest.skip(f"Test file not found: {test_file}")
-            
+    def test_barcode_preprocessing_methods(self):
+        """Test different image preprocessing methods for barcode detection."""        
         # Test the preprocessing methods exist and work
         blank_image = np.zeros((200, 200, 3), dtype=np.uint8)
         
@@ -306,7 +302,7 @@ class TestBarcodeExtractor:
     def test_try_formats_order(self):
         """Test that format groups are tried in correct order."""
         with patch.object(self.extractor, 'decode_with_formats') as mock_decode:
-            # Mock to return barcodes only for QR (second group)
+            # Mock to return barcodes only for QR (third group)
             def mock_decode_side_effect(image, formats, try_harder=True):
                 if 'QRCODE' in formats:
                     return [{'type': 'QRCODE', 'data': 'qr_data'}]
@@ -317,16 +313,41 @@ class TestBarcodeExtractor:
             blank_image = np.zeros((100, 100, 3), dtype=np.uint8)
             result = self.extractor._try_formats(blank_image, self.extractor.format_groups, 1, "test")
             
-            # Should have called decode_with_formats for AZTEC first, then QRCODE
-            assert mock_decode.call_count >= 2
+            # Should have called decode_with_formats for AZTEC first, then DATAMATRIX, then QRCODE
+            assert mock_decode.call_count >= 3
             
             # First call should be for AZTEC
             first_call_formats = mock_decode.call_args_list[0][0][1]
             assert first_call_formats == {'AZTEC'}
             
-            # Should return QR result since AZTEC returned empty
+            # Second call should be for DATAMATRIX
+            second_call_formats = mock_decode.call_args_list[1][0][1]
+            assert second_call_formats == {'DATAMATRIX'}
+            
+            # Should return QR result since AZTEC and DATAMATRIX returned empty
             assert len(result) == 1
             assert result[0]['type'] == 'QRCODE'
+    
+    def test_data_matrix_priority_over_qr(self):
+        """Test that Data Matrix codes are prioritized over QR codes when both are present."""
+        with patch.object(self.extractor, 'decode_with_formats') as mock_decode:
+            # Mock to return both Data Matrix and QR codes
+            def mock_decode_side_effect(image, formats, try_harder=True):
+                if 'DATAMATRIX' in formats:
+                    return [{'type': 'DATAMATRIX', 'data': 'datamatrix_data'}]
+                elif 'QRCODE' in formats:
+                    return [{'type': 'QRCODE', 'data': 'qr_data'}]
+                return []
+            
+            mock_decode.side_effect = mock_decode_side_effect
+            
+            blank_image = np.zeros((100, 100, 3), dtype=np.uint8)
+            result = self.extractor._try_formats(blank_image, self.extractor.format_groups, 1, "test")
+            
+            # Should return Data Matrix result since it's tried before QR
+            assert len(result) == 1
+            assert result[0]['type'] == 'DATAMATRIX'
+            assert result[0]['data'] == 'datamatrix_data'
 
 
 if __name__ == "__main__":

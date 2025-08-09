@@ -1,4 +1,4 @@
-"""Integration tests for Aztec code detection in PDF files."""
+"""Integration tests for Data Matrix code detection in PDF files."""
 
 import sys
 import os
@@ -11,15 +11,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.DEBUG)
 
 
-def test_aztec_pdf_detection():
-    """Test Aztec code detection with the provided test PDF."""
+def test_data_matrix_pdf_detection():
+    """Test Data Matrix code detection with the provided test PDF."""
     try:
         from app.services.barcode_extractor import barcode_extractor
         
-        test_file_path = os.path.join(os.path.dirname(__file__), '..', 'test_files', 'pass_with_aztec_code.pdf')
+        test_file_path = os.path.join(os.path.dirname(__file__), '..', 'test_files', 'pass_with_data_matrix.pdf')
         test_file_path = os.path.abspath(test_file_path)
         
-        print(f"🔍 Testing Aztec detection with: {test_file_path}")
+        print(f"🔍 Testing Data Matrix detection with: {test_file_path}")
         
         if not os.path.exists(test_file_path):
             print(f"❌ Test file not found at: {test_file_path}")
@@ -30,12 +30,12 @@ def test_aztec_pdf_detection():
         
         print(f"📄 PDF file size: {len(pdf_data)} bytes")
         
-        # Extract barcodes using new Aztec-compatible logic
-        result = barcode_extractor.extract_barcodes_from_pdf(pdf_data, "pass_with_aztec_code.pdf")
+        # Extract barcodes using Data Matrix-compatible logic
+        result = barcode_extractor.extract_barcodes_from_pdf(pdf_data, "pass_with_data_matrix.pdf")
         
         print(f"✅ Found {len(result)} barcode(s):")
         
-        aztec_found = False
+        datamatrix_found = False
         for i, bc in enumerate(result, 1):
             barcode_type = bc.get('type', 'unknown')
             barcode_format = bc.get('format', 'unknown') 
@@ -61,17 +61,17 @@ def test_aztec_pdf_detection():
                 print(f"     BBox: {bc['bbox']}")
             print()
             
-            if barcode_type == 'AZTEC':
-                aztec_found = True
-                print("🎯 ✅ AZTEC CODE DETECTED!")
+            if barcode_type == 'DATAMATRIX':
+                datamatrix_found = True
+                print("🎯 ✅ DATA MATRIX CODE DETECTED!")
         
-        if not aztec_found:
-            print("⚠️  No Aztec codes found - checking if QR was detected instead")
+        if not datamatrix_found:
+            print("⚠️  No Data Matrix codes found - checking if QR was detected instead")
             qr_found = any(bc.get('type') == 'QRCODE' for bc in result)
             if qr_found:
-                print("📱 QR code was found - this indicates Aztec might be misidentified")
+                print("📱 QR code was found - this indicates Data Matrix might be misidentified")
         
-        return len(result) > 0 and aztec_found
+        return len(result) > 0 and datamatrix_found
         
     except ImportError as e:
         print(f"❌ Import error: {e}")
@@ -94,10 +94,11 @@ def test_format_precedence():
         print("🔧 Testing format precedence...")
         print(f"Format groups: {extractor.format_groups}")
         
-        # Verify Aztec comes first
+        # Verify format order: Aztec -> Data Matrix -> QR -> 1D codes
         assert extractor.format_groups[0] == {'AZTEC'}, "Aztec should be first format group"
-        assert extractor.format_groups[1] == {'QRCODE'}, "QR should be second format group"
-        assert 'CODE128' in extractor.format_groups[2], "1D codes should be in third group"
+        assert extractor.format_groups[1] == {'DATAMATRIX'}, "Data Matrix should be second format group"
+        assert extractor.format_groups[2] == {'QRCODE'}, "QR should be third format group"
+        assert 'CODE128' in extractor.format_groups[3], "1D codes should be in fourth group"
         
         print("✅ Format precedence is correct")
         return True
@@ -120,9 +121,10 @@ def test_encoding_handling():
         
         print("🔧 Testing encoding handling...")
         
-        # Test with empty result (should not crash)
-        result = extractor.decode_with_formats(test_image, {'AZTEC'})
-        print(f"Empty image test: {len(result)} results")
+        # Test with empty result for different formats (should not crash)
+        for format_type in ['AZTEC', 'DATAMATRIX', 'QRCODE']:
+            result = extractor.decode_with_formats(test_image, {format_type})
+            print(f"Empty image test for {format_type}: {len(result)} results")
         
         print("✅ Encoding handling works")
         return True
@@ -134,13 +136,13 @@ def test_encoding_handling():
 
 def run_all_tests():
     """Run all integration tests."""
-    print("🚀 Starting Aztec Code Integration Tests")
+    print("🚀 Starting Data Matrix Code Integration Tests")
     print("=" * 50)
     
     tests = [
         ("Format Precedence", test_format_precedence),
         ("Encoding Handling", test_encoding_handling), 
-        ("Aztec PDF Detection", test_aztec_pdf_detection),
+        ("Data Matrix PDF Detection", test_data_matrix_pdf_detection),
     ]
     
     results = []
