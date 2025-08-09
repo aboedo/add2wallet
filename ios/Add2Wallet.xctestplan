@@ -1,0 +1,29 @@
+{
+  "configurations" : [
+    {
+      "id" : "1F4B5C42-5F1A-4C5E-9A2B-8D3E7F9A1C2D",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Add2Wallet.xcodeproj",
+      "identifier" : "Add2Wallet",
+      "name" : "Add2Wallet"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Add2Wallet.xcodeproj",
+        "identifier" : "Add2WalletTests",
+        "name" : "Add2WalletTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -80,23 +80,22 @@ struct ContentView: View {
                             .buttonStyle(.bordered)
 
                             Button {
-                                viewModel.uploadSelected()
+                                if passViewController != nil {
+                                    showingAddPassVC = true
+                                } else {
+                                    viewModel.uploadSelected()
+                                }
                             } label: {
-                                Label("Create Pass", systemImage: "wallet.pass")
-                                    .frame(maxWidth: .infinity)
+                                if passViewController != nil {
+                                    Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
+                                        .frame(maxWidth: .infinity)
+                                } else {
+                                    Label("Create Pass", systemImage: "wallet.pass")
+                                        .frame(maxWidth: .infinity)
+                                }
                             }
                             .buttonStyle(.borderedProminent)
-                        }
-                    }
-
-                    if passViewController != nil {
-                        Button(action: { showingAddPassVC = true }) {
-                            Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.green)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
+                            .tint(passViewController != nil ? .green : .blue)
                         }
                     }
                 }

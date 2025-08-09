@@ -78,7 +78,7 @@ class ContentViewModel: ObservableObject {
             // Reset any previously generated pass UI state/metadata
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
-            statusMessage = "Ready to upload \(url.lastPathComponent)"
+            statusMessage = "Ready to create an Apple Wallet pass"
             hasError = false
         } catch {
             statusMessage = "Error reading PDF: \(error.localizedDescription)"
@@ -128,7 +128,7 @@ class ContentViewModel: ObservableObject {
             // Reset any previous state
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
-            statusMessage = "Ready to upload \(filename)"
+            statusMessage = "Ready to create an Apple Wallet pass"
             hasError = false
             
             print("🟢 ContentViewModel: PDF ready for preview and manual upload")

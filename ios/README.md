@@ -97,6 +97,21 @@ The app includes a Share Extension that allows users to import PDFs from other a
 ### App Group Configuration:
 Both the main app and extension use App Group `group.com.andresboedo.add2wallet` for data sharing.
 
+## Xcode Cloud CI/CD
+
+This project is configured for Xcode Cloud with Tuist support:
+
+- **Build Scripts**: Located in `ci_scripts/` directory
+- **Automatic Project Generation**: Tuist generates the Xcode project during CI
+- **Test Plan**: `Add2Wallet.xctestplan` for automated testing
+- **Documentation**: See `ci_scripts/README.md` for detailed setup instructions
+
+### Quick Xcode Cloud Setup:
+1. Enable Xcode Cloud in Apple Developer account
+2. Connect to your repository
+3. Select `Add2Wallet` scheme and iOS platform
+4. The build scripts will automatically handle Tuist installation and project generation
+
 ## Next Steps
 1. Implement document picker for in-app PDF selection
 2. Add PassKit integration for Apple Wallet
