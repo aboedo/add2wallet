@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,11 +13,14 @@
 		2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */; };
 		3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */; };
 		3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54837C8CBF4AA918D1214C04 /* NetworkService.swift */; };
+		54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */; };
 		60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */; };
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
 		7DBCF60D8DFD81421974D801 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50AEC1A177FC2937D94926BA /* ActionViewController.swift */; };
+		7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */; };
 		83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */; };
+		9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
 		DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */; };
 		E218D7BB1695B1A64D72FADD /* Add2WalletShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -95,6 +98,7 @@
 		4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Add2WalletShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		50AEC1A177FC2937D94926BA /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		54837C8CBF4AA918D1214C04 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
+		54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPass.swift; sourceTree = "<group>"; };
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+Add2Wallet.swift"; sourceTree = "<group>"; };
@@ -105,6 +109,8 @@
 		C7287DB2FC0F76437E783DEA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPreviewView.swift; sourceTree = "<group>"; };
 		E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2WalletShareExtension.entitlements; sourceTree = "<group>"; };
+		E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPassesView.swift; sourceTree = "<group>"; };
+		EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPassDetailView.swift; sourceTree = "<group>"; };
 		EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Add2WalletApp.swift; sourceTree = "<group>"; };
 		F0647FA2EE1335D1CD3543C9 /* Add2Wallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Add2Wallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -134,6 +140,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		08BA36A6FACFF3EF3BC3448A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		15870E9EDF09E6A365236CA7 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -155,6 +169,7 @@
 		4238948DC0A04B07712BEC10 /* Add2Wallet */ = {
 			isa = PBXGroup;
 			children = (
+				08BA36A6FACFF3EF3BC3448A /* Models */,
 				7E02BD608C5E0AAB53D25A33 /* Preview Content */,
 				C4ED5855D8BBECFD1754E03F /* Services */,
 				15870E9EDF09E6A365236CA7 /* ViewModels */,
@@ -190,6 +205,8 @@
 			children = (
 				13372BE4DCB2183466AD3A53 /* ContentView.swift */,
 				CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */,
+				EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */,
+				E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -390,10 +407,13 @@
 			files = (
 				2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */,
 				60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */,
+				7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */,
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
 				2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */,
 				B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */,
 				DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */,
+				9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */,
+				54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */,
 				3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */,
 				83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */,
 			);
@@ -520,7 +540,10 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -662,7 +685,10 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -726,7 +752,10 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;

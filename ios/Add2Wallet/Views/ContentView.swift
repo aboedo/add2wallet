@@ -6,8 +6,23 @@ struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
     @State private var passViewController: PKAddPassesViewController?
     @State private var showingAddPassVC = false
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
+        TabView {
+            generatePassView
+                .tabItem {
+                    Label("Generate Pass", systemImage: "plus.circle")
+                }
+            
+            SavedPassesView()
+                .tabItem {
+                    Label("Your Passes", systemImage: "wallet.pass")
+                }
+        }
+    }
+    
+    private var generatePassView: some View {
         NavigationView {
             VStack(spacing: 0) {
                 ScrollView {
@@ -106,6 +121,9 @@ struct ContentView: View {
             }
             .navigationBarHidden(true)
             .onAppear {
+                // Set up model context for view model
+                viewModel.setModelContext(modelContext)
+                
                 NotificationCenter.default.addObserver(
                     forName: NSNotification.Name("PassReadyToAdd"),
                     object: nil,

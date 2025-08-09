@@ -1,16 +1,30 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct Add2WalletApp: App {
     // UIApplicationDelegateAdaptor temporarily disabled; not required for URL
     // @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
+    let container: ModelContainer
+    
+    init() {
+        do {
+            container = try ModelContainer(for: SavedPass.self)
+        } catch {
+            fatalError("Failed to initialize Swift Data container: \(error)")
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .modelContainer(container)
                 .onOpenURL { url in
                     handleURL(url)
                 }
                 .onAppear {
+                    
                     checkForSharedPDF()
                 }
         }

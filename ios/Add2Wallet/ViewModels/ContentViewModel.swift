@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 import UniformTypeIdentifiers
 import PassKit
+import SwiftData
 
 class ContentViewModel: ObservableObject {
     @Published var isProcessing = false
@@ -15,6 +16,7 @@ class ContentViewModel: ObservableObject {
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
+    private var modelContext: ModelContext?
     private var phraseTimer: AnyCancellable?
     private let phrases: [String] = [
         "Sharpening digital scissors ✂️",
@@ -50,6 +52,10 @@ class ContentViewModel: ObservableObject {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    func setModelContext(_ context: ModelContext) {
+        self.modelContext = context
     }
     
     func selectPDF() {
@@ -219,6 +225,9 @@ class ContentViewModel: ObservableObject {
                 return
             }
             
+            // Save pass to persistent storage
+            savePassToPersistentStorage(passData: passData)
+            
             // Present the add pass view controller
             let passVC = PKAddPassesViewController(pass: pass)
             
@@ -285,6 +294,11 @@ class ContentViewModel: ObservableObject {
                 return
             }
 
+            // Save all passes to persistent storage
+            for (index, passData) in passDatas.enumerated() {
+                savePassToPersistentStorage(passData: passData, ticketNumber: index + 1)
+            }
+
             let passVC = PKAddPassesViewController(passes: passes)
 
             statusMessage = "Passes ready! Tap to add to Wallet"
@@ -323,5 +337,49 @@ class ContentViewModel: ObservableObject {
         phraseTimer?.cancel()
         phraseTimer = nil
         funnyPhrase = ""
+    }
+    
+    private func savePassToPersistentStorage(passData: Data, ticketNumber: Int? = nil) {
+        guard let modelContext = modelContext,
+              let metadata = passMetadata else {
+            print("Cannot save pass: missing model context or metadata")
+            return
+        }
+        
+        // Extract basic information for the SavedPass model
+        let passType = metadata.eventType ?? "Pass"
+        let title = metadata.title ?? metadata.eventName ?? "Untitled Pass"
+        let eventDate = metadata.date
+        let venue = metadata.venueName
+        let city = metadata.city
+        
+        // Create title with ticket number if multiple passes
+        let finalTitle = if let ticketNumber = ticketNumber, let ticketCount = ticketCount, ticketCount > 1 {
+            "\(title) - Ticket \(ticketNumber)"
+        } else {
+            title
+        }
+        
+        // Create SavedPass instance
+        let savedPass = SavedPass(
+            passType: passType,
+            title: finalTitle,
+            eventDate: eventDate,
+            venue: venue,
+            city: city,
+            passData: passData,
+            metadata: metadata
+        )
+        
+        // Insert into context
+        modelContext.insert(savedPass)
+        
+        // Save context
+        do {
+            try modelContext.save()
+            print("Successfully saved pass: \(finalTitle)")
+        } catch {
+            print("Error saving pass: \(error)")
+        }
     }
 }
