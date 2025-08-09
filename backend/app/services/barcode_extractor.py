@@ -8,49 +8,13 @@ import base64
 import math
 from typing import List, Tuple, Optional, Dict, Any, Set
 
-# Import dependencies with fallback handling
-try:
-    import cv2
-    HAS_CV2 = True
-except ImportError:
-    print("⚠️ OpenCV not available")
-    HAS_CV2 = False
-    cv2 = None
-
-try:
-    import numpy as np
-    HAS_NUMPY = True
-except ImportError:
-    print("⚠️ NumPy not available")
-    HAS_NUMPY = False
-    np = None
-
-try:
-    from pyzbar import pyzbar
-    HAS_PYZBAR = True
-except ImportError:
-    print("⚠️ pyzbar not available - will use fallback detection")
-    HAS_PYZBAR = False
-    pyzbar = None
-
-try:
-    from pdf2image import convert_from_bytes
-    HAS_PDF2IMAGE = True
-except ImportError:
-    print("⚠️ pdf2image not available")
-    HAS_PDF2IMAGE = False
-    convert_from_bytes = None
-
-# Always available imports
+# Required dependencies - no fallbacks
+import cv2
+import numpy as np
+from pyzbar import pyzbar
+from pdf2image import convert_from_bytes
 from PIL import Image
-try:
-    import fitz  # PyMuPDF
-    HAS_PYMUPDF = True
-except ImportError:
-    print("⚠️ PyMuPDF not available")
-    HAS_PYMUPDF = False
-    fitz = None
-
+import fitz  # PyMuPDF
 import PyPDF2
 
 # Configure logging
@@ -89,51 +53,35 @@ class BarcodeExtractor:
         
         barcodes = []
         
-        # If we have the full dependency stack, use advanced detection
-        if HAS_PYZBAR and HAS_CV2 and HAS_NUMPY:
-            logger.info("🚀 Using advanced barcode detection with format prioritization")
-            
-            # Method 1: Try PyMuPDF for vector-based barcodes (fastest)
-            if HAS_PYMUPDF:
-                try:
-                    pymupdf_barcodes = self._extract_with_pymupdf(pdf_data)
-                    barcodes.extend(pymupdf_barcodes)
-                    logger.info(f"📊 PyMuPDF found {len(pymupdf_barcodes)} barcodes")
-                except Exception as e:
-                    logger.warning(f"⚠️ PyMuPDF extraction failed: {e}")
-            
-            # Method 2: Convert PDF to images and scan (more thorough)
-            try:
-                image_barcodes = self._extract_from_images(pdf_data)
-                # Avoid duplicates by checking barcode data
-                existing_data = {bc['data'] for bc in barcodes}
-                new_barcodes = [bc for bc in image_barcodes if bc['data'] not in existing_data]
-                barcodes.extend(new_barcodes)
-                logger.info(f"🖼️ Image scanning found {len(new_barcodes)} additional barcodes")
-            except Exception as e:
-                logger.warning(f"⚠️ Image-based extraction failed: {e}")
-            
-            # Method 3: Enhanced image processing for difficult barcodes
-            if not barcodes:
-                try:
-                    enhanced_barcodes = self._extract_with_enhancement(pdf_data)
-                    barcodes.extend(enhanced_barcodes)
-                    logger.info(f"🔧 Enhanced processing found {len(enhanced_barcodes)} barcodes")
-                except Exception as e:
-                    logger.warning(f"⚠️ Enhanced extraction failed: {e}")
+        logger.info("🚀 Using advanced barcode detection with format prioritization")
         
-        else:
-            # Fallback to text-based detection but apply Aztec logic
-            logger.warning("⚠️ Missing dependencies for advanced detection, using hybrid fallback approach")
+        # Method 1: Try PyMuPDF for vector-based barcodes (fastest)
+        try:
+            pymupdf_barcodes = self._extract_with_pymupdf(pdf_data)
+            barcodes.extend(pymupdf_barcodes)
+            logger.info(f"📊 PyMuPDF found {len(pymupdf_barcodes)} barcodes")
+        except Exception as e:
+            logger.warning(f"⚠️ PyMuPDF extraction failed: {e}")
+        
+        # Method 2: Convert PDF to images and scan (more thorough)
+        try:
+            image_barcodes = self._extract_from_images(pdf_data)
+            # Avoid duplicates by checking barcode data
+            existing_data = {bc['data'] for bc in barcodes}
+            new_barcodes = [bc for bc in image_barcodes if bc['data'] not in existing_data]
+            barcodes.extend(new_barcodes)
+            logger.info(f"🖼️ Image scanning found {len(new_barcodes)} additional barcodes")
+        except Exception as e:
+            logger.warning(f"⚠️ Image-based extraction failed: {e}")
+        
+        # Method 3: Enhanced image processing for difficult barcodes
+        if not barcodes:
             try:
-                from app.services.barcode_extractor_fallback import fallback_barcode_extractor
-                fallback_barcodes = fallback_barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
-                
-                # Apply our Aztec logic to fallback results
-                barcodes = self._apply_aztec_logic_to_fallback(fallback_barcodes, filename)
-                logger.info(f"🔄 Applied Aztec logic to {len(fallback_barcodes)} fallback barcodes, result: {len(barcodes)}")
+                enhanced_barcodes = self._extract_with_enhancement(pdf_data)
+                barcodes.extend(enhanced_barcodes)
+                logger.info(f"🔧 Enhanced processing found {len(enhanced_barcodes)} barcodes")
             except Exception as e:
-                logger.warning(f"⚠️ Fallback extraction failed: {e}")
+                logger.warning(f"⚠️ Enhanced extraction failed: {e}")
         
         # Apply context-aware mixed Aztec/QR handling before deduplication
         if barcodes:
@@ -208,9 +156,6 @@ class BarcodeExtractor:
         Returns:
             List of detected barcodes
         """
-        if not HAS_PYMUPDF:
-            return []
-            
         barcodes = []
         
         # Open PDF with PyMuPDF
@@ -626,52 +571,6 @@ class BarcodeExtractor:
         # Default case: return all barcodes (ordered detection already handled this)
         return all_barcodes
     
-    def _apply_aztec_logic_to_fallback(self, fallback_barcodes: List[Dict[str, Any]], filename: str) -> List[Dict[str, Any]]:
-        """Apply Aztec detection logic to fallback barcode results.
-        
-        Args:
-            fallback_barcodes: Barcodes detected by fallback extractor
-            filename: PDF filename for context
-            
-        Returns:
-            Processed barcodes with Aztec logic applied
-        """
-        if not fallback_barcodes:
-            return []
-        
-        logger.info(f"🔄 Applying Aztec logic to {len(fallback_barcodes)} fallback barcodes")
-        
-        # The fallback extractor typically assigns all codes as 'QRCODE' type
-        # We need to intelligently reassign types based on context and content
-        
-        processed_barcodes = []
-        for barcode in fallback_barcodes:
-            # Create enhanced barcode structure
-            enhanced_barcode = {
-                'data': barcode.get('data', ''),
-                'type': self._infer_barcode_type_from_content(barcode.get('data', ''), filename),
-                'format': 'PKBarcodeFormatQR',  # Will be updated based on type
-                'encoding': barcode.get('encoding', 'utf-8'),
-                'raw_bytes': barcode.get('data', '').encode('utf-8'),
-                'bytes_b64': base64.b64encode(barcode.get('data', '').encode('utf-8')).decode('ascii'),
-                'bbox': barcode.get('position', {}).get('bbox', [0, 0, 100, 100]),
-                'area': barcode.get('confidence', 50) * 100,  # Use confidence as area proxy
-                'confidence': barcode.get('confidence', 70),
-                'center_distance': 50.0,  # Default center distance
-                'page': barcode.get('page', 1),
-                'method': 'fallback_with_aztec_logic',
-                'source': 'text-analysis',
-                'dpi': 150
-            }
-            
-            # Update format based on inferred type
-            enhanced_barcode['format'] = self._normalize_barcode_format(enhanced_barcode['type'])
-            
-            processed_barcodes.append(enhanced_barcode)
-            
-            logger.debug(f"📱 Processed fallback barcode: {enhanced_barcode['type']} - {enhanced_barcode['data'][:50]}...")
-        
-        return processed_barcodes
     
     def _infer_barcode_type_from_content(self, data: str, filename: str) -> str:
         """Infer the likely barcode type from content and context.

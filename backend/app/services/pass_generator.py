@@ -205,25 +205,12 @@ class PassGenerator:
         """
         print(f"🔍 Analyzing PDF: {filename}")
         
-        # Step 1: Extract barcodes from PDF (with robust fallback)
+        # Step 1: Extract barcodes from PDF
         barcodes: List[Dict[str, Any]] = []
         try:
-            # Try main barcode extractor first
-            try:
-                from app.services.barcode_extractor import barcode_extractor
-                barcodes = barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
-                print(f"📊 Found {len(barcodes)} barcodes in PDF using main extractor")
-            except ImportError:
-                barcodes = []
-            
-            # If main extractor not available or returned none, try fallback extractor
-            if not barcodes:
-                try:
-                    from app.services.barcode_extractor_fallback import fallback_barcode_extractor
-                    barcodes = fallback_barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
-                    print(f"📊 Found {len(barcodes)} potential barcodes in PDF using fallback extractor")
-                except Exception as fe:
-                    print(f"⚠️ Fallback barcode extraction failed: {fe}")
+            from app.services.barcode_extractor import barcode_extractor
+            barcodes = barcode_extractor.extract_barcodes_from_pdf(pdf_data, filename)
+            print(f"📊 Found {len(barcodes)} barcodes in PDF")
         except Exception as e:
             print(f"⚠️ Barcode extraction failed: {e}")
         
@@ -254,40 +241,25 @@ class PassGenerator:
             base_pass_info = self._extract_pass_info(pdf_text)
             print(f"🎯 Extracted info: {base_pass_info}")
         
-        # Step 3: Detect multiple tickets
-        try:
-            from app.services.barcode_extractor_fallback import fallback_barcode_extractor
-            tickets = fallback_barcode_extractor.detect_multiple_tickets(barcodes, base_pass_info)
-            # If fallback collapses duplicates and we have multiple barcodes on different pages,
-            # ensure we still create distinct tickets per barcode instance
-            if len(tickets) == 1 and len(barcodes) > 1:
-                tickets = []
-                for i, bc in enumerate(barcodes, 1):
-                    tickets.append({
-                        'barcode': bc,
-                        'metadata': base_pass_info,
-                        'ticket_number': i,
-                        'total_tickets': len(barcodes)
-                    })
-        except Exception as _:
-            # Simple fallback if detection fails
-            tickets = []
-            if barcodes:
-                for i, barcode in enumerate(barcodes, 1):
-                    tickets.append({
-                        'barcode': barcode,
-                        'metadata': base_pass_info,
-                        'ticket_number': i,
-                        'total_tickets': len(barcodes)
-                    })
-            else:
-                # No barcodes, create single pass
+        # Step 3: Create tickets based on detected barcodes
+        tickets = []
+        if barcodes:
+            # Create one ticket per unique barcode
+            for i, barcode in enumerate(barcodes, 1):
                 tickets.append({
-                    'barcode': None,
+                    'barcode': barcode,
                     'metadata': base_pass_info,
-                    'ticket_number': 1,
-                    'total_tickets': 1
+                    'ticket_number': i,
+                    'total_tickets': len(barcodes)
                 })
+        else:
+            # No barcodes, create single pass
+            tickets.append({
+                'barcode': None,
+                'metadata': base_pass_info,
+                'ticket_number': 1,
+                'total_tickets': 1
+            })
         
         print(f"🎫 Detected {len(tickets)} ticket(s) in PDF")
         
