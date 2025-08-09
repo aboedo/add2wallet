@@ -47,6 +47,18 @@ struct Add2WalletApp: App {
         // Handle files opened via "Open in Add2Wallet"
         if url.isFileURL {
             print("🟢 App: Handling file URL: \(url)")
+            
+            // Request access to security-scoped resource
+            guard url.startAccessingSecurityScopedResource() else {
+                print("🔴 App: Failed to start accessing security scoped resource")
+                return
+            }
+            
+            defer {
+                url.stopAccessingSecurityScopedResource()
+                print("🟢 App: Stopped accessing security scoped resource")
+            }
+            
             do {
                 let data = try Data(contentsOf: url)
                 let filename = url.lastPathComponent
