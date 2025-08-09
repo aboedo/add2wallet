@@ -198,7 +198,7 @@ class PassGenerator:
     def create_pass_from_pdf_data(self, 
                                  pdf_data: bytes, 
                                  filename: str,
-                                 ai_metadata: Dict[str, Any] = None) -> Tuple[List[bytes], List[Dict[str, Any]], List[Dict[str, Any]]]:
+                                 ai_metadata: Dict[str, Any] = None) -> Tuple[List[bytes], List[Dict[str, Any]], List[Dict[str, Any]], List[str]]:
         """Create intelligent passes from PDF data, supporting multiple tickets.
         
         Args:
@@ -207,9 +207,12 @@ class PassGenerator:
             ai_metadata: AI-extracted metadata (optional)
             
         Returns:
-            Tuple of (list of .pkpass files as bytes, list of detected barcodes, list of ticket info)
+            Tuple of (list of .pkpass files as bytes, list of detected barcodes, list of ticket info, list of warnings)
         """
         print(f"🔍 Analyzing PDF: {filename}")
+        
+        # Initialize warnings list to collect from all passes
+        all_warnings = []
         
         # Step 1: Extract barcodes from PDF
         barcodes: List[Dict[str, Any]] = []
@@ -285,11 +288,17 @@ class PassGenerator:
             # Merge barcode data with pass info
             pass_info = ticket_metadata.copy()
             if ticket_barcode:
-                pass_info['primary_barcode'] = ticket_barcode
-                # Use barcode data if no other barcode data was found
-                if not pass_info.get('barcode_data'):
-                    pass_info['barcode_data'] = ticket_barcode['data']
-                print(f"🎫 Ticket {ticket_num}: Using barcode {ticket_barcode['type']} - {ticket_barcode['data'][:50]}...")
+                # Check if this is a Data Matrix code
+                if ticket_barcode.get('type') == 'DATAMATRIX':
+                    print(f"🎫 Ticket {ticket_num}: Detected Data Matrix barcode - will be excluded from pass")
+                    # Still pass it to the pass generator so it can generate warnings
+                    pass_info['primary_barcode'] = ticket_barcode
+                else:
+                    pass_info['primary_barcode'] = ticket_barcode
+                    # Use barcode data if no other barcode data was found
+                    if not pass_info.get('barcode_data'):
+                        pass_info['barcode_data'] = ticket_barcode['data']
+                    print(f"🎫 Ticket {ticket_num}: Using barcode {ticket_barcode['type']} - {ticket_barcode['data'][:50]}...")
             
             # Extract colors directly from PDF - this is more accurate than AI guessing
             print(f"🎨 Extracting colors from PDF...")
@@ -333,7 +342,7 @@ class PassGenerator:
                 description = base_description
             
             # Generate the enhanced pass with barcode
-            pkpass_data = self.create_enhanced_pass(
+            pkpass_data, pass_warnings = self.create_enhanced_pass(
                 title=title,
                 description=description,
                 pass_info=pass_info,
@@ -344,19 +353,22 @@ class PassGenerator:
             )
             
             pkpass_files.append(pkpass_data)
+            all_warnings.extend(pass_warnings)
             
             # Store ticket info for response
+            # Don't include Data Matrix barcodes in ticket info since they're unsupported
+            stored_barcode = None if (ticket_barcode and ticket_barcode.get('type') == 'DATAMATRIX') else ticket_barcode
             ticket_info.append({
                 'ticket_number': ticket_num,
                 'total_tickets': total_tickets,
                 'title': title,
                 'description': description,
-                'barcode': ticket_barcode,
+                'barcode': stored_barcode,
                 'metadata': pass_info
             })
         
         print(f"✅ Generated {len(pkpass_files)} wallet pass(es)")
-        return pkpass_files, barcodes, ticket_info
+        return pkpass_files, barcodes, ticket_info, all_warnings
     
     def create_enhanced_pass(self, 
                             title: str,
@@ -366,7 +378,7 @@ class PassGenerator:
                             fg_color: str,
                             label_color: str,
                             organization: str = "Add2Wallet",
-                            pdf_bytes: Optional[bytes] = None) -> bytes:
+                            pdf_bytes: Optional[bytes] = None) -> Tuple[bytes, List[str]]:
         """Create an enhanced pass with extracted PDF data.
         
         Args:
@@ -379,10 +391,13 @@ class PassGenerator:
             organization: Organization name
             
         Returns:
-            bytes: The .pkpass file as bytes
+            Tuple of (.pkpass file as bytes, list of warnings)
         """
         # Extract identifiers from certificate
         pass_type_id, team_id = self._extract_certificate_identifiers()
+        
+        # Initialize warnings list
+        warnings = []
         
         # Build pass fields dynamically based on AI-extracted info
         header_fields = []
@@ -588,42 +603,49 @@ class PassGenerator:
         # Add barcode to the pass if available
         primary_barcode = pass_info.get('primary_barcode')
         if primary_barcode:
+            barcode_type = primary_barcode.get('type', '')
             barcode_format = primary_barcode.get('format', 'PKBarcodeFormatQR')
-            # Prefer raw bytes to preserve exact payload; fall back to text
-            raw_bytes = primary_barcode.get('raw_bytes')
-            barcode_data = primary_barcode.get('data', '')
+            
+            # Check if this is a Data Matrix code
+            if barcode_type == 'DATAMATRIX':
+                warnings.append("This PDF contains a Data Matrix code, which is not supported by Apple Wallet. The pass has been saved without a barcode for future reference when support is added.")
+                print(f"⚠️ Skipping Data Matrix barcode - not supported by Apple Wallet")
+            else:
+                # Prefer raw bytes to preserve exact payload; fall back to text
+                raw_bytes = primary_barcode.get('raw_bytes')
+                barcode_data = primary_barcode.get('data', '')
 
-            # If we have bytes, use ISO-8859-1 mapping for PassKit fidelity
-            if raw_bytes is not None and isinstance(raw_bytes, (bytes, bytearray)):
-                try:
-                    message_text = bytes(raw_bytes).decode('latin-1')
-                except Exception:
-                    message_text = barcode_data or ''
-                pass_json['barcode'] = {
-                    "format": barcode_format,
-                    "message": message_text,
-                    "messageEncoding": "iso-8859-1"
-                }
-                pass_json['barcodes'] = [{
-                    "format": barcode_format,
-                    "message": message_text,
-                    "messageEncoding": "iso-8859-1"
-                }]
-                print(f"🎫 Added barcode preserving raw bytes via latin-1 ({len(raw_bytes)} bytes, format {barcode_format})")
-            elif barcode_data:
-                # Avoid accidental whitespace/newlines differences vs. source
-                normalized = str(barcode_data).replace('\r\n', '\n').strip('\n')
-                pass_json['barcode'] = {
-                    "format": barcode_format,
-                    "message": normalized,
-                    "messageEncoding": "iso-8859-1"
-                }
-                pass_json['barcodes'] = [{
-                    "format": barcode_format,
-                    "message": normalized,
-                    "messageEncoding": "iso-8859-1"
-                }]
-                print(f"🎫 Added barcode to pass: {barcode_format} with {len(normalized)} characters")
+                # If we have bytes, use ISO-8859-1 mapping for PassKit fidelity
+                if raw_bytes is not None and isinstance(raw_bytes, (bytes, bytearray)):
+                    try:
+                        message_text = bytes(raw_bytes).decode('latin-1')
+                    except Exception:
+                        message_text = barcode_data or ''
+                    pass_json['barcode'] = {
+                        "format": barcode_format,
+                        "message": message_text,
+                        "messageEncoding": "iso-8859-1"
+                    }
+                    pass_json['barcodes'] = [{
+                        "format": barcode_format,
+                        "message": message_text,
+                        "messageEncoding": "iso-8859-1"
+                    }]
+                    print(f"🎫 Added barcode preserving raw bytes via latin-1 ({len(raw_bytes)} bytes, format {barcode_format})")
+                elif barcode_data:
+                    # Avoid accidental whitespace/newlines differences vs. source
+                    normalized = str(barcode_data).replace('\r\n', '\n').strip('\n')
+                    pass_json['barcode'] = {
+                        "format": barcode_format,
+                        "message": normalized,
+                        "messageEncoding": "iso-8859-1"
+                    }
+                    pass_json['barcodes'] = [{
+                        "format": barcode_format,
+                        "message": normalized,
+                        "messageEncoding": "iso-8859-1"
+                    }]
+                    print(f"🎫 Added barcode to pass: {barcode_format} with {len(normalized)} characters")
         else:
             # Fallback: try to use barcode_data from AI extraction
             barcode_data = (pass_info.get('barcode_data') or 
@@ -682,7 +704,7 @@ class PassGenerator:
             # Create .pkpass zip file
             pkpass_data = self._create_pkpass_zip(temp_dir)
             
-            return pkpass_data
+            return pkpass_data, warnings
 
     def _extract_color_palette_from_pdf_images(self, pdf_bytes: Optional[bytes]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """Extract dominant colors by rasterizing pages and counting pixel occurrences.

@@ -23,7 +23,7 @@ def test_pass_generation():
                 pdf_data = f.read()
 
             # Generate passes
-            pkpass_files, detected_barcodes, ticket_info = pass_generator.create_pass_from_pdf_data(
+            pkpass_files, detected_barcodes, ticket_info, warnings = pass_generator.create_pass_from_pdf_data(
                 pdf_data, 
                 filename.split('/')[-1],
                 None  # No AI metadata for this test
@@ -32,6 +32,8 @@ def test_pass_generation():
             print(f'Generated {len(pkpass_files)} pass file(s)')
             print(f'Found {len(detected_barcodes)} unique barcode(s)')
             print(f'Ticket info count: {len(ticket_info)}')
+            if warnings:
+                print(f'Warnings: {warnings}')
             
             for i, ticket in enumerate(ticket_info, 1):
                 print(f'  Ticket {i}: {ticket["title"]} - Has barcode: {ticket["barcode"] is not None}')

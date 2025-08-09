@@ -13,6 +13,7 @@ class ContentViewModel: ObservableObject {
     @Published var selectedFileURL: URL?
     @Published var passMetadata: EnhancedPassMetadata?
     @Published var ticketCount: Int? = nil
+    @Published var warnings: [String] = []
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
@@ -84,6 +85,7 @@ class ContentViewModel: ObservableObject {
             // Reset any previously generated pass UI state/metadata
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
+            warnings = []
             statusMessage = "Ready to create an Apple Wallet pass"
             hasError = false
         } catch {
@@ -113,6 +115,7 @@ class ContentViewModel: ObservableObject {
         hasError = false
         passMetadata = nil
         ticketCount = nil
+        warnings = []
         NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
     }
     
@@ -134,6 +137,7 @@ class ContentViewModel: ObservableObject {
             // Reset any previous state
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
+            warnings = []
             statusMessage = "Ready to create an Apple Wallet pass"
             hasError = false
             
@@ -167,6 +171,7 @@ class ContentViewModel: ObservableObject {
                     guard let self else { return }
                     self.passMetadata = response.aiMetadata
                     self.ticketCount = response.ticketCount
+                    self.warnings = response.warnings ?? []
                     if response.status == "completed", let passUrl = response.passUrl {
                         let count = response.ticketCount ?? 1
                         if count > 1 {

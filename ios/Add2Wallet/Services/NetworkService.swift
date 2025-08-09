@@ -102,6 +102,7 @@ struct UploadResponse: Codable {
     let passUrl: String?
     let aiMetadata: EnhancedPassMetadata?
     let ticketCount: Int?
+    let warnings: [String]?
     
     enum CodingKeys: String, CodingKey {
         case jobId = "job_id"
@@ -109,6 +110,7 @@ struct UploadResponse: Codable {
         case passUrl = "pass_url"
         case aiMetadata = "ai_metadata"
         case ticketCount = "ticket_count"
+        case warnings
     }
 }
 

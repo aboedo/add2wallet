@@ -67,4 +67,4 @@ install_official || install_homebrew || install_binary || {
 }
 
 echo "🎉 Tuist installation completed!"
-tuist --version
+tuist version

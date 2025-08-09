@@ -215,12 +215,14 @@ async def upload_pdf(
         
         # Step 3: Generate enhanced pass(es) with AI metadata and barcode extraction
         try:
-            pkpass_files, detected_barcodes, ticket_info = pass_generator.create_pass_from_pdf_data(
+            pkpass_files, detected_barcodes, ticket_info, warnings = pass_generator.create_pass_from_pdf_data(
                 contents, 
                 file.filename,
                 ai_metadata
             )
             print(f"🎫 Generated {len(pkpass_files)} pass files")
+            if warnings:
+                print(f"⚠️ Warnings generated: {warnings}")
         except Exception as e:
             print(f"❌ Error generating passes: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to generate passes: {str(e)}")
@@ -246,6 +248,7 @@ async def upload_pdf(
             "barcode_count": len(detected_barcodes),
             "ticket_count": len(pkpass_files),
             "ticket_info": ticket_info,
+            "warnings": warnings,
             # Keep backwards compatibility
             "pass_path": pass_paths[0] if pass_paths else None
         })
@@ -255,7 +258,8 @@ async def upload_pdf(
             status="completed", 
             pass_url=f"/pass/{job_id}",
             ai_metadata=ai_metadata,
-            ticket_count=len(pkpass_files)
+            ticket_count=len(pkpass_files),
+            warnings=warnings if warnings else None
         )
         
     except Exception as e:
@@ -288,7 +292,8 @@ async def get_status(
         status=job["status"],
         progress=job["progress"],
         result_url=f"/pass/{job_id}" if job["status"] == "completed" else None,
-        ai_metadata=job.get("ai_metadata")
+        ai_metadata=job.get("ai_metadata"),
+        warnings=job.get("warnings")
     )
 
 @app.get("/pass/{job_id}")

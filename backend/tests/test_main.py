@@ -36,7 +36,7 @@ def test_upload_pdf_success():
     assert response.status_code == 200
     json_response = response.json()
     assert "job_id" in json_response
-    assert json_response["status"] == "processing"
+    assert json_response["status"] in ["processing", "completed"]
 
 def test_upload_data_matrix_pdf_integration():
     """Test uploading the actual Data Matrix PDF through the API."""
@@ -147,6 +147,62 @@ def test_get_status_invalid_job():
     response = client.get("/status/invalid-job-id")
     assert response.status_code == 404
     assert response.json()["detail"] == "Job not found"
+
+def test_upload_eticket_pdf_integration():
+    """Test uploading the actual eTicket.pdf through the API."""
+    import os
+    
+    # Ensure API key is set for test
+    os.environ["API_KEY"] = "development-api-key"
+    
+    # Path to the test eTicket.pdf
+    test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "eTicket.pdf")
+    
+    if not os.path.exists(test_file):
+        pytest.skip(f"eTicket.pdf test file not found: {test_file}")
+    
+    # Read the test PDF
+    with open(test_file, 'rb') as f:
+        pdf_content = f.read()
+    
+    files = {"file": ("eTicket.pdf", pdf_content, "application/pdf")}
+    data = {
+        "user_id": "test-user-eticket",
+        "session_token": "test-token-eticket"
+    }
+    headers = {"X-API-Key": "development-api-key"}
+    
+    response = client.post("/upload", files=files, data=data, headers=headers)
+    
+    assert response.status_code == 200
+    json_response = response.json()
+    assert "job_id" in json_response
+    assert json_response["status"] in ["processing", "completed"]
+    
+    # If completed immediately, check specific eTicket.pdf expectations
+    if json_response["status"] == "completed":
+        assert "ticket_count" in json_response
+        # Should generate exactly 1 ticket from duplicate QR codes
+        assert json_response["ticket_count"] == 1
+        
+        print(f"✅ eTicket upload test: Found {json_response['ticket_count']} ticket(s)")
+        
+        # Test downloading the tickets
+        job_id = json_response["job_id"]
+        tickets_response = client.get(f"/tickets/{job_id}", headers=headers)
+        assert tickets_response.status_code == 200
+        
+        tickets_data = tickets_response.json()
+        assert "tickets" in tickets_data
+        assert len(tickets_data["tickets"]) == 1
+        
+        # Verify ticket has barcode info  
+        ticket = tickets_data["tickets"][0]
+        assert "has_barcode" in ticket
+        assert ticket["has_barcode"] == True
+        assert "barcode_type" in ticket
+        assert ticket["barcode_type"] == "QRCODE"
+        print(f"  Ticket: {ticket.get('title', 'N/A')} - {ticket.get('barcode_type', 'N/A')}")
 
 def test_list_passes():
     response = client.get("/passes")

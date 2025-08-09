@@ -22,7 +22,7 @@ mise global tuist@latest
 
 # Verify Tuist installation
 echo "✅ Tuist version:"
-tuist --version
+tuist version
 
 # Navigate to the iOS project directory
 cd ios

@@ -7,6 +7,7 @@ class UploadResponse(BaseModel):
     pass_url: Optional[str] = None
     ai_metadata: Optional[Dict[str, Any]] = None
     ticket_count: Optional[int] = None
+    warnings: Optional[List[str]] = None
 
 class ErrorResponse(BaseModel):
     error: str
@@ -17,6 +18,7 @@ class StatusResponse(BaseModel):
     progress: int
     result_url: Optional[str] = None
     ai_metadata: Optional[Dict[str, Any]] = None
+    warnings: Optional[List[str]] = None
 
 class PassMetadata(BaseModel):
     event_name: Optional[str] = None
