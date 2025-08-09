@@ -128,12 +128,11 @@ class ContentViewModel: ObservableObject {
             // Reset any previous state
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
-            statusMessage = "Processing shared PDF..."
+            statusMessage = "Ready to upload \(filename)"
             hasError = false
             
-            print("🟢 ContentViewModel: Starting PDF processing...")
-            // Immediately process the PDF
-            processPDF(data: data, filename: filename)
+            print("🟢 ContentViewModel: PDF ready for preview and manual upload")
+            // Don't automatically process - let user hit "Create Pass" button
         } catch {
             print("🔴 ContentViewModel: Error handling shared PDF: \(error)")
             statusMessage = "Error handling shared PDF: \(error.localizedDescription)"
