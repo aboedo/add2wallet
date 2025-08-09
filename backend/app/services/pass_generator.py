@@ -98,6 +98,12 @@ class PassGenerator:
             }
         }
         
+        # Add associatedStoreIdentifiers if available
+        associated_store_ids = self._get_associated_store_identifiers()
+        if associated_store_ids:
+            pass_json["associatedStoreIdentifiers"] = associated_store_ids
+            print(f"✅ Added associatedStoreIdentifiers: {associated_store_ids}")
+        
         # Create temporary directory for pass files
         with tempfile.TemporaryDirectory() as temp_dir:
             
@@ -244,13 +250,16 @@ class PassGenerator:
         # Step 3: Create tickets based on detected barcodes
         tickets = []
         if barcodes:
-            # Create one ticket per unique barcode
-            for i, barcode in enumerate(barcodes, 1):
+            # Apply intelligent barcode consolidation for single-pass documents
+            consolidated_barcodes = self._consolidate_barcodes_for_single_pass(barcodes, filename)
+            
+            # Create one ticket per consolidated barcode
+            for i, barcode in enumerate(consolidated_barcodes, 1):
                 tickets.append({
                     'barcode': barcode,
                     'metadata': base_pass_info,
                     'ticket_number': i,
-                    'total_tickets': len(barcodes)
+                    'total_tickets': len(consolidated_barcodes)
                 })
         else:
             # No barcodes, create single pass
@@ -570,6 +579,12 @@ class PassGenerator:
         if brand_colors:
             pass_json['a2w_brandColors'] = brand_colors
         
+        # Add associatedStoreIdentifiers if available
+        associated_store_ids = self._get_associated_store_identifiers()
+        if associated_store_ids:
+            pass_json["associatedStoreIdentifiers"] = associated_store_ids
+            print(f"✅ Added associatedStoreIdentifiers: {associated_store_ids}")
+        
         # Add barcode to the pass if available
         primary_barcode = pass_info.get('primary_barcode')
         if primary_barcode:
@@ -861,6 +876,23 @@ class PassGenerator:
         if thumb is not None:
             thumb.thumbnail((180, 180))
             thumb.save(os.path.join(temp_dir, 'thumbnail.png'), format='PNG')
+    
+    def _get_associated_store_identifiers(self) -> Optional[List[int]]:
+        """Get the App Store identifiers for associated apps.
+        
+        Returns:
+            List of iTunes Store item identifiers, or None if not configured
+        """
+        app_store_id = os.getenv('APP_STORE_ID')
+        if app_store_id:
+            try:
+                # Convert to int as required by PassKit
+                store_id = int(app_store_id)
+                return [store_id]
+            except ValueError:
+                print(f"⚠️ Invalid APP_STORE_ID format: {app_store_id}")
+                return None
+        return None
     
     def _check_certificates_available(self) -> bool:
         """Check if all required certificate files are available.
@@ -1391,6 +1423,109 @@ class PassGenerator:
             return desc[:80]
         except Exception:
             return f"Digital pass from {filename}"[:80]
+
+    def _consolidate_barcodes_for_single_pass(self, barcodes: List[Dict[str, Any]], filename: str) -> List[Dict[str, Any]]:
+        """Consolidate barcodes for single-pass documents to avoid creating multiple passes.
+        
+        This handles cases where:
+        1. The same barcode appears multiple times in different formats (visual + text)
+        2. Multiple related barcode data strings are extracted from text but represent the same logical code
+        3. Data Matrix codes that should result in a single pass
+        
+        Args:
+            barcodes: List of detected barcodes
+            filename: PDF filename for context
+            
+        Returns:
+            Consolidated list of barcodes (usually 1 for single-pass documents)
+        """
+        if not barcodes:
+            return barcodes
+        
+        if len(barcodes) == 1:
+            return barcodes
+        
+        print(f"🔄 Consolidating {len(barcodes)} barcodes for single-pass document")
+        
+        # Group barcodes by detection method
+        visual_barcodes = [bc for bc in barcodes if bc.get('source') != 'text-analysis']
+        text_barcodes = [bc for bc in barcodes if bc.get('source') == 'text-analysis']
+        
+        print(f"   Visual: {len(visual_barcodes)}, Text: {len(text_barcodes)}")
+        
+        # Strategy 1: If we have visual barcodes, prefer them over text extraction
+        if visual_barcodes:
+            print("   ✅ Using visual detection results (more reliable)")
+            return visual_barcodes
+        
+        # Strategy 2: For text-only detection, check if we should consolidate
+        if text_barcodes:
+            # Check if all text barcodes are the same type and from similar sources
+            same_type = len(set(bc.get('type') for bc in text_barcodes)) == 1
+            same_method_pattern = len(set(bc.get('method', '').split('_')[0] for bc in text_barcodes)) == 1
+            
+            print(f"   Same type: {same_type}, Same method pattern: {same_method_pattern}")
+            
+            # Check for duplicate identical barcodes (user's feedback about identical QR codes from single Data Matrix)
+            unique_data = list(set(bc.get('data', '') for bc in text_barcodes))
+            has_duplicates = len(unique_data) < len(text_barcodes)
+            
+            print(f"   Unique data strings: {len(unique_data)}, Has duplicates: {has_duplicates}")
+            
+            # Consolidation heuristics
+            should_consolidate = False
+            consolidation_reason = ""
+            
+            # Heuristic 1: Identical QR codes from single Data Matrix (user's feedback)
+            if has_duplicates and len(text_barcodes) <= 3:
+                should_consolidate = True
+                consolidation_reason = "duplicate_barcodes"
+            
+            # Heuristic 2: Data Matrix from text extraction in single-pass document
+            elif same_type and text_barcodes[0].get('type') == 'DATAMATRIX' and len(text_barcodes) <= 3:
+                filename_lower = filename.lower()
+                single_pass_hints = ['ticket', 'pass', 'boarding', 'admission', 'data_matrix', 'datamatrix']
+                
+                if any(hint in filename_lower for hint in single_pass_hints):
+                    should_consolidate = True
+                    consolidation_reason = "single_pass_datamatrix"
+            
+            # Heuristic 3: Same type QR codes that might be misidentified Data Matrix
+            elif same_type and text_barcodes[0].get('type') == 'QRCODE' and len(text_barcodes) <= 3:
+                filename_lower = filename.lower()
+                datamatrix_hints = ['data_matrix', 'datamatrix']
+                
+                if any(hint in filename_lower for hint in datamatrix_hints):
+                    should_consolidate = True
+                    consolidation_reason = "qr_likely_datamatrix"
+                    # Re-classify as Data Matrix since filename suggests it
+                    for bc in text_barcodes:
+                        bc['type'] = 'DATAMATRIX'
+                        bc['format'] = 'PKBarcodeFormatQR'  # Data Matrix uses QR format in Apple Wallet
+                        bc['reclassified'] = True
+                        bc['original_type'] = 'QRCODE'
+            
+            if should_consolidate:
+                print(f"   📋 Consolidating due to: {consolidation_reason}")
+                
+                # Select best barcode (longest data, highest confidence, etc.)
+                best_barcode = max(text_barcodes, key=lambda bc: (
+                    len(bc.get('data', '')),
+                    bc.get('confidence', 0),
+                    -bc.get('center_distance', float('inf'))
+                ))
+                
+                print(f"   ✅ Selected best barcode: {best_barcode.get('data', '')[:30]}... ({len(best_barcode.get('data', ''))} chars)")
+                
+                # Add metadata about consolidation
+                best_barcode['consolidated_from'] = len(text_barcodes)
+                best_barcode['consolidation_method'] = consolidation_reason
+                
+                return [best_barcode]
+        
+        # Strategy 3: Default behavior - return all barcodes if no consolidation applies
+        print("   🔄 No consolidation applied, using all barcodes")
+        return barcodes
 
 
 # Global instance
