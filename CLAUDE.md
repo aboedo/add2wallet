@@ -207,6 +207,22 @@ open Add2Wallet.xcworkspace
 3. Update UI to display new fields
 4. Add backend response fields
 
+### Configuring App Store Backlinks
+
+Add2Wallet passes can include backlinks to the iOS app using Apple's `associatedStoreIdentifiers` field:
+
+1. **Set APP_STORE_ID environment variable** with your iTunes Store item identifier
+2. **Get the ID from App Store Connect** after app publication
+3. **Passes will show "Related Apps" section** in Apple Wallet
+4. **Users can tap to download/open** the Add2Wallet app
+
+**Example:**
+```bash
+export APP_STORE_ID=1234567890
+```
+
+The feature is implemented in `pass_generator.py:866` and automatically adds the identifier to all generated passes when configured.
+
 ## Key Files Reference
 
 ### Backend
@@ -227,6 +243,7 @@ open Add2Wallet.xcworkspace
 ### Backend
 - `OPENAI_API_KEY` - OpenAI API access (required for AI features)
 - `API_KEY` - Backend API authentication (default: "development-api-key")
+- `APP_STORE_ID` - iTunes Store item identifier for pass backlinks (optional)
 
 ### Production URLs
 - Backend: `https://add2wallet-backend-production.up.railway.app`
