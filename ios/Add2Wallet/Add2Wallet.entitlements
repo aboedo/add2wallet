@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:add2wallet.app</string>
+		<string>applinks:links.add2wallet.app</string>
 	</array>
 	<key>com.apple.developer.pass-type-identifiers</key>
 	<array>

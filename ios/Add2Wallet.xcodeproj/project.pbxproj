@@ -13,12 +13,13 @@
 		2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */; };
 		3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */; };
 		3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54837C8CBF4AA918D1214C04 /* NetworkService.swift */; };
+		60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */; };
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
-        7572110EA39EC51E5C14CBF3 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3A6C1E1122334455667788 /* ActionViewController.swift */; };
+		7DBCF60D8DFD81421974D801 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50AEC1A177FC2937D94926BA /* ActionViewController.swift */; };
 		83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
-		C1F3AA9B1A2B4C4D9E8F0001 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F3AA9A1A2B4C4D9E8F0001 /* PDFPreviewView.swift */; };
+		DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */; };
 		E218D7BB1695B1A64D72FADD /* Add2WalletShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FC1358C8D4ADD78243CEA248 /* ContentViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */; };
 /* End PBXBuildFile section */
@@ -88,20 +89,21 @@
 		0CE5125D2B22D9E8C032B3FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		13372BE4DCB2183466AD3A53 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		C1F3AA9A1A2B4C4D9E8F0001 /* PDFPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPreviewView.swift; sourceTree = "<group>"; };
 		14163BCA5715B9BC2F933391 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		24D7B9D34B651C0C6D4C8D38 /* Add2WalletTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Add2WalletTests-Info.plist"; sourceTree = "<group>"; };
 		41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtensionTests.swift; sourceTree = "<group>"; };
 		4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Add2WalletShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-        7A3A6C1E1122334455667788 /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
+		50AEC1A177FC2937D94926BA /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		54837C8CBF4AA918D1214C04 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+Add2Wallet.swift"; sourceTree = "<group>"; };
 		91BE638A702EBF2E23F0C455 /* Add2Wallet.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2Wallet.entitlements; sourceTree = "<group>"; };
 		93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
 		B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModelTests.swift; sourceTree = "<group>"; };
 		C7287DB2FC0F76437E783DEA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPreviewView.swift; sourceTree = "<group>"; };
 		E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2WalletShareExtension.entitlements; sourceTree = "<group>"; };
 		EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Add2WalletApp.swift; sourceTree = "<group>"; };
 		F0647FA2EE1335D1CD3543C9 /* Add2Wallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Add2Wallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -159,6 +161,7 @@
 				9502FAC6D87A2BCDD2579505 /* Views */,
 				91BE638A702EBF2E23F0C455 /* Add2Wallet.entitlements */,
 				EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */,
+				5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */,
 				C7287DB2FC0F76437E783DEA /* Assets.xcassets */,
 				14163BCA5715B9BC2F933391 /* Info.plist */,
 			);
@@ -186,7 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				13372BE4DCB2183466AD3A53 /* ContentView.swift */,
-				C1F3AA9A1A2B4C4D9E8F0001 /* PDFPreviewView.swift */,
+				CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -221,9 +224,9 @@
 		B5FBE6E61076D1EE32FDAD93 /* Add2WalletShareExtension */ = {
 			isa = PBXGroup;
 			children = (
-                E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */,
-                0CE5125D2B22D9E8C032B3FC /* Info.plist */,
-                7A3A6C1E1122334455667788 /* ActionViewController.swift */,
+				50AEC1A177FC2937D94926BA /* ActionViewController.swift */,
+				E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */,
+				0CE5125D2B22D9E8C032B3FC /* Info.plist */,
 			);
 			path = Add2WalletShareExtension;
 			sourceTree = "<group>";
@@ -386,21 +389,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */,
+				60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */,
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
 				2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */,
 				B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */,
+				DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */,
 				3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */,
 				83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */,
-				C1F3AA9B1A2B4C4D9E8F0001 /* PDFPreviewView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		9A5278112B18300B913C6C08 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
-            files = (
-                7572110EA39EC51E5C14CBF3 /* ActionViewController.swift in Sources */,
-            );
+			files = (
+				7DBCF60D8DFD81421974D801 /* ActionViewController.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		FEEB636C491BF8236EFB4BBF /* Sources */ = {
