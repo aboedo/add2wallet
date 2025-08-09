@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [ "H9DPH4DQG7.com.andresboedo.add2wallet" ],
+        "components": [
+          {
+            "/": "/share/*"
+          }
+        ]
+      }
+    ]
+  }
+}

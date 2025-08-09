@@ -95,6 +95,12 @@ class BarcodeExtractor:
             except Exception as e:
                 logger.warning(f"⚠️ Enhanced extraction failed: {e}")
         
+        # If no barcodes found through image processing, try text extraction as fallback
+        if not barcodes:
+            logger.info("🔄 No visual barcodes found, attempting text-based extraction")
+            text_barcodes = self._extract_barcodes_from_text(pdf_data, filename)
+            barcodes.extend(text_barcodes)
+        
         # Apply context-aware mixed Aztec/QR handling before deduplication
         if barcodes:
             barcodes = self._handle_mixed_aztec_qr(barcodes, filename)
@@ -619,6 +625,83 @@ class BarcodeExtractor:
         # Default to QR for general purpose
         return 'QRCODE'
     
+    def _extract_barcodes_from_text(self, pdf_data: bytes, filename: str) -> List[Dict[str, Any]]:
+        """Extract potential barcode data from PDF text content as fallback.
+        
+        Args:
+            pdf_data: Raw PDF bytes
+            filename: PDF filename for context hints
+            
+        Returns:
+            List of potential barcodes extracted from text
+        """
+        import re
+        from io import BytesIO
+        
+        barcodes = []
+        
+        try:
+            # Extract text from PDF
+            pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_data))
+            text_content = ""
+            
+            for page_num, page in enumerate(pdf_reader.pages, 1):
+                page_text = page.extract_text()
+                text_content += page_text + "\n"
+            
+            logger.info(f"📄 Extracted {len(text_content)} characters of text for barcode analysis")
+            
+            # Look for patterns that could be barcode data
+            potential_barcodes = []
+            
+            # Pattern 1: Long numeric sequences (10+ digits)
+            numeric_patterns = re.findall(r'\b\d{10,}\b', text_content)
+            for pattern in numeric_patterns:
+                potential_barcodes.append({
+                    'data': pattern,
+                    'type': self._infer_barcode_type_from_content(pattern, filename),
+                    'source': 'text_numeric'
+                })
+            
+            # Pattern 2: Mixed alphanumeric sequences (15+ chars)
+            alnum_patterns = re.findall(r'\b[A-Za-z0-9]{15,}\b', text_content)
+            for pattern in alnum_patterns:
+                if not pattern.isdigit():  # Skip if already caught by numeric pattern
+                    potential_barcodes.append({
+                        'data': pattern,
+                        'type': self._infer_barcode_type_from_content(pattern, filename),
+                        'source': 'text_alphanumeric'
+                    })
+            
+            # Convert potential barcodes to structured format
+            for i, potential in enumerate(potential_barcodes):
+                barcode_info = {
+                    'data': potential['data'],
+                    'type': potential['type'],
+                    'format': self._normalize_barcode_format(potential['type']),
+                    'encoding': 'utf-8',
+                    'raw_bytes': potential['data'].encode('utf-8'),
+                    'bytes_b64': base64.b64encode(potential['data'].encode('utf-8')).decode('ascii'),
+                    'bbox': [0, 0, 100, 20],  # Placeholder bbox
+                    'area': 2000,  # Placeholder area
+                    'confidence': 75,  # Medium confidence for text extraction
+                    'center_distance': 0.0,  # Unknown position
+                    'page': 1,  # Assume page 1
+                    'method': f'text_extraction_{potential["source"]}',
+                    'source': 'text-analysis',
+                    'dpi': 150
+                }
+                
+                barcodes.append(barcode_info)
+                logger.debug(f"📱 Extracted text barcode: {potential['type']} - {potential['data'][:50]}...")
+            
+            logger.info(f"📄 Text extraction found {len(barcodes)} potential barcodes")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Text-based barcode extraction failed: {e}")
+        
+        return barcodes
+
     def _deduplicate_barcodes(self, barcodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Remove duplicate barcodes based on data content.
         

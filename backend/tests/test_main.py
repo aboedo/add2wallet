@@ -38,6 +38,61 @@ def test_upload_pdf_success():
     assert "job_id" in json_response
     assert json_response["status"] == "processing"
 
+def test_upload_aztec_pdf_integration():
+    """Test uploading the actual Aztec PDF through the API."""
+    import os
+    
+    # Ensure API key is set for test
+    os.environ["API_KEY"] = "development-api-key"
+    
+    # Path to the test Aztec PDF
+    test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
+    
+    if not os.path.exists(test_file):
+        pytest.skip(f"Aztec test file not found: {test_file}")
+    
+    # Read the test PDF
+    with open(test_file, 'rb') as f:
+        pdf_content = f.read()
+    
+    files = {"file": ("pass_with_aztec_code.pdf", pdf_content, "application/pdf")}
+    data = {
+        "user_id": "test-user-aztec",
+        "session_token": "test-token-aztec"
+    }
+    headers = {"X-API-Key": "development-api-key"}
+    
+    response = client.post("/upload", files=files, data=data, headers=headers)
+    
+    assert response.status_code == 200
+    json_response = response.json()
+    assert "job_id" in json_response
+    assert json_response["status"] in ["processing", "completed"]
+    
+    # If completed immediately, check ticket count
+    if json_response["status"] == "completed":
+        assert "ticket_count" in json_response
+        # Should find at least 1 ticket (ideally 3 for the 3 Aztec codes)
+        assert json_response["ticket_count"] >= 1
+        
+        print(f"✅ Aztec upload test: Found {json_response['ticket_count']} ticket(s)")
+        
+        # Test downloading the tickets
+        job_id = json_response["job_id"]
+        tickets_response = client.get(f"/tickets/{job_id}", headers=headers)
+        assert tickets_response.status_code == 200
+        
+        tickets_data = tickets_response.json()
+        assert "tickets" in tickets_data
+        assert len(tickets_data["tickets"]) == json_response["ticket_count"]
+        
+        # Verify each ticket has barcode info
+        for ticket in tickets_data["tickets"]:
+            assert "has_barcode" in ticket
+            if ticket["has_barcode"]:
+                assert "barcode_type" in ticket
+                print(f"  Ticket: {ticket.get('title', 'N/A')} - {ticket.get('barcode_type', 'N/A')}")
+
 def test_upload_pdf_invalid_api_key():
     pdf_content = create_test_pdf()
     

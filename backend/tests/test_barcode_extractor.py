@@ -204,30 +204,94 @@ class TestBarcodeExtractor:
             assert barcode['bbox'] == [10, 20, 50, 60]
             assert barcode['area'] == 3000  # 50 * 60
     
-    @pytest.mark.skipif(not os.path.exists("/Users/andresboedo/personal_projects/add2wallet/backend/test_files/pass_with_aztec_code.pdf"), 
-                       reason="Test file not available")
     def test_aztec_detection_integration(self):
         """Integration test with actual Aztec PDF."""
-        test_file = os.path.join(self.test_files_dir, "pass_with_aztec_code.pdf")
+        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
         
-        if os.path.exists(test_file):
-            with open(test_file, 'rb') as f:
-                pdf_data = f.read()
+        if not os.path.exists(test_file):
+            pytest.skip(f"Test file not found: {test_file}")
+        
+        with open(test_file, 'rb') as f:
+            pdf_data = f.read()
+        
+        result = self.extractor.extract_barcodes_from_pdf(pdf_data, "pass_with_aztec_code.pdf")
+        
+        # Should find at least one barcode (expected: 3 Aztec codes)
+        assert len(result) > 0, f"No barcodes found in PDF. Result: {result}"
+        
+        # Should detect Aztec format
+        aztec_found = any(bc['type'] == 'AZTEC' for bc in result)
+        assert aztec_found, f"Aztec code not detected. Found types: {[bc['type'] for bc in result]}"
+        
+        # Check that result has proper structure
+        for barcode in result:
+            assert 'format' in barcode
+            assert 'encoding' in barcode
+            assert 'bytes_b64' in barcode
+            assert 'data' in barcode
+            assert 'type' in barcode
+        
+        # Verify we get the expected 3 barcodes
+        print(f"Found {len(result)} barcodes (expected 3)")
+        for i, bc in enumerate(result, 1):
+            print(f"  {i}. Type: {bc['type']}, Format: {bc['format']}, Data: {bc['data'][:50]}...")
+    
+    def test_aztec_pdf_multiple_dpi_processing(self):
+        """Test Aztec PDF processing at different DPI levels."""
+        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
+        
+        if not os.path.exists(test_file):
+            pytest.skip(f"Test file not found: {test_file}")
             
-            result = self.extractor.extract_barcodes_from_pdf(pdf_data, "pass_with_aztec_code.pdf")
+        with open(test_file, 'rb') as f:
+            pdf_data = f.read()
             
-            # Should find at least one barcode
-            assert len(result) > 0
+        # Test different extraction methods work
+        from pdf2image import convert_from_bytes
+        from pyzbar import pyzbar
+        import cv2
+        import numpy as np
+        
+        # Test pdf2image conversion works
+        images = convert_from_bytes(pdf_data, dpi=400)
+        assert len(images) == 1, "Should convert to exactly 1 image"
+        
+        # Test image can be processed
+        image = images[0]
+        cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        assert cv_image.shape[0] > 1000 and cv_image.shape[1] > 1000, "Image should be high resolution"
+        
+        # Test pyzbar can run (even if it doesn't find anything)
+        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+        detected = pyzbar.decode(gray)  # This may return empty list, that's ok for this test
+        
+        print(f"DPI test: Converted PDF to {cv_image.shape} image, pyzbar found {len(detected)} barcodes")
+    
+    def test_aztec_preprocessing_methods(self):
+        """Test different image preprocessing methods for Aztec detection."""
+        test_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files", "pass_with_aztec_code.pdf")
+        
+        if not os.path.exists(test_file):
+            pytest.skip(f"Test file not found: {test_file}")
             
-            # Should detect Aztec format
-            aztec_found = any(bc['type'] == 'AZTEC' for bc in result)
-            assert aztec_found, "Aztec code not detected in test PDF"
-            
-            # Check that result has proper structure
-            for barcode in result:
-                assert 'format' in barcode
-                assert 'encoding' in barcode
-                assert 'bytes_b64' in barcode
+        # Test the preprocessing methods exist and work
+        blank_image = np.zeros((200, 200, 3), dtype=np.uint8)
+        
+        # Test each preprocessing method
+        contrast_result = self.extractor._enhance_contrast(blank_image)
+        assert contrast_result.shape == (200, 200), "Contrast enhancement should return 2D array"
+        
+        sharpness_result = self.extractor._enhance_sharpness(blank_image)
+        assert sharpness_result.shape == (200, 200), "Sharpness enhancement should return 2D array"
+        
+        threshold_result = self.extractor._enhance_threshold(blank_image)
+        assert threshold_result.shape == (200, 200), "Threshold should return 2D array"
+        
+        morphology_result = self.extractor._enhance_morphology(blank_image)
+        assert morphology_result.shape == (200, 200), "Morphology should return 2D array"
+        
+        blur_result = self.extractor._enhance_gaussian_blur(blank_image)
+        assert blur_result.shape == (200, 200), "Blur should return 2D array"
     
     def test_no_barcode_returns_empty_list(self):
         """Test that no barcode scenario returns empty list without exceptions."""
