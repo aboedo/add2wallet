@@ -5,6 +5,7 @@ struct SavedPassesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedPass.createdAt, order: .reverse) private var savedPasses: [SavedPass]
     @State private var selectedPass: SavedPass?
+    @State private var selectedTab = 0
     
     var body: some View {
         NavigationView {
@@ -15,7 +16,7 @@ struct SavedPassesView: View {
                     passListView
                 }
             }
-            .navigationTitle("Your Passes")
+            .navigationTitle("My Passes")
             .navigationBarTitleDisplayMode(.large)
         }
         .sheet(item: $selectedPass) { pass in
@@ -33,11 +34,23 @@ struct SavedPassesView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            Text("Generated passes will appear here for easy access")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+            Group {
+                Text("Start by ")
+                    .foregroundColor(.secondary) +
+                Text("generating your first Pass")
+                    .foregroundColor(.blue)
+                    .underline()
+            }
+            .font(.body)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal)
+            .onTapGesture {
+                // Switch to Generate Pass tab
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("SwitchToGeneratePassTab"),
+                    object: nil
+                )
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))

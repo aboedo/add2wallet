@@ -6,19 +6,22 @@ struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
     @State private var passViewController: PKAddPassesViewController?
     @State private var showingAddPassVC = false
+    @State private var selectedTab = 0
     @Environment(\.modelContext) private var modelContext
     
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             generatePassView
                 .tabItem {
                     Label("Generate Pass", systemImage: "plus.circle")
                 }
+                .tag(0)
             
             SavedPassesView()
                 .tabItem {
-                    Label("Your Passes", systemImage: "wallet.pass")
+                    Label("My Passes", systemImage: "wallet.pass")
                 }
+                .tag(1)
         }
     }
     
@@ -146,6 +149,13 @@ struct ContentView: View {
                 ) { _ in
                     self.passViewController = nil
                     self.showingAddPassVC = false
+                }
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("SwitchToGeneratePassTab"),
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    self.selectedTab = 0
                 }
             }
             .sheet(isPresented: $showingAddPassVC) {

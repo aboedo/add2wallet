@@ -1,7 +1,58 @@
-# Add2Wallet: PDF to Apple Wallet Pass Converter - Project Plan
+# Add2Wallet iOS App Polish Plan
 
-## Project Overview
-A two-component system that converts PDF files (tickets, passes, etc.) into Apple Wallet passes using AI-powered document processing.
+## Progress Tracker
+
+### Task List
+
+- [ ] Task 1: Update empty state in "My Passes" tab
+  - Change copy to "Start by generating your first Pass" 
+  - Make "generating your first Pass" link to Generate Pass tab
+  - Update tab title from "Your Passes" to "My Passes"
+
+- [ ] Task 2: Add PDF storage to SavedPass model
+  - Add `pdfData: Data` property to SavedPass
+  - Update save logic to include PDF data
+  - Add PDF preview in SavedPassDetailView with full-screen tap
+
+- [ ] Task 3: Multi-pass support in SavedPass model
+  - Replace single `passData` with `passDatas: [Data]` array
+  - Group multiple passes in one SavedPass entry
+  - Add pass count badge when > 1
+  - Update detail view for multiple passes
+
+- [ ] Task 4: Implement fake progress bar
+  - Add progress tracking with non-linear steps
+  - Replace ProcessingView with progress bar
+  - 30-second total with realistic intermediate steps
+
+- [ ] Task 5: Fix bottom view in Generate Pass tab
+  - Only show when `selectedFileURL != nil || isProcessing`
+  - Remove empty view when no content
+
+- [ ] Task 6: Visual style updates for My Passes view
+  - Extract and use pass colors from metadata
+  - Move date to right side of row
+  - Group passes by month
+  - Sort by date within months
+
+- [ ] Task 7: Enhanced pass type thumbnails
+  - Add museum, concert, sports icons
+  - Improve icon matching for pass types
+  - Update color scheme
+
+- [ ] Task 8: Create tracking documentation
+  - ✅ Created this PLAN.md file
+  - Update checklist after each task
+
+## Notes
+
+- No data migration needed - breaking changes to SavedPass model are OK
+- Build after each task to verify compilation
+- Commit after each completed task
+
+---
+
+# Original Project Plan
 
 ## High-Level System Architecture
 
