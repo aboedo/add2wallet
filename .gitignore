@@ -53,4 +53,5 @@ backend/.env.railway
 # Certificates
 backend/certificates/*.pem
 backend/certificates/*.p12
-backend/certificates/*.cer
+backend/certificates/*.cerbackend/.env.railway
+backend/set_railway_env.sh
