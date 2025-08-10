@@ -83,49 +83,52 @@ struct ContentView: View {
                     .padding()
                 }
 
-                // Fixed bottom action bar
-                VStack(spacing: 8) {
-                    if let message = viewModel.statusMessage, !message.isEmpty {
-                        Text(message)
-                            .font(.footnote)
-                            .foregroundColor(viewModel.hasError ? .red : .green)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                    }
-                    if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
-                        HStack(spacing: 12) {
-                            Button(role: .cancel) {
-                                viewModel.clearSelection()
-                            } label: {
-                                Label("Cancel", systemImage: "xmark")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
+                // Fixed bottom action bar - only show when needed
+                if viewModel.selectedFileURL != nil || viewModel.isProcessing || (viewModel.statusMessage != nil && !viewModel.statusMessage!.isEmpty) {
+                    VStack(spacing: 8) {
+                        if let message = viewModel.statusMessage, !message.isEmpty {
+                            Text(message)
+                                .font(.footnote)
+                                .foregroundColor(viewModel.hasError ? .red : .green)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                        }
+                        if let _ = viewModel.selectedFileURL, !viewModel.isProcessing {
+                            HStack(spacing: 12) {
+                                Button(role: .cancel) {
+                                    viewModel.clearSelection()
+                                } label: {
+                                    Label("Cancel", systemImage: "xmark")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
 
-                            Button {
-                                if passViewController != nil {
-                                    showingAddPassVC = true
-                                } else {
-                                    viewModel.uploadSelected()
+                                Button {
+                                    if passViewController != nil {
+                                        showingAddPassVC = true
+                                    } else {
+                                        viewModel.uploadSelected()
+                                    }
+                                } label: {
+                                    if passViewController != nil {
+                                        Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
+                                            .frame(maxWidth: .infinity)
+                                    } else {
+                                        Label("Create Pass", systemImage: "wallet.pass")
+                                            .frame(maxWidth: .infinity)
+                                    }
                                 }
-                            } label: {
-                                if passViewController != nil {
-                                    Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
-                                        .frame(maxWidth: .infinity)
-                                } else {
-                                    Label("Create Pass", systemImage: "wallet.pass")
-                                        .frame(maxWidth: .infinity)
-                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(passViewController != nil ? .green : .blue)
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(passViewController != nil ? .green : .blue)
                         }
                     }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
+                    .background(.thinMaterial)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
-                .background(.thinMaterial)
             }
             .navigationBarHidden(true)
             .onAppear {

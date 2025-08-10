@@ -20,7 +20,7 @@
   - Add pass count badge when > 1
   - Update detail view for multiple passes
 
-- [ ] Task 4: Implement fake progress bar
+- [x] Task 4: Implement fake progress bar
   - Add progress tracking with non-linear steps
   - Replace ProcessingView with progress bar
   - 30-second total with realistic intermediate steps
