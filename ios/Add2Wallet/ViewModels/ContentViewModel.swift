@@ -89,7 +89,7 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
-            statusMessage = "Ready to create an Apple Wallet pass"
+            statusMessage = nil
             hasError = false
         } catch {
             statusMessage = "Error reading PDF: \(error.localizedDescription)"
@@ -141,7 +141,7 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
-            statusMessage = "Ready to create an Apple Wallet pass"
+            statusMessage = nil
             hasError = false
             
             print("🟢 ContentViewModel: PDF ready for preview and manual upload")
@@ -244,8 +244,6 @@ class ContentViewModel: ObservableObject {
             // Present the add pass view controller
             let passVC = PKAddPassesViewController(pass: pass)
             
-            // For now, show success message - we'll need to present the VC from the View
-            statusMessage = "Pass ready! Tap to add to Wallet"
             hasError = false
             
             // Store the pass data for the view to access
@@ -315,7 +313,7 @@ class ContentViewModel: ObservableObject {
 
             let passVC = PKAddPassesViewController(passes: passes)
 
-            statusMessage = "Passes ready! Tap to add to Wallet"
+            statusMessage = nil
             hasError = false
 
             NotificationCenter.default.post(

@@ -231,7 +231,6 @@ struct SavedPassDetailView: View {
             }
             
             showingAddPassVC = true
-            statusMessage = "Ready to add to Wallet"
             hasError = false
             
         } catch {

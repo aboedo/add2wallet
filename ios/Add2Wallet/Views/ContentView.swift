@@ -309,8 +309,7 @@ struct PassDetailsView: View {
                 keyValueRow("Type", metadata.eventType?.capitalized)
                 keyValueRow("Title", metadata.title ?? metadata.eventName)
                 keyValueRow("Description", metadata.description ?? metadata.eventDescription)
-                keyValueRow("Date", metadata.date)
-                keyValueRow("Time", metadata.time)
+                keyValueRow("Date & Time", combineDateTime(date: metadata.date, time: metadata.time))
                 keyValueRow("Venue", metadata.venueName)
                 keyValueRow("Address", metadata.venueAddress)
                 keyValueRow("City", metadata.city)
@@ -433,6 +432,22 @@ struct PassDetailsView: View {
                     coordinateFromAddress = location.coordinate
                 }
             }
+        }
+    }
+
+    // Helper function to combine date and time intelligently
+    private func combineDateTime(date: String?, time: String?) -> String? {
+        let cleanDate = date?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanTime = time?.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if let date = cleanDate, !date.isEmpty, let time = cleanTime, !time.isEmpty {
+            return "\(date) at \(time)"
+        } else if let date = cleanDate, !date.isEmpty {
+            return date
+        } else if let time = cleanTime, !time.isEmpty {
+            return time
+        } else {
+            return nil
         }
     }
 

@@ -54,7 +54,22 @@ class SavedPass {
     
     // Convenience computed properties for display
     var displayTitle: String {
-        return title.isEmpty ? (passType.isEmpty ? "Pass" : passType) : title
+        let baseTitle = title.isEmpty ? (passType.isEmpty ? "Pass" : passType) : title
+        return cleanTicketSuffix(from: baseTitle)
+    }
+    
+    // Helper function to remove "Ticket" suffix from titles
+    private func cleanTicketSuffix(from title: String) -> String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Check if title ends with "Ticket" (case-insensitive)
+        if trimmed.lowercased().hasSuffix("ticket") {
+            let endIndex = trimmed.index(trimmed.endIndex, offsetBy: -6) // "ticket" has 6 characters
+            let withoutTicket = String(trimmed[..<endIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
+            return withoutTicket.isEmpty ? trimmed : withoutTicket
+        }
+        
+        return trimmed
     }
     
     var displaySubtitle: String {

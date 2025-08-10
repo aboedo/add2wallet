@@ -98,7 +98,7 @@ The app handles multiple URL schemes:
 ```bash
 # Setup
 cd backend
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
@@ -150,7 +150,7 @@ xcodebuild test -scheme Add2Wallet
 
 ```bash
 cd backend
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
@@ -159,7 +159,7 @@ export OPENAI_API_KEY="your-key-here"
 export API_KEY="development-api-key"
 
 # Run development server
-python run.py
+python3 run.py
 # Server available at: http://localhost:8000
 # API docs at: http://localhost:8000/docs
 ```
@@ -180,7 +180,7 @@ open Add2Wallet.xcworkspace
 
 ### Full Integration Testing
 
-1. Start backend server: `cd backend && python run.py`
+1. Start backend server: `cd backend && python3 run.py`
 2. Run iOS app in simulator
 3. Test PDF processing end-to-end
 
