@@ -112,43 +112,47 @@ struct PassRowView: View {
                 passIcon
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(pass.displayTitle)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                        
-                        Spacer()
-                        
-                        if let eventDate = pass.eventDate, !eventDate.isEmpty {
-                            Text(eventDate)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        } else {
-                            Text(formatDateShort(pass.createdAt))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
+                    // Top row: Pass title
+                    Text(pass.displayTitle)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    HStack {
-                        if !pass.displaySubtitle.isEmpty {
-                            Text(pass.displaySubtitle)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .lineLimit(2)
+                    // Bottom row: Venue/Address/Ticket count on left, Date on right
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            if !pass.displaySubtitle.isEmpty {
+                                Text(pass.displaySubtitle)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(2)
+                            }
+                            
+                            if pass.passCount > 1 {
+                                Text("\(pass.passCount) tickets")
+                                    .font(.caption)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(passColor.opacity(0.15))
+                                    .foregroundColor(passColor)
+                                    .clipShape(Capsule())
+                            }
                         }
                         
                         Spacer()
                         
-                        if pass.passCount > 1 {
-                            Text("\(pass.passCount) passes")
-                                .font(.caption)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(passColor.opacity(0.15))
-                                .foregroundColor(passColor)
-                                .clipShape(Capsule())
+                        // Date on bottom right
+                        VStack(alignment: .trailing) {
+                            if let eventDate = pass.eventDate, !eventDate.isEmpty {
+                                Text(eventDate)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text(formatDateShort(pass.createdAt))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
                 }
@@ -184,35 +188,67 @@ struct PassRowView: View {
     }
     
     private var passColor: Color {
-        // Try to extract color from metadata if available
+        // First try to use actual pass colors from metadata
         if let metadata = pass.metadata {
-            // Use event type to determine color
-            let eventType = (metadata.eventType ?? pass.passType).lowercased()
-            
-            switch eventType {
-            case let type where type.contains("museum"):
-                return .brown
-            case let type where type.contains("concert") || type.contains("music"):
-                return .purple
-            case let type where type.contains("event") || type.contains("festival"):
-                return .orange
-            case let type where type.contains("flight") || type.contains("airline"):
-                return .blue
-            case let type where type.contains("movie") || type.contains("cinema"):
-                return .red
-            case let type where type.contains("sport") || type.contains("game"):
-                return .green
-            case let type where type.contains("transit") || type.contains("train") || type.contains("bus"):
-                return .cyan
-            case let type where type.contains("theatre") || type.contains("theater"):
-                return .indigo
-            default:
-                return .gray
+            // Check if we have the actual pass colors
+            if let backgroundColor = metadata.backgroundColor {
+                return parseRGBColor(backgroundColor) ?? fallbackColorFromEventType(metadata)
             }
+            return fallbackColorFromEventType(metadata)
         }
         
-        // Fallback to basic pass type
-        switch pass.passType.lowercased() {
+        // Final fallback to basic pass type
+        return fallbackColorFromPassType(pass.passType)
+    }
+    
+    private func parseRGBColor(_ rgbString: String) -> Color? {
+        // Parse rgb(r,g,b) format
+        let pattern = #"rgb\((\d+),\s*(\d+),\s*(\d+)\)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: rgbString, range: NSRange(rgbString.startIndex..., in: rgbString)) else {
+            return nil
+        }
+        
+        let rRange = Range(match.range(at: 1), in: rgbString)!
+        let gRange = Range(match.range(at: 2), in: rgbString)!
+        let bRange = Range(match.range(at: 3), in: rgbString)!
+        
+        guard let r = Double(String(rgbString[rRange])),
+              let g = Double(String(rgbString[gRange])),
+              let b = Double(String(rgbString[bRange])) else {
+            return nil
+        }
+        
+        return Color(red: r/255.0, green: g/255.0, blue: b/255.0)
+    }
+    
+    private func fallbackColorFromEventType(_ metadata: EnhancedPassMetadata) -> Color {
+        let eventType = (metadata.eventType ?? pass.passType).lowercased()
+        
+        switch eventType {
+        case let type where type.contains("museum"):
+            return .brown
+        case let type where type.contains("concert") || type.contains("music"):
+            return .purple
+        case let type where type.contains("event") || type.contains("festival"):
+            return .orange
+        case let type where type.contains("flight") || type.contains("airline"):
+            return .blue
+        case let type where type.contains("movie") || type.contains("cinema"):
+            return .red
+        case let type where type.contains("sport") || type.contains("game"):
+            return .green
+        case let type where type.contains("transit") || type.contains("train") || type.contains("bus"):
+            return .cyan
+        case let type where type.contains("theatre") || type.contains("theater"):
+            return .indigo
+        default:
+            return .gray
+        }
+    }
+    
+    private func fallbackColorFromPassType(_ passType: String) -> Color {
+        switch passType.lowercased() {
         case let type where type.contains("event"):
             return .orange
         case let type where type.contains("concert"):

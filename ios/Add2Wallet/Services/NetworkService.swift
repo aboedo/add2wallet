@@ -53,6 +53,11 @@ struct EnhancedPassMetadata: Codable {
     let processingTimestamp: String?
     let modelUsed: String?
     let enrichmentCompleted: Bool?
+    
+    // Pass Colors
+    let backgroundColor: String?
+    let foregroundColor: String?
+    let labelColor: String?
 
     enum CodingKeys: String, CodingKey {
         case eventType = "event_type"
@@ -93,6 +98,9 @@ struct EnhancedPassMetadata: Codable {
         case processingTimestamp = "processing_timestamp"
         case modelUsed = "model_used"
         case enrichmentCompleted = "enrichment_completed"
+        case backgroundColor = "background_color"
+        case foregroundColor = "foreground_color"
+        case labelColor = "label_color"
     }
 }
 

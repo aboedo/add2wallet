@@ -263,12 +263,14 @@ struct ProgressView: View {
 }
 
 import MapKit
+import CoreLocation
 
 struct PassDetailsView: View {
     let metadata: EnhancedPassMetadata
     let ticketCount: Int?
     private let keyWidth: CGFloat = 120
     @Environment(\.openURL) private var openURL
+    @State private var coordinateFromAddress: CLLocationCoordinate2D?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -296,21 +298,24 @@ struct PassDetailsView: View {
             .font(.subheadline)
             .foregroundColor(.secondary)
 
-            if let lat = metadata.latitude, let lon = metadata.longitude {
-                let coord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-                Map {
-                    Marker(metadata.venueName ?? "Venue", coordinate: coord)
-                }
-                .mapStyle(.standard)
-                .frame(height: 140)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
-                )
+            // Show map if we have address or coordinates
+            if shouldShowMap {
+                Map(coordinateRegion: .constant(mapRegion))
+                    .mapStyle(.standard)
+                    .frame(height: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
+                    )
+                    .onAppear {
+                        geocodeAddressIfNeeded()
+                    }
 
                 HStack(spacing: 8) {
                     Button {
-                        openInAppleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
+                        if let coord = finalCoordinate {
+                            openInAppleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
+                        }
                     } label: {
                         Label("Open in Apple Maps", systemImage: "map")
                             .frame(maxWidth: .infinity)
@@ -318,7 +323,9 @@ struct PassDetailsView: View {
                     .buttonStyle(.bordered)
 
                     Button {
-                        openInGoogleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
+                        if let coord = finalCoordinate {
+                            openInGoogleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
+                        }
                     } label: {
                         Label("Open in Google Maps", systemImage: "map.fill")
                             .frame(maxWidth: .infinity)
@@ -332,6 +339,70 @@ struct PassDetailsView: View {
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    private var shouldShowMap: Bool {
+        return hasAddress || hasCoordinates
+    }
+    
+    private var hasAddress: Bool {
+        return metadata.venueAddress?.isEmpty == false
+    }
+    
+    private var hasCoordinates: Bool {
+        return metadata.latitude != nil && metadata.longitude != nil
+    }
+    
+    private var finalCoordinate: CLLocationCoordinate2D? {
+        // Prefer geocoded address coordinate, fallback to GPS coordinates
+        if let coord = coordinateFromAddress {
+            return coord
+        } else if let lat = metadata.latitude, let lon = metadata.longitude {
+            return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        }
+        return nil
+    }
+    
+    private var mapRegion: MKCoordinateRegion {
+        guard let coord = finalCoordinate else {
+            return MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 0, longitude: 0), latitudinalMeters: 10000, longitudinalMeters: 10000)
+        }
+        // Zoom out more for better context - increased from default ~1000m to 3000m
+        return MKCoordinateRegion(center: coord, latitudinalMeters: 3000, longitudinalMeters: 3000)
+    }
+    
+    private func geocodeAddressIfNeeded() {
+        // Only geocode if we have an address and don't already have a geocoded coordinate
+        guard coordinateFromAddress == nil,
+              let address = metadata.venueAddress,
+              !address.isEmpty else {
+            return
+        }
+        
+        let geocoder = CLGeocoder()
+        
+        // Build full address string
+        var fullAddress = address
+        if let city = metadata.city, !city.isEmpty {
+            fullAddress += ", " + city
+        }
+        if let stateCountry = metadata.stateCountry, !stateCountry.isEmpty {
+            fullAddress += ", " + stateCountry
+        }
+        
+        geocoder.geocodeAddressString(fullAddress) { placemarks, error in
+            if let error = error {
+                print("Geocoding error: \(error)")
+                return
+            }
+            
+            if let placemark = placemarks?.first,
+               let location = placemark.location {
+                DispatchQueue.main.async {
+                    coordinateFromAddress = location.coordinate
+                }
+            }
+        }
     }
 
     @ViewBuilder

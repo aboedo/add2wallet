@@ -14,23 +14,44 @@ struct SavedPassDetailView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Header section
+                    // Header section with pass color theming
                     VStack(spacing: 8) {
                         Text(savedPass.displayTitle)
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .multilineTextAlignment(.center)
+                            .foregroundColor(.white)
                         
                         Text(savedPass.displaySubtitle)
                             .font(.title3)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                         
-                        Text("Created \(savedPass.formattedCreatedAt)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        HStack {
+                            Text("Created \(savedPass.formattedCreatedAt)")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.8))
+                            
+                            if savedPass.passCount > 1 {
+                                Text("•")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.6))
+                                
+                                Text("\(savedPass.passCount) tickets")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                        }
                     }
                     .padding()
+                    .background(
+                        LinearGradient(
+                            colors: [passHeaderColor, passHeaderColor.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     
                     // PDF Preview section if available
                     if let pdfData = savedPass.pdfData {
@@ -218,6 +239,85 @@ struct SavedPassDetailView: View {
             hasError = true
         }
     }
+    
+    private var passHeaderColor: Color {
+        // First try to use actual pass colors from metadata
+        if let metadata = savedPass.metadata {
+            // Check if we have the actual pass colors
+            if let backgroundColor = metadata.backgroundColor {
+                return parseRGBColor(backgroundColor) ?? fallbackColorFromEventType(metadata)
+            }
+            return fallbackColorFromEventType(metadata)
+        }
+        
+        // Final fallback to basic pass type
+        return fallbackColorFromPassType(savedPass.passType)
+    }
+    
+    private func parseRGBColor(_ rgbString: String) -> Color? {
+        // Parse rgb(r,g,b) format
+        let pattern = #"rgb\((\d+),\s*(\d+),\s*(\d+)\)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: rgbString, range: NSRange(rgbString.startIndex..., in: rgbString)) else {
+            return nil
+        }
+        
+        let rRange = Range(match.range(at: 1), in: rgbString)!
+        let gRange = Range(match.range(at: 2), in: rgbString)!
+        let bRange = Range(match.range(at: 3), in: rgbString)!
+        
+        guard let r = Double(String(rgbString[rRange])),
+              let g = Double(String(rgbString[gRange])),
+              let b = Double(String(rgbString[bRange])) else {
+            return nil
+        }
+        
+        return Color(red: r/255.0, green: g/255.0, blue: b/255.0)
+    }
+    
+    private func fallbackColorFromEventType(_ metadata: EnhancedPassMetadata) -> Color {
+        let eventType = (metadata.eventType ?? savedPass.passType).lowercased()
+        
+        switch eventType {
+        case let type where type.contains("museum"):
+            return .brown
+        case let type where type.contains("concert") || type.contains("music"):
+            return .purple
+        case let type where type.contains("event") || type.contains("festival"):
+            return .orange
+        case let type where type.contains("flight") || type.contains("airline"):
+            return .blue
+        case let type where type.contains("movie") || type.contains("cinema"):
+            return .red
+        case let type where type.contains("sport") || type.contains("game"):
+            return .green
+        case let type where type.contains("transit") || type.contains("train") || type.contains("bus"):
+            return .cyan
+        case let type where type.contains("theatre") || type.contains("theater"):
+            return .indigo
+        default:
+            return .gray
+        }
+    }
+    
+    private func fallbackColorFromPassType(_ passType: String) -> Color {
+        switch passType.lowercased() {
+        case let type where type.contains("event"):
+            return .orange
+        case let type where type.contains("concert"):
+            return .purple
+        case let type where type.contains("flight"):
+            return .blue
+        case let type where type.contains("movie"):
+            return .red
+        case let type where type.contains("sport"):
+            return .green
+        case let type where type.contains("transit"):
+            return .cyan
+        default:
+            return .gray
+        }
+    }
 }
 
 struct FullScreenPDFView: View {
@@ -280,7 +380,10 @@ struct FullScreenPDFView: View {
         confidenceScore: 95,
         processingTimestamp: "2024-01-01T12:00:00Z",
         modelUsed: "gpt-4",
-        enrichmentCompleted: true
+        enrichmentCompleted: true,
+        backgroundColor: "rgb(138,43,226)",
+        foregroundColor: "rgb(255,255,255)",
+        labelColor: "rgb(255,255,255)"
     )
     
     let samplePass = SavedPass(
@@ -292,5 +395,5 @@ struct FullScreenPDFView: View {
         metadata: sampleMetadata
     )
     
-    return SavedPassDetailView(savedPass: samplePass)
+    SavedPassDetailView(savedPass: samplePass)
 }

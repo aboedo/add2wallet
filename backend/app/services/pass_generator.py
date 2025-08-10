@@ -358,13 +358,22 @@ class PassGenerator:
             # Store ticket info for response
             # Don't include Data Matrix barcodes in ticket info since they're unsupported
             stored_barcode = None if (ticket_barcode and ticket_barcode.get('type') == 'DATAMATRIX') else ticket_barcode
+            
+            # Add color information to metadata for iOS app
+            enhanced_metadata = pass_info.copy() if isinstance(pass_info, dict) else {}
+            enhanced_metadata.update({
+                'background_color': bg_color,
+                'foreground_color': fg_color,
+                'label_color': label_color
+            })
+            
             ticket_info.append({
                 'ticket_number': ticket_num,
                 'total_tickets': total_tickets,
                 'title': title,
                 'description': description,
                 'barcode': stored_barcode,
-                'metadata': pass_info
+                'metadata': enhanced_metadata
             })
         
         print(f"✅ Generated {len(pkpass_files)} wallet pass(es)")
