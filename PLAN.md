@@ -29,7 +29,7 @@
   - Only show when `selectedFileURL != nil || isProcessing`
   - Remove empty view when no content
 
-- [ ] Task 6: Visual style updates for My Passes view
+- [x] Task 6: Visual style updates for My Passes view
   - Extract and use pass colors from metadata
   - Move date to right side of row
   - Group passes by month

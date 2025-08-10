@@ -231,6 +231,53 @@ struct PassRowView: View {
     }
     
     private var passIconName: String {
+        // Try to use metadata for better icon matching
+        if let metadata = pass.metadata {
+            let eventType = (metadata.eventType ?? pass.passType).lowercased()
+            
+            switch eventType {
+            case let type where type.contains("museum") || type.contains("gallery") || type.contains("exhibition"):
+                return "building.columns"
+            case let type where type.contains("concert") || type.contains("music") || type.contains("band"):
+                return "music.note"
+            case let type where type.contains("festival"):
+                return "star.circle"
+            case let type where type.contains("event") || type.contains("conference"):
+                return "calendar"
+            case let type where type.contains("flight") || type.contains("airline") || type.contains("boarding"):
+                return "airplane"
+            case let type where type.contains("movie") || type.contains("cinema") || type.contains("film"):
+                return "tv"
+            case let type where type.contains("sport") || type.contains("game") || type.contains("match") || type.contains("stadium"):
+                return "sportscourt"
+            case let type where type.contains("basketball"):
+                return "basketball"
+            case let type where type.contains("football") || type.contains("soccer"):
+                return "soccerball"
+            case let type where type.contains("baseball"):
+                return "baseball"
+            case let type where type.contains("transit") || type.contains("train") || type.contains("railway"):
+                return "train.side.front.car"
+            case let type where type.contains("bus"):
+                return "bus"
+            case let type where type.contains("ferry") || type.contains("boat"):
+                return "ferry"
+            case let type where type.contains("theatre") || type.contains("theater") || type.contains("play") || type.contains("broadway"):
+                return "theatermasks"
+            case let type where type.contains("parking"):
+                return "parkingsign"
+            case let type where type.contains("hotel") || type.contains("accommodation"):
+                return "bed.double"
+            case let type where type.contains("restaurant") || type.contains("dining"):
+                return "fork.knife"
+            case let type where type.contains("ticket"):
+                return "ticket"
+            default:
+                return "wallet.pass"
+            }
+        }
+        
+        // Fallback to basic pass type
         switch pass.passType.lowercased() {
         case let type where type.contains("event"):
             return "calendar"
