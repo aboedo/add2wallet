@@ -81,3 +81,8 @@ class EnhancedPassMetadata(BaseModel):
     processing_timestamp: Optional[str] = None
     model_used: Optional[str] = None
     enrichment_completed: Optional[bool] = False
+    
+    # Pass Colors (added by pass generator)
+    background_color: Optional[str] = None
+    foreground_color: Optional[str] = None
+    label_color: Optional[str] = None

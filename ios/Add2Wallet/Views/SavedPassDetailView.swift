@@ -86,11 +86,6 @@ struct SavedPassDetailView: View {
                             PDFPreviewView(url: tempPDFURL)
                                 .frame(height: 250)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.secondary.opacity(0.2))
-                                )
-                                .padding(.horizontal)
                                 .onTapGesture {
                                     showingFullScreenPDF = true
                                 }

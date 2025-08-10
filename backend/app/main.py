@@ -253,11 +253,19 @@ async def upload_pdf(
             "pass_path": pass_paths[0] if pass_paths else None
         })
         
+        # Use enhanced metadata with colors from ticket_info for the upload response
+        enhanced_metadata = ai_metadata  # fallback to original
+        if ticket_info and len(ticket_info) > 0:
+            first_ticket = ticket_info[0]
+            if "metadata" in first_ticket and first_ticket["metadata"]:
+                enhanced_metadata = first_ticket["metadata"]
+                print(f"🎨 Using enhanced metadata with colors for upload response")
+        
         return UploadResponse(
             job_id=job_id, 
             status="completed", 
             pass_url=f"/pass/{job_id}",
-            ai_metadata=ai_metadata,
+            ai_metadata=enhanced_metadata,
             ticket_count=len(pkpass_files),
             warnings=warnings if warnings else None
         )
