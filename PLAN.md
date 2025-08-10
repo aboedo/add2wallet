@@ -4,7 +4,7 @@
 
 ### Task List
 
-- [ ] Task 1: Update empty state in "My Passes" tab
+- [x] Task 1: Update empty state in "My Passes" tab
   - Change copy to "Start by generating your first Pass" 
   - Make "generating your first Pass" link to Generate Pass tab
   - Update tab title from "Your Passes" to "My Passes"

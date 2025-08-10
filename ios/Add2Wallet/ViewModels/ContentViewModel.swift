@@ -351,6 +351,12 @@ class ContentViewModel: ObservableObject {
             return
         }
         
+        // Get the PDF data from the selected file
+        var pdfData: Data? = nil
+        if let pdfURL = selectedFileURL {
+            pdfData = try? Data(contentsOf: pdfURL)
+        }
+        
         // Extract basic information for the SavedPass model
         let passType = metadata.eventType ?? "Pass"
         let title = metadata.title ?? metadata.eventName ?? "Untitled Pass"
@@ -373,6 +379,7 @@ class ContentViewModel: ObservableObject {
             venue: venue,
             city: city,
             passData: passData,
+            pdfData: pdfData,
             metadata: metadata
         )
         

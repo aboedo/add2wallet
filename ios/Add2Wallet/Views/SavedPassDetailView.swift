@@ -8,6 +8,7 @@ struct SavedPassDetailView: View {
     @State private var passViewController: PKAddPassesViewController?
     @State private var statusMessage: String?
     @State private var hasError = false
+    @State private var showingFullScreenPDF = false
     
     var body: some View {
         NavigationView {
@@ -30,6 +31,45 @@ struct SavedPassDetailView: View {
                             .foregroundColor(.secondary)
                     }
                     .padding()
+                    
+                    // PDF Preview section if available
+                    if let pdfData = savedPass.pdfData {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Original PDF")
+                                .font(.headline)
+                                .padding(.horizontal)
+                            
+                            // Create a temporary URL for the PDF preview
+                            if let tempPDFURL = createTempPDFURL(from: pdfData) {
+                                PDFPreviewView(url: tempPDFURL)
+                                    .frame(height: 250)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.secondary.opacity(0.2))
+                                    )
+                                    .padding(.horizontal)
+                                    .onTapGesture {
+                                        showingFullScreenPDF = true
+                                    }
+                                    .overlay(
+                                        VStack {
+                                            Spacer()
+                                            HStack {
+                                                Spacer()
+                                                Label("Tap to view full screen", systemImage: "arrow.up.left.and.arrow.down.right")
+                                                    .font(.caption)
+                                                    .padding(8)
+                                                    .background(.ultraThinMaterial)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                    .padding(8)
+                                            }
+                                        }
+                                    )
+                            }
+                        }
+                        .padding(.bottom)
+                    }
                     
                     // Pass details section
                     if let metadata = savedPass.metadata {
@@ -100,6 +140,25 @@ struct SavedPassDetailView: View {
                 PassKitView(passViewController: passVC)
             }
         }
+        .fullScreenCover(isPresented: $showingFullScreenPDF) {
+            if let pdfData = savedPass.pdfData,
+               let tempPDFURL = createTempPDFURL(from: pdfData) {
+                FullScreenPDFView(url: tempPDFURL)
+            }
+        }
+    }
+    
+    private func createTempPDFURL(from data: Data) -> URL? {
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempURL = tempDir.appendingPathComponent("\(savedPass.id).pdf")
+        
+        do {
+            try data.write(to: tempURL)
+            return tempURL
+        } catch {
+            print("Error creating temporary PDF file: \(error)")
+            return nil
+        }
     }
     
     @ViewBuilder
@@ -142,6 +201,27 @@ struct SavedPassDetailView: View {
         } catch {
             statusMessage = "Error loading pass: \(error.localizedDescription)"
             hasError = true
+        }
+    }
+}
+
+struct FullScreenPDFView: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            PDFPreviewView(url: url)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                        .fontWeight(.medium)
+                    }
+                }
+                .edgesIgnoringSafeArea(.bottom)
         }
     }
 }

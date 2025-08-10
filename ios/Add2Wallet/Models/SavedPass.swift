@@ -12,6 +12,7 @@ class SavedPass {
     var city: String?
     var passData: Data?
     var passURL: String?
+    var pdfData: Data?
     
     // Store the full metadata as JSON for complete preservation
     var metadataJSON: Data?
@@ -26,6 +27,7 @@ class SavedPass {
         city: String? = nil,
         passData: Data? = nil,
         passURL: String? = nil,
+        pdfData: Data? = nil,
         metadata: EnhancedPassMetadata? = nil
     ) {
         self.id = id
@@ -37,6 +39,7 @@ class SavedPass {
         self.city = city
         self.passData = passData
         self.passURL = passURL
+        self.pdfData = pdfData
         
         if let metadata = metadata {
             self.metadataJSON = try? JSONEncoder().encode(metadata)
