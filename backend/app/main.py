@@ -287,12 +287,25 @@ async def get_status(
     
     # Job status is already set during upload
     
+    # For completed jobs, use the enhanced metadata from ticket_info (includes colors)
+    # For in-progress jobs, use the original ai_metadata
+    metadata_to_return = job.get("ai_metadata")  # default
+    
+    if job["status"] == "completed" and "ticket_info" in job and job["ticket_info"]:
+        # Use the enhanced metadata from the first ticket (includes colors)
+        first_ticket = job["ticket_info"][0]
+        if "metadata" in first_ticket and first_ticket["metadata"]:
+            metadata_to_return = first_ticket["metadata"]
+            print(f"🎨 Using enhanced metadata with colors for job {job_id}")
+        else:
+            print(f"⚠️ No enhanced metadata found in ticket_info for job {job_id}")
+    
     return StatusResponse(
         job_id=job_id,
         status=job["status"],
         progress=job["progress"],
         result_url=f"/pass/{job_id}" if job["status"] == "completed" else None,
-        ai_metadata=job.get("ai_metadata"),
+        ai_metadata=metadata_to_return,
         warnings=job.get("warnings")
     )
 
