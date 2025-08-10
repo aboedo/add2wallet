@@ -10,7 +10,51 @@ struct Add2WalletApp: App {
     
     init() {
         do {
-            container = try ModelContainer(for: SavedPass.self)
+            // Create a schema with the current model
+            let schema = Schema([SavedPass.self])
+            
+            // Configure to delete existing store if incompatible
+            let modelConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                allowsSave: true
+            )
+            
+            // First, try to create the container normally
+            do {
+                container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                // If there's a migration error, delete the existing store and recreate
+                print("Migration error detected, dropping existing data: \(error)")
+                
+                // Find and remove all possible store locations
+                let appSupportURL = URL.applicationSupportDirectory
+                let storeURL = appSupportURL.appendingPathComponent("default.store")
+                
+                // Also check in App Group container if it exists
+                if let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet") {
+                    let groupStoreURL = groupURL.appendingPathComponent("Library/Application Support/default.store")
+                    try? FileManager.default.removeItem(at: groupStoreURL)
+                    try? FileManager.default.removeItem(at: groupStoreURL.appendingPathExtension("shm"))
+                    try? FileManager.default.removeItem(at: groupStoreURL.appendingPathExtension("wal"))
+                }
+                
+                // Remove main store files
+                try? FileManager.default.removeItem(at: storeURL)
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
+                
+                // Also remove any cached model files
+                let cacheURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+                if let cacheURL = cacheURL {
+                    let modelCacheURL = cacheURL.appendingPathComponent("com.apple.CoreData")
+                    try? FileManager.default.removeItem(at: modelCacheURL)
+                }
+                
+                // Try again with a fresh store
+                container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+                print("Successfully created new store after dropping old data")
+            }
         } catch {
             fatalError("Failed to initialize Swift Data container: \(error)")
         }
