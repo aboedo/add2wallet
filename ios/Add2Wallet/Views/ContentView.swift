@@ -265,6 +265,12 @@ struct ProgressView: View {
 import MapKit
 import CoreLocation
 
+struct MapAnnotationItem: Identifiable {
+    let id = UUID()
+    let coordinate: CLLocationCoordinate2D
+    let title: String
+}
+
 struct PassDetailsView: View {
     let metadata: EnhancedPassMetadata
     let ticketCount: Int?
@@ -277,7 +283,7 @@ struct PassDetailsView: View {
             Text("Pass Details")
                 .font(.headline)
             Group {
-                keyValueRow("Type", metadata.eventType)
+                keyValueRow("Type", metadata.eventType?.capitalized)
                 keyValueRow("Title", metadata.title ?? metadata.eventName)
                 keyValueRow("Description", metadata.description ?? metadata.eventDescription)
                 keyValueRow("Date", metadata.date)
@@ -300,16 +306,18 @@ struct PassDetailsView: View {
 
             // Show map if we have address or coordinates
             if shouldShowMap {
-                Map(coordinateRegion: .constant(mapRegion))
-                    .mapStyle(.standard)
-                    .frame(height: 140)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
-                    )
-                    .onAppear {
-                        geocodeAddressIfNeeded()
-                    }
+                Map(coordinateRegion: .constant(mapRegion), annotationItems: finalCoordinate != nil ? [MapAnnotationItem(coordinate: finalCoordinate!, title: metadata.venueName ?? "Location")] : []) { annotation in
+                    MapPin(coordinate: annotation.coordinate, tint: .red)
+                }
+                .mapStyle(.standard)
+                .frame(height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
+                )
+                .onAppear {
+                    geocodeAddressIfNeeded()
+                }
 
                 HStack(spacing: 8) {
                     Button {

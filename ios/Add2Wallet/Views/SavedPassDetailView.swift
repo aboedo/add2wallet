@@ -103,7 +103,7 @@ struct SavedPassDetailView: View {
                                 .font(.headline)
                             
                             Group {
-                                keyValueRow("Type", savedPass.passType)
+                                keyValueRow("Type", savedPass.passType.capitalized)
                                 keyValueRow("Title", savedPass.title)
                                 keyValueRow("Date", savedPass.eventDate)
                                 keyValueRow("Venue", savedPass.venue)

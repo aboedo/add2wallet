@@ -7,17 +7,23 @@ struct SavedPassesView: View {
     @State private var selectedPass: SavedPass?
     @State private var selectedTab = 0
     
-    // Group passes by month
+    // Group passes by month based on event date (fallback to creation date)
     private var groupedPasses: [(String, [SavedPass])] {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         
         let grouped = Dictionary(grouping: savedPasses) { pass in
-            formatter.string(from: pass.createdAt)
+            let dateToUse = eventDateOrFallback(for: pass)
+            return formatter.string(from: dateToUse)
         }
         
-        return grouped.sorted { $0.value.first!.createdAt > $1.value.first!.createdAt }
-            .map { ($0.key, $0.value.sorted { $0.createdAt > $1.createdAt }) }
+        return grouped.sorted { $0.value.first!.eventDateOrFallback > $1.value.first!.eventDateOrFallback }
+            .map { ($0.key, $0.value.sorted { $0.eventDateOrFallback > $1.eventDateOrFallback }) }
+    }
+    
+    // Helper to get event date or fallback to creation date
+    private func eventDateOrFallback(for pass: SavedPass) -> Date {
+        return pass.eventDateOrFallback
     }
     
     var body: some View {
@@ -119,16 +125,18 @@ struct PassRowView: View {
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    // Bottom row: Venue/Address/Ticket count on left, Date on right
+                    // Bottom row: Venue and ticket count on left (separate lines), Date on right
                     HStack(alignment: .bottom) {
                         VStack(alignment: .leading, spacing: 2) {
-                            if !pass.displaySubtitle.isEmpty {
-                                Text(pass.displaySubtitle)
+                            // Venue on its own line
+                            if !pass.displayVenue.isEmpty {
+                                Text(pass.displayVenue)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
-                                    .lineLimit(2)
+                                    .lineLimit(1)
                             }
                             
+                            // Ticket count on separate line
                             if pass.passCount > 1 {
                                 Text("\(pass.passCount) tickets")
                                     .font(.caption)
@@ -142,14 +150,14 @@ struct PassRowView: View {
                         
                         Spacer()
                         
-                        // Date on bottom right
+                        // Date on bottom right - use localized format
                         VStack(alignment: .trailing) {
                             if let eventDate = pass.eventDate, !eventDate.isEmpty {
-                                Text(eventDate)
+                                Text(formatEventDate(eventDate))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             } else {
-                                Text(formatDateShort(pass.createdAt))
+                                Text(formatDateLocalized(pass.createdAt))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -168,10 +176,40 @@ struct PassRowView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    private func formatDateShort(_ date: Date) -> String {
+    private func formatDateLocalized(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
+        formatter.dateStyle = .short
+        formatter.timeStyle = .none
         return formatter.string(from: date)
+    }
+    
+    private func formatEventDate(_ eventDateString: String) -> String {
+        // Try to parse the event date string and reformat it consistently
+        let inputFormatters = [
+            "MMM d, yyyy",    // "Dec 15, 2024"
+            "MMMM d, yyyy",   // "December 15, 2024"
+            "MM/dd/yyyy",     // "12/15/2024"
+            "dd/MM/yyyy",     // "15/12/2024"
+            "yyyy-MM-dd",     // "2024-12-15"
+            "d MMMM yyyy",    // "15 December 2024"
+            "MMM d",          // "Dec 15" (current year assumed)
+            "MMMM d"          // "December 15" (current year assumed)
+        ]
+        
+        for formatString in inputFormatters {
+            let formatter = DateFormatter()
+            formatter.dateFormat = formatString
+            if let parsedDate = formatter.date(from: eventDateString) {
+                // Return in localized format
+                let outputFormatter = DateFormatter()
+                outputFormatter.dateStyle = .short
+                outputFormatter.timeStyle = .none
+                return outputFormatter.string(from: parsedDate)
+            }
+        }
+        
+        // If we can't parse it, return the original string
+        return eventDateString
     }
     
     @ViewBuilder

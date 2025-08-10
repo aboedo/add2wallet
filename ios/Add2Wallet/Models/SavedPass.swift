@@ -73,6 +73,16 @@ class SavedPass {
         return components.joined(separator: " • ")
     }
     
+    // Venue-only subtitle for cleaner display in lists
+    var displayVenue: String {
+        if let venue = venue, !venue.isEmpty {
+            return venue
+        } else if let city = city, !city.isEmpty {
+            return city
+        }
+        return ""
+    }
+    
     var formattedCreatedAt: String {
         let formatter = RelativeDateTimeFormatter()
         formatter.dateTimeStyle = .named
@@ -81,5 +91,33 @@ class SavedPass {
     
     var passCount: Int {
         return passDatas.count
+    }
+    
+    // Parse event date string or fallback to creation date for sorting/grouping
+    var eventDateOrFallback: Date {
+        if let eventDateString = eventDate, !eventDateString.isEmpty {
+            // Try common date formats
+            let formatters = [
+                "MMM d, yyyy",    // "Dec 15, 2024"
+                "MMMM d, yyyy",   // "December 15, 2024"
+                "MM/dd/yyyy",     // "12/15/2024"
+                "dd/MM/yyyy",     // "15/12/2024"
+                "yyyy-MM-dd",     // "2024-12-15"
+                "d MMMM yyyy",    // "15 December 2024"
+                "MMM d",          // "Dec 15" (current year assumed)
+                "MMMM d"          // "December 15" (current year assumed)
+            ]
+            
+            for formatString in formatters {
+                let formatter = DateFormatter()
+                formatter.dateFormat = formatString
+                if let parsedDate = formatter.date(from: eventDateString) {
+                    return parsedDate
+                }
+            }
+        }
+        
+        // Fallback to creation date
+        return createdAt
     }
 }

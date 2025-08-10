@@ -551,14 +551,6 @@ class PassGenerator:
                 })
                 print(f"   Added address: {pass_info['venue_address'][:50]}")
         
-        # Add AI processing indicator if enhanced
-        if pass_info.get('ai_processed'):
-            auxiliary_fields.append({
-                "key": "ai_enhanced",
-                "label": "Enhanced",
-                "value": "AI Processed"
-            })
-        
         # Always add generation info
         auxiliary_fields.append({
             "key": "generated",
