@@ -20,19 +20,6 @@ struct SavedPassDetailView: View {
                         if let metadata = savedPass.metadata {
                             // Custom header for detail view
                             VStack(spacing: 8) {
-                                // Date and time field with calendar icon
-                                if let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
-                                    HStack(spacing: 8) {
-                                        Spacer()
-                                        Image(systemName: "calendar")
-                                            .foregroundColor(.white.opacity(0.9))
-                                            .font(.subheadline)
-                                        Text(dateTimeString)
-                                            .font(.subheadline)
-                                            .foregroundColor(.white.opacity(0.9))
-                                    }
-                                }
-                                
                                 Text(savedPass.displayTitle)
                                     .font(.largeTitle)
                                     .fontWeight(.bold)

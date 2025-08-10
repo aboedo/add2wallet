@@ -148,7 +148,14 @@ enum NetworkError: Error, LocalizedError {
 
 class NetworkService {
     private let baseURL = "https://add2wallet-backend-production.up.railway.app"
-    private let session = URLSession.shared
+    private let session: URLSession
+    
+    init() {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 60.0  // 60 seconds
+        config.timeoutIntervalForResource = 60.0 // 60 seconds
+        self.session = URLSession(configuration: config)
+    }
     
     func uploadPDF(data: Data, filename: String) -> AnyPublisher<UploadResponse, Error> {
         guard let url = URL(string: "\(baseURL)/upload") else {

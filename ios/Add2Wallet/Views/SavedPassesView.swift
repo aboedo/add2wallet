@@ -149,9 +149,14 @@ struct PassRowView: View {
                     
                     Spacer()
                     
-                    // Date on bottom right - use localized format
+                    // Date on bottom right - use same format as SavedPassDetailView
                     VStack(alignment: .trailing) {
-                        if let eventDate = pass.eventDate, !eventDate.isEmpty {
+                        if let metadata = pass.metadata,
+                           let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
+                            Text(dateTimeString)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else if let eventDate = pass.eventDate, !eventDate.isEmpty {
                             Text(PassDateTimeFormatter.formatEventDate(eventDate))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
