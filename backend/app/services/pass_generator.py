@@ -341,14 +341,19 @@ class PassGenerator:
             else:
                 description = base_description
             
+            # Ensure sufficient contrast for text readability (do this once, before pass generation)
+            bg_color_adjusted, fg_color_adjusted, label_color_adjusted = self._ensure_color_contrast(
+                bg_color, fg_color, label_color
+            )
+            
             # Generate the enhanced pass with barcode
             pkpass_data, pass_warnings = self.create_enhanced_pass(
                 title=title,
                 description=description,
                 pass_info=pass_info,
-                bg_color=bg_color,
-                fg_color=fg_color,
-                label_color=label_color,
+                bg_color=bg_color_adjusted,
+                fg_color=fg_color_adjusted,
+                label_color=label_color_adjusted,
                 pdf_bytes=pdf_data
             )
             
@@ -362,9 +367,9 @@ class PassGenerator:
             # Add color information to metadata for iOS app
             enhanced_metadata = pass_info.copy() if isinstance(pass_info, dict) else {}
             enhanced_metadata.update({
-                'background_color': bg_color,
-                'foreground_color': fg_color,
-                'label_color': label_color
+                'background_color': bg_color_adjusted,
+                'foreground_color': fg_color_adjusted,
+                'label_color': label_color_adjusted
             })
             
             ticket_info.append({
@@ -1199,6 +1204,82 @@ class PassGenerator:
             print(f"⚠️  Error analyzing PDF colors: {e}")
             return "rgb(0,122,255)", "rgb(255,255,255)", "rgb(255,255,255)"
 
+    def _ensure_color_contrast(self, bg_color: str, fg_color: str, label_color: str) -> Tuple[str, str, str]:
+        """Ensure sufficient contrast between background and text colors.
+        
+        Args:
+            bg_color: Background color in rgb(r,g,b) format
+            fg_color: Foreground color in rgb(r,g,b) format
+            label_color: Label color in rgb(r,g,b) format
+            
+        Returns:
+            Tuple of (bg_color, fg_color, label_color) with adjusted colors for contrast
+        """
+        def parse_rgb(color_str: str) -> Tuple[int, int, int]:
+            """Parse rgb(r,g,b) string to tuple."""
+            import re
+            match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', color_str)
+            if not match:
+                return (0, 0, 0)
+            return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+        
+        def calculate_luminance(r: int, g: int, b: int) -> float:
+            """Calculate relative luminance for contrast calculation.
+            Based on WCAG 2.0 formula: https://www.w3.org/TR/WCAG20/#relativeluminancedef
+            """
+            # Normalize RGB values
+            r_norm = r / 255.0
+            g_norm = g / 255.0
+            b_norm = b / 255.0
+            
+            # Apply gamma correction
+            r_lin = r_norm/12.92 if r_norm <= 0.03928 else ((r_norm + 0.055)/1.055) ** 2.4
+            g_lin = g_norm/12.92 if g_norm <= 0.03928 else ((g_norm + 0.055)/1.055) ** 2.4
+            b_lin = b_norm/12.92 if b_norm <= 0.03928 else ((b_norm + 0.055)/1.055) ** 2.4
+            
+            # Calculate luminance
+            return 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin
+        
+        def contrast_ratio(lum1: float, lum2: float) -> float:
+            """Calculate contrast ratio between two luminances."""
+            lighter = max(lum1, lum2)
+            darker = min(lum1, lum2)
+            return (lighter + 0.05) / (darker + 0.05)
+        
+        # Parse background color
+        bg_r, bg_g, bg_b = parse_rgb(bg_color)
+        bg_luminance = calculate_luminance(bg_r, bg_g, bg_b)
+        
+        # Determine if background is light or dark
+        # Using 0.5 as threshold (middle of 0-1 range)
+        # For even better results, we can use 0.4 to bias towards dark text
+        is_light_background = bg_luminance > 0.4
+        
+        # Set text colors based on background luminance
+        if is_light_background:
+            # Light background - use dark text
+            new_fg_color = "rgb(0,0,0)"  # Black text
+            new_label_color = "rgb(60,60,67)"  # Dark gray for labels
+            print(f"🔲 Light background detected (luminance: {bg_luminance:.3f}) - using dark text")
+        else:
+            # Dark background - use light text
+            new_fg_color = "rgb(255,255,255)"  # White text
+            new_label_color = "rgb(255,255,255)"  # White labels
+            print(f"⬜ Dark background detected (luminance: {bg_luminance:.3f}) - using light text")
+        
+        # Calculate and log contrast ratios for verification
+        fg_r, fg_g, fg_b = parse_rgb(new_fg_color)
+        fg_luminance = calculate_luminance(fg_r, fg_g, fg_b)
+        contrast = contrast_ratio(bg_luminance, fg_luminance)
+        
+        print(f"📊 Contrast ratio: {contrast:.2f}:1 (WCAG AA requires 4.5:1 for normal text)")
+        
+        # Ensure minimum WCAG AA compliance (4.5:1 for normal text)
+        if contrast < 4.5:
+            print(f"⚠️  Warning: Contrast ratio {contrast:.2f} is below WCAG AA standard (4.5)")
+        
+        return bg_color, new_fg_color, new_label_color
+    
     def _compute_expiration_date(self, pass_info: Dict[str, Any]) -> str:
         """Compute an ISO8601 expiration date for the pass.
         - If pass_info has an explicit date (and optional time), expire next day 03:00 local time.

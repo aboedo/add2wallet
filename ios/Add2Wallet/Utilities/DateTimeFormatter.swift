@@ -37,7 +37,7 @@ struct PassDateTimeFormatter {
         let output = DateFormatter()
         output.calendar = cal
         output.locale = .autoupdatingCurrent
-        output.dateStyle = (dateObj != nil) ? .medium : .none
+        output.dateStyle = (dateObj != nil) ? .short : .none
         output.timeStyle = (timeComponents != nil) ? .short : .none
         output.doesRelativeDateFormatting = true
         
