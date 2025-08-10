@@ -25,7 +25,7 @@
   - Replace ProcessingView with progress bar
   - 30-second total with realistic intermediate steps
 
-- [ ] Task 5: Fix bottom view in Generate Pass tab
+- [x] Task 5: Fix bottom view in Generate Pass tab
   - Only show when `selectedFileURL != nil || isProcessing`
   - Remove empty view when no content
 

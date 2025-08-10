@@ -7,6 +7,19 @@ struct SavedPassesView: View {
     @State private var selectedPass: SavedPass?
     @State private var selectedTab = 0
     
+    // Group passes by month
+    private var groupedPasses: [(String, [SavedPass])] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        
+        let grouped = Dictionary(grouping: savedPasses) { pass in
+            formatter.string(from: pass.createdAt)
+        }
+        
+        return grouped.sorted { $0.value.first!.createdAt > $1.value.first!.createdAt }
+            .map { ($0.key, $0.value.sorted { $0.createdAt > $1.createdAt }) }
+    }
+    
     var body: some View {
         NavigationView {
             Group {
@@ -58,20 +71,26 @@ struct SavedPassesView: View {
     
     private var passListView: some View {
         List {
-            ForEach(savedPasses) { pass in
-                PassRowView(pass: pass) {
-                    selectedPass = pass
+            ForEach(groupedPasses, id: \.0) { month, passes in
+                Section(header: Text(month)) {
+                    ForEach(passes) { pass in
+                        PassRowView(pass: pass) {
+                            selectedPass = pass
+                        }
+                    }
+                    .onDelete { offsets in
+                        deletePassesInSection(passes: passes, offsets: offsets)
+                    }
                 }
             }
-            .onDelete(perform: deletePasses)
         }
         .listStyle(InsetGroupedListStyle())
         .background(Color(.systemGroupedBackground))
     }
     
-    private func deletePasses(offsets: IndexSet) {
+    private func deletePassesInSection(passes: [SavedPass], offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(savedPasses[index])
+            modelContext.delete(passes[index])
         }
         
         do {
@@ -99,27 +118,39 @@ struct PassRowView: View {
                             .foregroundColor(.primary)
                             .lineLimit(1)
                         
+                        Spacer()
+                        
+                        if let eventDate = pass.eventDate, !eventDate.isEmpty {
+                            Text(eventDate)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text(formatDateShort(pass.createdAt))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    HStack {
+                        if !pass.displaySubtitle.isEmpty {
+                            Text(pass.displaySubtitle)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .lineLimit(2)
+                        }
+                        
+                        Spacer()
+                        
                         if pass.passCount > 1 {
                             Text("\(pass.passCount) passes")
                                 .font(.caption)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color.blue.opacity(0.15))
-                                .foregroundColor(.blue)
+                                .background(passColor.opacity(0.15))
+                                .foregroundColor(passColor)
                                 .clipShape(Capsule())
                         }
                     }
-                    
-                    if !pass.displaySubtitle.isEmpty {
-                        Text(pass.displaySubtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .lineLimit(2)
-                    }
-                    
-                    Text("Created \(pass.formattedCreatedAt)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
@@ -131,6 +162,12 @@ struct PassRowView: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(PlainButtonStyle())
+    }
+    
+    private func formatDateShort(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: date)
     }
     
     @ViewBuilder
@@ -147,6 +184,34 @@ struct PassRowView: View {
     }
     
     private var passColor: Color {
+        // Try to extract color from metadata if available
+        if let metadata = pass.metadata {
+            // Use event type to determine color
+            let eventType = (metadata.eventType ?? pass.passType).lowercased()
+            
+            switch eventType {
+            case let type where type.contains("museum"):
+                return .brown
+            case let type where type.contains("concert") || type.contains("music"):
+                return .purple
+            case let type where type.contains("event") || type.contains("festival"):
+                return .orange
+            case let type where type.contains("flight") || type.contains("airline"):
+                return .blue
+            case let type where type.contains("movie") || type.contains("cinema"):
+                return .red
+            case let type where type.contains("sport") || type.contains("game"):
+                return .green
+            case let type where type.contains("transit") || type.contains("train") || type.contains("bus"):
+                return .cyan
+            case let type where type.contains("theatre") || type.contains("theater"):
+                return .indigo
+            default:
+                return .gray
+            }
+        }
+        
+        // Fallback to basic pass type
         switch pass.passType.lowercased() {
         case let type where type.contains("event"):
             return .orange
