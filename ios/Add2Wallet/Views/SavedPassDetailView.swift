@@ -10,12 +10,89 @@ struct SavedPassDetailView: View {
     @State private var hasError = false
     @State private var showingFullScreenPDF = false
     
+    private func combineDateTime(date: String?, time: String?) -> String? {
+        let cleanDate = date?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanTime = time?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if (cleanDate?.isEmpty ?? true) && (cleanTime?.isEmpty ?? true) { return nil }
+        
+        let cal = Calendar.autoupdatingCurrent
+        
+        // Parse fixed-format date
+        var dateObj: Date?
+        if let ds = cleanDate, !ds.isEmpty {
+            let iso = DateFormatter()
+            iso.calendar = cal
+            iso.locale = Locale(identifier: "en_US_POSIX")
+            iso.dateFormat = "yyyy-MM-dd"
+            dateObj = iso.date(from: ds)
+        }
+        
+        // Parse fixed-format time
+        var timeComponents: DateComponents?
+        if let ts = cleanTime, !ts.isEmpty {
+            let tf = DateFormatter()
+            tf.calendar = cal
+            tf.locale = Locale(identifier: "en_US_POSIX")
+            tf.dateFormat = "HH:mm"
+            if let tDate = tf.date(from: ts) {
+                timeComponents = cal.dateComponents([.hour, .minute, .second], from: tDate)
+            }
+        }
+        
+        // Format combined output in user locale
+        let output = DateFormatter()
+        output.calendar = cal
+        output.locale = .autoupdatingCurrent
+        output.dateStyle = (dateObj != nil) ? .medium : .none
+        output.timeStyle = (timeComponents != nil) ? .short : .none
+        output.doesRelativeDateFormatting = true
+        
+        if let d = dateObj, let t = timeComponents,
+           let combined = cal.date(bySettingHour: t.hour ?? 0,
+                                   minute: t.minute ?? 0,
+                                   second: t.second ?? 0,
+                                   of: d) {
+            return output.string(from: combined)
+        }
+        
+        if let d = dateObj {
+            return output.string(from: d)
+        }
+        
+        if let t = timeComponents {
+            let today = cal.startOfDay(for: Date())
+            if let dt = cal.date(bySettingHour: t.hour ?? 0,
+                                 minute: t.minute ?? 0,
+                                 second: t.second ?? 0,
+                                 of: today) {
+                output.dateStyle = .none
+                output.timeStyle = .short
+                return output.string(from: dt)
+            }
+        }
+        
+        return nil
+    }
+    
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
                     // Header section with pass color theming
                     VStack(spacing: 8) {
+                        // Date and time field with calendar icon
+                        if let metadata = savedPass.metadata, let dateTimeString = combineDateTime(date: metadata.date, time: metadata.time) {
+                            HStack(spacing: 8) {
+                                Spacer()
+                                Image(systemName: "calendar")
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .font(.subheadline)
+                                Text(dateTimeString)
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.9))
+                            }
+                        }
+                        
                         Text(savedPass.displayTitle)
                             .font(.largeTitle)
                             .fontWeight(.bold)
@@ -23,7 +100,7 @@ struct SavedPassDetailView: View {
                             .foregroundColor(.white)
                         
                         if let metadata = savedPass.metadata {
-                            SavedPassThreeFieldSubtitleView(metadata: metadata)
+                            SavedPassThreeFieldSubtitleView(savedPass: savedPass)
                         } else {
                             Text(savedPass.displaySubtitle)
                                 .font(.title3)
@@ -31,30 +108,9 @@ struct SavedPassDetailView: View {
                                 .multilineTextAlignment(.center)
                         }
                         
-                        HStack {
-                            Spacer()
-                            if savedPass.passCount > 1 {
-                                Text("\(savedPass.passCount) tickets")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        Capsule()
-                                            .fill(Color.black.opacity(0.4))
-                                    )
-                            }
-                        }
                     }
                     .padding()
                     .frame(maxWidth: .infinity)
-//                    .background(
-//                        LinearGradient(
-//                            colors: [passHeaderColor, passHeaderColor.opacity(0.8)],
-//                            startPoint: .topLeading,
-//                            endPoint: .bottomTrailing
-//                        )
-//                    )
                     
                     // Pass details section
                     if let metadata = savedPass.metadata {
@@ -352,126 +408,70 @@ struct FullScreenPDFView: View {
 
 // MARK: - SavedPassThreeFieldSubtitleView
 struct SavedPassThreeFieldSubtitleView: View {
-    let metadata: EnhancedPassMetadata
+    let savedPass: SavedPass
     
     var body: some View {
         VStack(spacing: 8) {
             
-            
-            // Event description field with caption font
-            if let description = metadata.eventDescription ?? metadata.description {
-                HStack(spacing: 8) {
-                    Image(systemName: "text.alignleft")
-                        .foregroundColor(.white.opacity(0.7))
-                        .font(.caption)
-                    Text(description)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                        .multilineTextAlignment(.leading)
-                    Spacer()
-                }
-            }
-            
-            // Venue field with map pin icon
-            if let venue = metadata.venueName {
-                VStack(alignment: .leading) {
+            if let metadata = savedPass.metadata {
+                
+                
+                // Event description field with caption font
+                if let description = metadata.eventDescription ?? metadata.description {
                     HStack(spacing: 8) {
-                        Image(systemName: "mappin")
-                            .foregroundColor(.white.opacity(0.9))
-                            .font(.subheadline)
-                        Text(venue)
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.9))
-                        Spacer()
-                    }
-                    if let address = metadata.venueAddress, let city = metadata.city, let country = metadata.stateCountry {
-                        Text("\(address), \(city), \(country)")
+                        Image(systemName: "text.alignleft")
+                            .foregroundColor(.white.opacity(0.7))
                             .font(.caption)
-                            .foregroundColor(.white.opacity(0.9))
+                        Text(description)
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                    }
+                    .padding(.bottom)
+                }
+                
+                // Venue field with map pin icon
+                if let venue = metadata.venueName {
+                    VStack(alignment: .leading) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "mappin")
+                                .foregroundColor(.white.opacity(0.9))
+                                .font(.subheadline)
+                            Text(venue)
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.9))
+                            Spacer()
+                        }
+                        if let address = metadata.venueAddress, let city = metadata.city, let country = metadata.stateCountry {
+                            Text("\(address), \(city), \(country)")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.9))
+                            Spacer()
+                        }
+                    }
+                }
+                if savedPass.passCount > 1 {
+                    HStack {
+                        Text("\(savedPass.passCount) tickets")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(Color.black.opacity(0.4))
+                            )
                         Spacer()
                     }
                 }
+                
             }
-            // Date and time field with calendar icon
-            if let dateTimeString = combineDateTime(date: metadata.date, time: metadata.time) {
-                HStack(spacing: 8) {
-                    Spacer()
-                    Image(systemName: "calendar")
-                        .foregroundColor(.white.opacity(0.9))
-                        .font(.subheadline)
-                    Text(dateTimeString)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
-                }
-            }
-            
             
         }
     }
     
-    private func combineDateTime(date: String?, time: String?) -> String? {
-        let cleanDate = date?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanTime = time?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if (cleanDate?.isEmpty ?? true) && (cleanTime?.isEmpty ?? true) { return nil }
-        
-        let cal = Calendar.autoupdatingCurrent
-        
-        // Parse fixed-format date
-        var dateObj: Date?
-        if let ds = cleanDate, !ds.isEmpty {
-            let iso = DateFormatter()
-            iso.calendar = cal
-            iso.locale = Locale(identifier: "en_US_POSIX")
-            iso.dateFormat = "yyyy-MM-dd"
-            dateObj = iso.date(from: ds)
-        }
-        
-        // Parse fixed-format time
-        var timeComponents: DateComponents?
-        if let ts = cleanTime, !ts.isEmpty {
-            let tf = DateFormatter()
-            tf.calendar = cal
-            tf.locale = Locale(identifier: "en_US_POSIX")
-            tf.dateFormat = "HH:mm"
-            if let tDate = tf.date(from: ts) {
-                timeComponents = cal.dateComponents([.hour, .minute, .second], from: tDate)
-            }
-        }
-        
-        // Format combined output in user locale
-        let output = DateFormatter()
-        output.calendar = cal
-        output.locale = .autoupdatingCurrent
-        output.dateStyle = (dateObj != nil) ? .medium : .none
-        output.timeStyle = (timeComponents != nil) ? .short : .none
-        output.doesRelativeDateFormatting = true
-        
-        if let d = dateObj, let t = timeComponents,
-           let combined = cal.date(bySettingHour: t.hour ?? 0,
-                                   minute: t.minute ?? 0,
-                                   second: t.second ?? 0,
-                                   of: d) {
-            return output.string(from: combined)
-        }
-        
-        if let d = dateObj {
-            return output.string(from: d)
-        }
-        
-        if let t = timeComponents {
-            let today = cal.startOfDay(for: Date())
-            if let dt = cal.date(bySettingHour: t.hour ?? 0,
-                                 minute: t.minute ?? 0,
-                                 second: t.second ?? 0,
-                                 of: today) {
-                output.dateStyle = .none
-                output.timeStyle = .short
-                return output.string(from: dt)
-            }
-        }
-        
-        return nil
-    }
+    
 }
 
 #Preview {

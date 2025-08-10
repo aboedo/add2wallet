@@ -443,8 +443,7 @@ struct PassDetailsView: View {
             .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(Color(.secondarySystemBackground).opacity(0.8))
     }
     
     private var shouldShowMap: Bool {

@@ -198,7 +198,7 @@ class ContentViewModel: ObservableObject {
     }
     
     private func downloadAndOpenPass(passUrl: String) {
-        statusMessage = "Downloading pass..."
+        statusMessage = ""
         
         networkService.downloadPass(from: passUrl)
             .receive(on: DispatchQueue.main)
