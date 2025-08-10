@@ -179,31 +179,40 @@ struct PassRowView: View {
     private func formatDateLocalized(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
-        formatter.timeStyle = .none
+        formatter.timeStyle = .short
         return formatter.string(from: date)
     }
     
     private func formatEventDate(_ eventDateString: String) -> String {
         // Try to parse the event date string and reformat it consistently
         let inputFormatters = [
-            "MMM d, yyyy",    // "Dec 15, 2024"
-            "MMMM d, yyyy",   // "December 15, 2024"
-            "MM/dd/yyyy",     // "12/15/2024"
-            "dd/MM/yyyy",     // "15/12/2024"
-            "yyyy-MM-dd",     // "2024-12-15"
-            "d MMMM yyyy",    // "15 December 2024"
-            "MMM d",          // "Dec 15" (current year assumed)
-            "MMMM d"          // "December 15" (current year assumed)
+            "MMM d, yyyy 'at' h:mm a",  // "Dec 15, 2024 at 8:00 PM"
+            "MMM d, yyyy h:mm a",       // "Dec 15, 2024 8:00 PM"
+            "MMMM d, yyyy 'at' h:mm a", // "December 15, 2024 at 8:00 PM"
+            "MMMM d, yyyy h:mm a",      // "December 15, 2024 8:00 PM"
+            "MMM d, yyyy",              // "Dec 15, 2024"
+            "MMMM d, yyyy",             // "December 15, 2024"
+            "MM/dd/yyyy",               // "12/15/2024"
+            "dd/MM/yyyy",               // "15/12/2024"
+            "yyyy-MM-dd",               // "2024-12-15"
+            "d MMMM yyyy",              // "15 December 2024"
+            "MMM d",                    // "Dec 15" (current year assumed)
+            "MMMM d"                    // "December 15" (current year assumed)
         ]
         
         for formatString in inputFormatters {
             let formatter = DateFormatter()
             formatter.dateFormat = formatString
             if let parsedDate = formatter.date(from: eventDateString) {
-                // Return in localized format
+                // Return in localized format with both date and time if available
                 let outputFormatter = DateFormatter()
                 outputFormatter.dateStyle = .short
-                outputFormatter.timeStyle = .none
+                // Check if the original string contained time information
+                let hasTime = eventDateString.lowercased().contains("am") || 
+                             eventDateString.lowercased().contains("pm") ||
+                             eventDateString.contains(":") ||
+                             eventDateString.lowercased().contains("at")
+                outputFormatter.timeStyle = hasTime ? .short : .none
                 return outputFormatter.string(from: parsedDate)
             }
         }

@@ -44,6 +44,7 @@ struct SavedPassDetailView: View {
                         }
                     }
                     .padding()
+                    .frame(maxWidth: .infinity)
                     .background(
                         LinearGradient(
                             colors: [passHeaderColor, passHeaderColor.opacity(0.8)],
@@ -51,7 +52,6 @@ struct SavedPassDetailView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     
                     // PDF Preview section if available
                     if let pdfData = savedPass.pdfData {

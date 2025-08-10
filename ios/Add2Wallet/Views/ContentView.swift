@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var passViewController: PKAddPassesViewController?
     @State private var showingAddPassVC = false
     @State private var selectedTab = 0
+    @State private var showingFullScreenPDF = false
     @Environment(\.modelContext) private var modelContext
     
     var body: some View {
@@ -43,6 +44,23 @@ struct ContentView: View {
                                 .frame(height: 320)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.secondary.opacity(0.2)))
+                                .onTapGesture {
+                                    showingFullScreenPDF = true
+                                }
+                                .overlay(
+                                    VStack {
+                                        Spacer()
+                                        HStack {
+                                            Spacer()
+                                            Label("Tap to view full screen", systemImage: "arrow.up.left.and.arrow.down.right")
+                                                .font(.caption)
+                                                .padding(8)
+                                                .background(.ultraThinMaterial)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                .padding(8)
+                                        }
+                                    }
+                                )
 
                             if let details = viewModel.passMetadata {
                                 PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
@@ -164,6 +182,11 @@ struct ContentView: View {
             .sheet(isPresented: $showingAddPassVC) {
                 if let passVC = passViewController {
                     PassKitView(passViewController: passVC)
+                }
+            }
+            .fullScreenCover(isPresented: $showingFullScreenPDF) {
+                if let url = viewModel.selectedFileURL {
+                    FullScreenPDFView(url: url)
                 }
             }
             .fileImporter(
