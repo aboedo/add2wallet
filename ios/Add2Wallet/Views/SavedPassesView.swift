@@ -93,10 +93,22 @@ struct PassRowView: View {
                 passIcon
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(pass.displayTitle)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
+                    HStack {
+                        Text(pass.displayTitle)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        if pass.passCount > 1 {
+                            Text("\(pass.passCount) passes")
+                                .font(.caption)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue.opacity(0.15))
+                                .foregroundColor(.blue)
+                                .clipShape(Capsule())
+                        }
+                    }
                     
                     if !pass.displaySubtitle.isEmpty {
                         Text(pass.displaySubtitle)

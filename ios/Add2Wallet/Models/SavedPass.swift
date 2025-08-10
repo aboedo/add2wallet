@@ -10,7 +10,7 @@ class SavedPass {
     var eventDate: String?
     var venue: String?
     var city: String?
-    var passData: Data?
+    var passDatas: [Data]
     var passURL: String?
     var pdfData: Data?
     
@@ -25,7 +25,7 @@ class SavedPass {
         eventDate: String? = nil,
         venue: String? = nil,
         city: String? = nil,
-        passData: Data? = nil,
+        passDatas: [Data] = [],
         passURL: String? = nil,
         pdfData: Data? = nil,
         metadata: EnhancedPassMetadata? = nil
@@ -37,7 +37,7 @@ class SavedPass {
         self.eventDate = eventDate
         self.venue = venue
         self.city = city
-        self.passData = passData
+        self.passDatas = passDatas
         self.passURL = passURL
         self.pdfData = pdfData
         
@@ -77,5 +77,9 @@ class SavedPass {
         let formatter = RelativeDateTimeFormatter()
         formatter.dateTimeStyle = .named
         return formatter.localizedString(for: createdAt, relativeTo: Date())
+    }
+    
+    var passCount: Int {
+        return passDatas.count
     }
 }

@@ -9,7 +9,7 @@
   - Make "generating your first Pass" link to Generate Pass tab
   - Update tab title from "Your Passes" to "My Passes"
 
-- [ ] Task 2: Add PDF storage to SavedPass model
+- [x] Task 2: Add PDF storage to SavedPass model
   - Add `pdfData: Data` property to SavedPass
   - Update save logic to include PDF data
   - Add PDF preview in SavedPassDetailView with full-screen tap

@@ -299,10 +299,8 @@ class ContentViewModel: ObservableObject {
                 return
             }
 
-            // Save all passes to persistent storage
-            for (index, passData) in passDatas.enumerated() {
-                savePassToPersistentStorage(passData: passData, ticketNumber: index + 1)
-            }
+            // Save all passes as one SavedPass entry
+            saveMultiplePassesToPersistentStorage(passDatas: passDatas)
 
             let passVC = PKAddPassesViewController(passes: passes)
 
@@ -344,6 +342,50 @@ class ContentViewModel: ObservableObject {
         funnyPhrase = ""
     }
     
+    private func saveMultiplePassesToPersistentStorage(passDatas: [Data]) {
+        guard let modelContext = modelContext,
+              let metadata = passMetadata else {
+            print("Cannot save passes: missing model context or metadata")
+            return
+        }
+        
+        // Get the PDF data from the selected file
+        var pdfData: Data? = nil
+        if let pdfURL = selectedFileURL {
+            pdfData = try? Data(contentsOf: pdfURL)
+        }
+        
+        // Extract basic information for the SavedPass model
+        let passType = metadata.eventType ?? "Pass"
+        let title = metadata.title ?? metadata.eventName ?? "Untitled Pass"
+        let eventDate = metadata.date
+        let venue = metadata.venueName
+        let city = metadata.city
+        
+        // Create SavedPass instance with all passes
+        let savedPass = SavedPass(
+            passType: passType,
+            title: title,
+            eventDate: eventDate,
+            venue: venue,
+            city: city,
+            passDatas: passDatas,
+            pdfData: pdfData,
+            metadata: metadata
+        )
+        
+        // Insert into context
+        modelContext.insert(savedPass)
+        
+        // Save context
+        do {
+            try modelContext.save()
+            print("Successfully saved \(passDatas.count) passes: \(title)")
+        } catch {
+            print("Error saving passes: \(error)")
+        }
+    }
+    
     private func savePassToPersistentStorage(passData: Data, ticketNumber: Int? = nil) {
         guard let modelContext = modelContext,
               let metadata = passMetadata else {
@@ -378,7 +420,7 @@ class ContentViewModel: ObservableObject {
             eventDate: eventDate,
             venue: venue,
             city: city,
-            passData: passData,
+            passDatas: [passData],
             pdfData: pdfData,
             metadata: metadata
         )

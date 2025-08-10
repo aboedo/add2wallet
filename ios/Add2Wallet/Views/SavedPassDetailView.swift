@@ -109,9 +109,9 @@ struct SavedPassDetailView: View {
                     }
                 }
                 
-                if savedPass.passData != nil {
+                if !savedPass.passDatas.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Add to Wallet") {
+                        Button(savedPass.passCount > 1 ? "Add \(savedPass.passCount) to Wallet" : "Add to Wallet") {
                             addPassToWallet()
                         }
                         .fontWeight(.medium)
@@ -178,22 +178,37 @@ struct SavedPassDetailView: View {
     }
     
     private func addPassToWallet() {
-        guard let passData = savedPass.passData else {
+        guard !savedPass.passDatas.isEmpty else {
             statusMessage = "Pass data not available"
             hasError = true
             return
         }
         
         do {
-            let pass = try PKPass(data: passData)
-            
-            guard PKPassLibrary.isPassLibraryAvailable() else {
-                statusMessage = "Apple Wallet is not available on this device"
-                hasError = true
-                return
+            if savedPass.passDatas.count == 1 {
+                // Single pass
+                let pass = try PKPass(data: savedPass.passDatas[0])
+                
+                guard PKPassLibrary.isPassLibraryAvailable() else {
+                    statusMessage = "Apple Wallet is not available on this device"
+                    hasError = true
+                    return
+                }
+                
+                passViewController = PKAddPassesViewController(pass: pass)
+            } else {
+                // Multiple passes
+                let passes = try savedPass.passDatas.map { try PKPass(data: $0) }
+                
+                guard PKPassLibrary.isPassLibraryAvailable() else {
+                    statusMessage = "Apple Wallet is not available on this device"
+                    hasError = true
+                    return
+                }
+                
+                passViewController = PKAddPassesViewController(passes: passes)
             }
             
-            passViewController = PKAddPassesViewController(pass: pass)
             showingAddPassVC = true
             statusMessage = "Ready to add to Wallet"
             hasError = false
