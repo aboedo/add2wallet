@@ -10,6 +10,20 @@ struct ContentView: View {
     @State private var showingFullScreenPDF = false
     @Environment(\.modelContext) private var modelContext
     
+    private var titleHeaderColor: Color {
+        // First try to use actual pass colors from metadata
+        if let metadata = viewModel.passMetadata {
+            // Check if we have the actual pass colors
+            if let backgroundColor = metadata.backgroundColor {
+                return parseRGBColor(backgroundColor) ?? fallbackColorFromEventType(metadata)
+            }
+            return fallbackColorFromEventType(metadata)
+        }
+        
+        // Final fallback to a default color
+        return .blue
+    }
+    
     var body: some View {
         TabView(selection: $selectedTab) {
             generatePassView
@@ -34,9 +48,20 @@ struct ContentView: View {
                     VStack(spacing: 4) {
                         Text("Add2Wallet")
                             .font(.largeTitle).fontWeight(.bold)
+                            .foregroundColor(.white)
                         Text("Convert PDFs to Apple Wallet passes")
-                            .font(.subheadline).foregroundColor(.secondary)
+                            .font(.subheadline).foregroundColor(.white.opacity(0.9))
                     }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        LinearGradient(
+                            colors: [titleHeaderColor, titleHeaderColor.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: 12) {
@@ -63,8 +88,14 @@ struct ContentView: View {
                                 )
 
                             if let details = viewModel.passMetadata {
-                                PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
-                                    .transition(.opacity)
+                                // Split subtitle into three components
+                                VStack(spacing: 8) {
+                                    ThreeFieldSubtitleView(metadata: details)
+                                        .transition(.opacity)
+                                    
+                                    PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
+                                        .transition(.opacity)
+                                }
                             }
                             
                             if !viewModel.warnings.isEmpty {
@@ -206,6 +237,52 @@ struct ContentView: View {
             }
         }
     }
+    
+    private func parseRGBColor(_ rgbString: String) -> Color? {
+        // Parse rgb(r,g,b) format
+        let pattern = #"rgb\((\d+),\s*(\d+),\s*(\d+)\)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: rgbString, range: NSRange(rgbString.startIndex..., in: rgbString)) else {
+            return nil
+        }
+        
+        let rRange = Range(match.range(at: 1), in: rgbString)!
+        let gRange = Range(match.range(at: 2), in: rgbString)!
+        let bRange = Range(match.range(at: 3), in: rgbString)!
+        
+        guard let r = Double(String(rgbString[rRange])),
+              let g = Double(String(rgbString[gRange])),
+              let b = Double(String(rgbString[bRange])) else {
+            return nil
+        }
+        
+        return Color(red: r/255.0, green: g/255.0, blue: b/255.0)
+    }
+    
+    private func fallbackColorFromEventType(_ metadata: EnhancedPassMetadata) -> Color {
+        let eventType = (metadata.eventType ?? "").lowercased()
+        
+        switch eventType {
+        case let type where type.contains("museum"):
+            return .brown
+        case let type where type.contains("concert") || type.contains("music"):
+            return .purple
+        case let type where type.contains("event") || type.contains("festival"):
+            return .orange
+        case let type where type.contains("flight") || type.contains("airline"):
+            return .blue
+        case let type where type.contains("movie") || type.contains("cinema"):
+            return .red
+        case let type where type.contains("sport") || type.contains("game"):
+            return .green
+        case let type where type.contains("transit") || type.contains("train") || type.contains("bus"):
+            return .cyan
+        case let type where type.contains("theatre") || type.contains("theater"):
+            return .indigo
+        default:
+            return .blue
+        }
+    }
 }
 
 struct PassKitView: UIViewControllerRepresentable {
@@ -303,25 +380,13 @@ struct PassDetailsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Pass Details")
-                .font(.headline)
+            // Venue information above the map
             Group {
                 keyValueRow("Type", metadata.eventType?.capitalized)
-                keyValueRow("Title", metadata.title ?? metadata.eventName)
-                keyValueRow("Description", metadata.description ?? metadata.eventDescription)
-                keyValueRow("Date & Time", combineDateTime(date: metadata.date, time: metadata.time))
                 keyValueRow("Venue", metadata.venueName)
                 keyValueRow("Address", metadata.venueAddress)
                 keyValueRow("City", metadata.city)
                 keyValueRow("Region", metadata.stateCountry)
-                keyValueRow("Seat", metadata.seatInfo)
-                keyValueRow("Barcode", metadata.barcodeData)
-                keyValueRow("Price", metadata.price)
-                keyValueRow("Confirmation", metadata.confirmationNumber)
-                keyValueRow("Gate", metadata.gateInfo)
-                if let ticketCount, ticketCount > 1 {
-                    keyValueRow("Number of passes", String(ticketCount))
-                }
             }
             .font(.subheadline)
             .foregroundColor(.secondary)
@@ -365,6 +430,20 @@ struct PassDetailsView: View {
                 .font(.footnote)
                 .padding(.top, 6)
             }
+            
+            // Other information below the map
+            Group {
+                keyValueRow("Seat", metadata.seatInfo)
+                keyValueRow("Barcode", metadata.barcodeData)
+                keyValueRow("Price", metadata.price)
+                keyValueRow("Confirmation", metadata.confirmationNumber)
+                keyValueRow("Gate", metadata.gateInfo)
+                if let ticketCount, ticketCount > 1 {
+                    keyValueRow("Number of passes", String(ticketCount))
+                }
+            }
+            .font(.subheadline)
+            .foregroundColor(.secondary)
         }
         .padding()
         .background(Color(.secondarySystemBackground))
@@ -524,6 +603,74 @@ struct WarningsView: View {
                 )
                 .cornerRadius(8)
             }
+        }
+    }
+}
+
+// MARK: - ThreeFieldSubtitleView
+struct ThreeFieldSubtitleView: View {
+    let metadata: EnhancedPassMetadata
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // Date and time field with calendar icon
+            if let dateTimeString = combineDateTime(date: metadata.date, time: metadata.time) {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar")
+                        .foregroundColor(.blue)
+                        .font(.subheadline)
+                    Text(dateTimeString)
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
+                    Spacer()
+                }
+            }
+            
+            // Venue field with map pin icon
+            if let venue = metadata.venueName {
+                HStack(spacing: 8) {
+                    Image(systemName: "mappin")
+                        .foregroundColor(.red)
+                        .font(.subheadline)
+                    Text(venue)
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
+                    Spacer()
+                }
+            }
+            
+            // Event description field with caption font
+            if let description = metadata.eventDescription ?? metadata.description {
+                HStack(spacing: 8) {
+                    Image(systemName: "text.alignleft")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                    Text(description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    // Helper function to combine date and time intelligently
+    private func combineDateTime(date: String?, time: String?) -> String? {
+        let cleanDate = date?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanTime = time?.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if let date = cleanDate, !date.isEmpty, let time = cleanTime, !time.isEmpty {
+            return "\(date) at \(time)"
+        } else if let date = cleanDate, !date.isEmpty {
+            return date
+        } else if let time = cleanTime, !time.isEmpty {
+            return time
+        } else {
+            return nil
         }
     }
 }

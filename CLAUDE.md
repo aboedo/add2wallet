@@ -144,6 +144,13 @@ xcodebuild test -scheme Add2Wallet
 - `ContentViewModelTests.swift` - View model logic tests
 - `ShareExtensionTests.swift` - Share extension tests
 
+### Manual Testing
+
+**Note**: Claude Code doesn't need to run the iOS app directly for testing. Manual testing will be done by the user after code changes are complete. Claude should focus on:
+- Ensuring compilation works correctly after each change
+- Verifying code syntax and structure
+- Following established patterns in the codebase
+
 ## Development Setup
 
 ### Backend Development

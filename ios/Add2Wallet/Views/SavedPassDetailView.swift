@@ -22,10 +22,14 @@ struct SavedPassDetailView: View {
                             .multilineTextAlignment(.center)
                             .foregroundColor(.white)
                         
-                        Text(savedPass.displaySubtitle)
-                            .font(.title3)
-                            .foregroundColor(.white.opacity(0.9))
-                            .multilineTextAlignment(.center)
+                        if let metadata = savedPass.metadata {
+                            SavedPassThreeFieldSubtitleView(metadata: metadata)
+                        } else {
+                            Text(savedPass.displaySubtitle)
+                                .font(.title3)
+                                .foregroundColor(.white.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                        }
                         
                         HStack {
                             Text("Created \(savedPass.formattedCreatedAt)")
@@ -336,6 +340,71 @@ struct FullScreenPDFView: View {
                     }
                 }
                 .edgesIgnoringSafeArea(.bottom)
+        }
+    }
+}
+
+// MARK: - SavedPassThreeFieldSubtitleView
+struct SavedPassThreeFieldSubtitleView: View {
+    let metadata: EnhancedPassMetadata
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // Date and time field with calendar icon
+            if let dateTimeString = combineDateTime(date: metadata.date, time: metadata.time) {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar")
+                        .foregroundColor(.white.opacity(0.9))
+                        .font(.subheadline)
+                    Text(dateTimeString)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.9))
+                    Spacer()
+                }
+            }
+            
+            // Venue field with map pin icon
+            if let venue = metadata.venueName {
+                HStack(spacing: 8) {
+                    Image(systemName: "mappin")
+                        .foregroundColor(.white.opacity(0.9))
+                        .font(.subheadline)
+                    Text(venue)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.9))
+                    Spacer()
+                }
+            }
+            
+            // Event description field with caption font
+            if let description = metadata.eventDescription ?? metadata.description {
+                HStack(spacing: 8) {
+                    Image(systemName: "text.alignleft")
+                        .foregroundColor(.white.opacity(0.7))
+                        .font(.caption)
+                    Text(description)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                }
+            }
+        }
+    }
+    
+    // Helper function to combine date and time intelligently
+    private func combineDateTime(date: String?, time: String?) -> String? {
+        let cleanDate = date?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanTime = time?.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if let date = cleanDate, !date.isEmpty, let time = cleanTime, !time.isEmpty {
+            return "\(date) at \(time)"
+        } else if let date = cleanDate, !date.isEmpty {
+            return date
+        } else if let time = cleanTime, !time.isEmpty {
+            return time
+        } else {
+            return nil
         }
     }
 }
