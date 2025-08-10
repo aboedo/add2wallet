@@ -175,7 +175,6 @@ struct ContentView: View {
                     .padding(.horizontal)
                     .padding(.top, 8)
                     .padding(.bottom, 16)
-                    .background(.thinMaterial)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }

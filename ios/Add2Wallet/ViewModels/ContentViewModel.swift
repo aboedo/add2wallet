@@ -266,7 +266,7 @@ class ContentViewModel: ObservableObject {
     }
 
     private func downloadAndOpenMultiplePasses(passUrl: String, count: Int) {
-        statusMessage = "Downloading passes..."
+        statusMessage = ""
 
         let publishers: [AnyPublisher<(Int, Data), Error>] = (1...count).map { index in
             let urlWithQuery = "\(passUrl)?ticket_number=\(index)"
