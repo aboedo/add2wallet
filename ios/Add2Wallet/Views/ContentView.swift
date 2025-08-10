@@ -382,11 +382,8 @@ struct PassDetailsView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Venue information above the map
             Group {
-                keyValueRow("Type", metadata.eventType?.capitalized)
-                keyValueRow("Venue", metadata.venueName)
-                keyValueRow("Address", metadata.venueAddress)
-                keyValueRow("City", metadata.city)
-                keyValueRow("Region", metadata.stateCountry)
+//                keyValueRow("Created", metadata.formattedCreatedAt)
+                            
             }
             .font(.subheadline)
             .foregroundColor(.secondary)
