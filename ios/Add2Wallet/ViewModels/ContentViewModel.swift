@@ -14,11 +14,14 @@ class ContentViewModel: ObservableObject {
     @Published var passMetadata: EnhancedPassMetadata?
     @Published var ticketCount: Int? = nil
     @Published var warnings: [String] = []
+    @Published var progress: Double = 0.0
+    @Published var progressMessage: String = ""
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
     private var modelContext: ModelContext?
     private var phraseTimer: AnyCancellable?
+    private var progressTimer: AnyCancellable?
     private let phrases: [String] = [
         "Sharpening digital scissors ✂️",
         "Teaching the pass to be classy 🧣",
@@ -154,7 +157,9 @@ class ContentViewModel: ObservableObject {
         isProcessing = true
         statusMessage = "Processing..."
         startPhraseCycling()
+        startProgressAnimation()
         hasError = false
+        progress = 0.0
         
         networkService.uploadPDF(data: data, filename: filename)
             .receive(on: DispatchQueue.main)
@@ -163,6 +168,7 @@ class ContentViewModel: ObservableObject {
                     if case .failure(let error) = completion {
                         self?.isProcessing = false
                         self?.stopPhraseCycling()
+                        self?.stopProgressAnimation()
                         self?.statusMessage = "Error: \(error.localizedDescription)"
                         self?.hasError = true
                     }
@@ -182,6 +188,7 @@ class ContentViewModel: ObservableObject {
                     } else {
                         self.isProcessing = false
                         self.stopPhraseCycling()
+                        self.stopProgressAnimation()
                         self.statusMessage = "Pass generation failed. Status: \(response.status)"
                         self.hasError = true
                     }
@@ -200,6 +207,7 @@ class ContentViewModel: ObservableObject {
                     if case .failure(let error) = completion {
                         self?.isProcessing = false
                         self?.stopPhraseCycling()
+                        self?.stopProgressAnimation()
                         self?.statusMessage = "Error downloading pass: \(error.localizedDescription)"
                         self?.hasError = true
                     }
@@ -248,10 +256,12 @@ class ContentViewModel: ObservableObject {
             )
             isProcessing = false
             stopPhraseCycling()
+            completeProgress()
             
         } catch {
             isProcessing = false
             stopPhraseCycling()
+            stopProgressAnimation()
             statusMessage = "Error creating pass: \(error.localizedDescription)"
             hasError = true
         }
@@ -276,6 +286,7 @@ class ContentViewModel: ObservableObject {
                     if case .failure(let error) = completion {
                         self?.isProcessing = false
                         self?.stopPhraseCycling()
+                        self?.stopProgressAnimation()
                         self?.statusMessage = "Error downloading passes: \(error.localizedDescription)"
                         self?.hasError = true
                     }
@@ -314,9 +325,11 @@ class ContentViewModel: ObservableObject {
             )
             isProcessing = false
             stopPhraseCycling()
+            completeProgress()
         } catch {
             isProcessing = false
             stopPhraseCycling()
+            stopProgressAnimation()
             statusMessage = "Error creating passes: \(error.localizedDescription)"
             hasError = true
         }
@@ -340,6 +353,85 @@ class ContentViewModel: ObservableObject {
         phraseTimer?.cancel()
         phraseTimer = nil
         funnyPhrase = ""
+    }
+    
+    private func startProgressAnimation() {
+        progress = 0.0
+        progressMessage = "Analyzing PDF..."
+        
+        // Define progress steps with non-linear timing
+        let steps: [(Double, String, Double)] = [
+            (0.15, "Analyzing PDF...", 3.0),
+            (0.40, "Extracting barcodes...", 7.0),
+            (0.65, "Processing with AI...", 8.0),
+            (0.85, "Generating pass...", 7.0),
+            (0.95, "Signing certificate...", 5.0)
+        ]
+        
+        var currentStep = 0
+        var elapsedTime: Double = 0
+        
+        progressTimer?.cancel()
+        progressTimer = Timer.publish(every: 0.1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                
+                elapsedTime += 0.1
+                
+                // Check if we should move to next step
+                if currentStep < steps.count {
+                    let (targetProgress, _, duration) = steps[currentStep]
+                    
+                    // Calculate cumulative time for this step
+                    var cumulativeTime: Double = 0
+                    for i in 0..<currentStep {
+                        cumulativeTime += steps[i].2
+                    }
+                    
+                    if elapsedTime >= cumulativeTime + duration {
+                        // Move to next step
+                        if currentStep < steps.count - 1 {
+                            currentStep += 1
+                            self.progressMessage = steps[currentStep].1
+                        }
+                    }
+                    
+                    // Animate progress smoothly towards target
+                    let startProgress = currentStep > 0 ? steps[currentStep - 1].0 : 0.0
+                    let progressRange = targetProgress - startProgress
+                    let stepElapsed = elapsedTime - cumulativeTime
+                    let stepProgress = min(stepElapsed / duration, 1.0)
+                    
+                    self.progress = startProgress + (progressRange * stepProgress)
+                }
+                
+                // Stop at 95% and wait for actual completion
+                if self.progress >= 0.95 {
+                    self.progressTimer?.cancel()
+                    self.progressTimer = nil
+                }
+            }
+    }
+    
+    private func stopProgressAnimation() {
+        progressTimer?.cancel()
+        progressTimer = nil
+        progress = 0.0
+        progressMessage = ""
+    }
+    
+    private func completeProgress() {
+        // Animate to 100% completion
+        withAnimation(.easeInOut(duration: 0.3)) {
+            progress = 1.0
+            progressMessage = "Complete!"
+        }
+        
+        // Reset after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.stopProgressAnimation()
+        }
     }
     
     private func saveMultiplePassesToPersistentStorage(passDatas: [Data]) {

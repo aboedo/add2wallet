@@ -14,7 +14,7 @@
   - Update save logic to include PDF data
   - Add PDF preview in SavedPassDetailView with full-screen tap
 
-- [ ] Task 3: Multi-pass support in SavedPass model
+- [x] Task 3: Multi-pass support in SavedPass model
   - Replace single `passData` with `passDatas: [Data]` array
   - Group multiple passes in one SavedPass entry
   - Add pass count badge when > 1
