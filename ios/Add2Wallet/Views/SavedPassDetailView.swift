@@ -10,69 +10,6 @@ struct SavedPassDetailView: View {
     @State private var hasError = false
     @State private var showingFullScreenPDF = false
     
-    private func combineDateTime(date: String?, time: String?) -> String? {
-        let cleanDate = date?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanTime = time?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if (cleanDate?.isEmpty ?? true) && (cleanTime?.isEmpty ?? true) { return nil }
-        
-        let cal = Calendar.autoupdatingCurrent
-        
-        // Parse fixed-format date
-        var dateObj: Date?
-        if let ds = cleanDate, !ds.isEmpty {
-            let iso = DateFormatter()
-            iso.calendar = cal
-            iso.locale = Locale(identifier: "en_US_POSIX")
-            iso.dateFormat = "yyyy-MM-dd"
-            dateObj = iso.date(from: ds)
-        }
-        
-        // Parse fixed-format time
-        var timeComponents: DateComponents?
-        if let ts = cleanTime, !ts.isEmpty {
-            let tf = DateFormatter()
-            tf.calendar = cal
-            tf.locale = Locale(identifier: "en_US_POSIX")
-            tf.dateFormat = "HH:mm"
-            if let tDate = tf.date(from: ts) {
-                timeComponents = cal.dateComponents([.hour, .minute, .second], from: tDate)
-            }
-        }
-        
-        // Format combined output in user locale
-        let output = DateFormatter()
-        output.calendar = cal
-        output.locale = .autoupdatingCurrent
-        output.dateStyle = (dateObj != nil) ? .medium : .none
-        output.timeStyle = (timeComponents != nil) ? .short : .none
-        output.doesRelativeDateFormatting = true
-        
-        if let d = dateObj, let t = timeComponents,
-           let combined = cal.date(bySettingHour: t.hour ?? 0,
-                                   minute: t.minute ?? 0,
-                                   second: t.second ?? 0,
-                                   of: d) {
-            return output.string(from: combined)
-        }
-        
-        if let d = dateObj {
-            return output.string(from: d)
-        }
-        
-        if let t = timeComponents {
-            let today = cal.startOfDay(for: Date())
-            if let dt = cal.date(bySettingHour: t.hour ?? 0,
-                                 minute: t.minute ?? 0,
-                                 second: t.second ?? 0,
-                                 of: today) {
-                output.dateStyle = .none
-                output.timeStyle = .short
-                return output.string(from: dt)
-            }
-        }
-        
-        return nil
-    }
     
     var body: some View {
         NavigationView {
@@ -80,28 +17,42 @@ struct SavedPassDetailView: View {
                 VStack(spacing: 16) {
                     // Header section with pass color theming
                     VStack(spacing: 8) {
-                        // Date and time field with calendar icon
-                        if let metadata = savedPass.metadata, let dateTimeString = combineDateTime(date: metadata.date, time: metadata.time) {
-                            HStack(spacing: 8) {
-                                Spacer()
-                                Image(systemName: "calendar")
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .font(.subheadline)
-                                Text(dateTimeString)
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.9))
-                            }
-                        }
-                        
-                        Text(savedPass.displayTitle)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.white)
-                        
                         if let metadata = savedPass.metadata {
-                            SavedPassThreeFieldSubtitleView(savedPass: savedPass)
+                            // Custom header for detail view
+                            VStack(spacing: 8) {
+                                // Date and time field with calendar icon
+                                if let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
+                                    HStack(spacing: 8) {
+                                        Spacer()
+                                        Image(systemName: "calendar")
+                                            .foregroundColor(.white.opacity(0.9))
+                                            .font(.subheadline)
+                                        Text(dateTimeString)
+                                            .font(.subheadline)
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                }
+                                
+                                Text(savedPass.displayTitle)
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                    .multilineTextAlignment(.center)
+                                    .foregroundColor(.white)
+                            }
+                            
+                            // Use shared PassMetadataView for subtitle info
+                            PassMetadataView(
+                                metadata: metadata,
+                                style: .detailView,
+                                ticketCount: savedPass.passCount > 1 ? savedPass.passCount : nil
+                            )
                         } else {
+                            Text(savedPass.displayTitle)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.white)
+                            
                             Text(savedPass.displaySubtitle)
                                 .font(.title3)
                                 .foregroundColor(.white.opacity(0.9))
@@ -306,83 +257,9 @@ struct SavedPassDetailView: View {
     }
     
     private var passHeaderColor: Color {
-        // First try to use actual pass colors from metadata
-        if let metadata = savedPass.metadata {
-            // Check if we have the actual pass colors
-            if let backgroundColor = metadata.backgroundColor {
-                return parseRGBColor(backgroundColor) ?? fallbackColorFromEventType(metadata)
-            }
-            return fallbackColorFromEventType(metadata)
-        }
-        
-        // Final fallback to basic pass type
-        return fallbackColorFromPassType(savedPass.passType)
+        return PassColorUtils.getPassColor(metadata: savedPass.metadata, passType: savedPass.passType)
     }
     
-    private func parseRGBColor(_ rgbString: String) -> Color? {
-        // Parse rgb(r,g,b) format
-        let pattern = #"rgb\((\d+),\s*(\d+),\s*(\d+)\)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: rgbString, range: NSRange(rgbString.startIndex..., in: rgbString)) else {
-            return nil
-        }
-        
-        let rRange = Range(match.range(at: 1), in: rgbString)!
-        let gRange = Range(match.range(at: 2), in: rgbString)!
-        let bRange = Range(match.range(at: 3), in: rgbString)!
-        
-        guard let r = Double(String(rgbString[rRange])),
-              let g = Double(String(rgbString[gRange])),
-              let b = Double(String(rgbString[bRange])) else {
-            return nil
-        }
-        
-        return Color(red: r/255.0, green: g/255.0, blue: b/255.0)
-    }
-    
-    private func fallbackColorFromEventType(_ metadata: EnhancedPassMetadata) -> Color {
-        let eventType = (metadata.eventType ?? savedPass.passType).lowercased()
-        
-        switch eventType {
-        case let type where type.contains("museum"):
-            return .brown
-        case let type where type.contains("concert") || type.contains("music"):
-            return .purple
-        case let type where type.contains("event") || type.contains("festival"):
-            return .orange
-        case let type where type.contains("flight") || type.contains("airline"):
-            return .blue
-        case let type where type.contains("movie") || type.contains("cinema"):
-            return .red
-        case let type where type.contains("sport") || type.contains("game"):
-            return .green
-        case let type where type.contains("transit") || type.contains("train") || type.contains("bus"):
-            return .cyan
-        case let type where type.contains("theatre") || type.contains("theater"):
-            return .indigo
-        default:
-            return .gray
-        }
-    }
-    
-    private func fallbackColorFromPassType(_ passType: String) -> Color {
-        switch passType.lowercased() {
-        case let type where type.contains("evt"):
-            return .orange
-        case let type where type.contains("concert"):
-            return .purple
-        case let type where type.contains("flight"):
-            return .blue
-        case let type where type.contains("movie"):
-            return .red
-        case let type where type.contains("sport"):
-            return .green
-        case let type where type.contains("transit"):
-            return .cyan
-        default:
-            return .gray
-        }
-    }
 }
 
 struct FullScreenPDFView: View {
@@ -406,73 +283,6 @@ struct FullScreenPDFView: View {
     }
 }
 
-// MARK: - SavedPassThreeFieldSubtitleView
-struct SavedPassThreeFieldSubtitleView: View {
-    let savedPass: SavedPass
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            
-            if let metadata = savedPass.metadata {
-                
-                
-                // Event description field with caption font
-                if let description = metadata.eventDescription ?? metadata.description {
-                    HStack(spacing: 8) {
-                        Image(systemName: "text.alignleft")
-                            .foregroundColor(.white.opacity(0.7))
-                            .font(.caption)
-                        Text(description)
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                            .multilineTextAlignment(.leading)
-                        Spacer()
-                    }
-                    .padding(.bottom)
-                }
-                
-                // Venue field with map pin icon
-                if let venue = metadata.venueName {
-                    VStack(alignment: .leading) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "mappin")
-                                .foregroundColor(.white.opacity(0.9))
-                                .font(.subheadline)
-                            Text(venue)
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.9))
-                            Spacer()
-                        }
-                        if let address = metadata.venueAddress, let city = metadata.city, let country = metadata.stateCountry {
-                            Text("\(address), \(city), \(country)")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.9))
-                            Spacer()
-                        }
-                    }
-                }
-                if savedPass.passCount > 1 {
-                    HStack {
-                        Text("\(savedPass.passCount) tickets")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.8))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(Color.black.opacity(0.4))
-                            )
-                        Spacer()
-                    }
-                }
-                
-            }
-            
-        }
-    }
-    
-    
-}
 
 #Preview {
     let sampleMetadata = EnhancedPassMetadata(
