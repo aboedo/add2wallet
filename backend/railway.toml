@@ -6,7 +6,6 @@ watchPatterns = ["**/*.py", "requirements.txt", "Dockerfile"]
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 300
-branch = "fix/deployment"
 
 [environments.production]
 variables = {}
