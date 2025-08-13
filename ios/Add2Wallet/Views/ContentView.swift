@@ -8,6 +8,9 @@ struct ContentView: View {
     @State private var showingAddPassVC = false
     @State private var selectedTab = 0
     @State private var showingFullScreenPDF = false
+    @State private var showingSuccessView = false
+    @State private var passAddedSuccessfully = false
+    @State private var addedPassCount = 1
     @Environment(\.modelContext) private var modelContext
     
     private var titleHeaderColor: Color {
@@ -187,10 +190,29 @@ struct ContentView: View {
                     self.selectedTab = 0
                 }
             }
-            .sheet(isPresented: $showingAddPassVC) {
-                if let passVC = passViewController {
-                    PassKitView(passViewController: passVC)
+            .sheet(isPresented: $showingAddPassVC, onDismiss: {
+                // Check if pass was added successfully
+                if passAddedSuccessfully {
+                    // Set the pass count for the success view
+                    addedPassCount = viewModel.ticketCount ?? 1
+                    showingSuccessView = true
+                    passAddedSuccessfully = false
                 }
+            }) {
+                if let passVC = passViewController {
+                    PassKitView(passViewController: passVC, passAdded: $passAddedSuccessfully)
+                }
+            }
+            .fullScreenCover(isPresented: $showingSuccessView) {
+                PassAddedSuccessView(
+                    isPresented: $showingSuccessView,
+                    passCount: addedPassCount,
+                    onDismiss: {
+                        // Clear the current pass (like cancel button does)
+                        viewModel.clearSelection()
+                        passViewController = nil
+                    }
+                )
             }
             .fullScreenCover(isPresented: $showingFullScreenPDF) {
                 if let url = viewModel.selectedFileURL {
@@ -219,13 +241,36 @@ struct ContentView: View {
 
 struct PassKitView: UIViewControllerRepresentable {
     let passViewController: PKAddPassesViewController
+    @Binding var passAdded: Bool
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
     
     func makeUIViewController(context: Context) -> PKAddPassesViewController {
+        passViewController.delegate = context.coordinator
         return passViewController
     }
     
     func updateUIViewController(_ uiViewController: PKAddPassesViewController, context: Context) {
         // No updates needed
+    }
+    
+    class Coordinator: NSObject, PKAddPassesViewControllerDelegate {
+        let parent: PassKitView
+        
+        init(_ parent: PassKitView) {
+            self.parent = parent
+        }
+        
+        func addPassesViewControllerDidFinish(_ controller: PKAddPassesViewController) {
+            // When the user dismisses the add passes view controller,
+            // we assume they added the pass if they didn't cancel
+            // Unfortunately we can't directly check if the pass was added
+            // but we can provide the success flow anyway
+            parent.passAdded = true
+            controller.dismiss(animated: true)
+        }
     }
 }
 

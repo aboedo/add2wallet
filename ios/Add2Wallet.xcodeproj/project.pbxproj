@@ -30,6 +30,7 @@
 		B9BEF48840DAA722B50251E8 /* PassDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE1D6BB33C4EB4252FC1E5B /* PassDetailsView.swift */; };
 		DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */; };
 		E218D7BB1695B1A64D72FADD /* Add2WalletShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E2F6FF5D4CBF46C13774A890 /* PassAddedSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */; };
 		FC1358C8D4ADD78243CEA248 /* ContentViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -118,6 +119,7 @@
 		B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModelTests.swift; sourceTree = "<group>"; };
 		BAE1D6BB33C4EB4252FC1E5B /* PassDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailsView.swift; sourceTree = "<group>"; };
 		BF9AF0EB658AC2C21B655C88 /* PassMetadataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassMetadataView.swift; sourceTree = "<group>"; };
+		C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassAddedSuccessView.swift; sourceTree = "<group>"; };
 		C7287DB2FC0F76437E783DEA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPreviewView.swift; sourceTree = "<group>"; };
 		E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2WalletShareExtension.entitlements; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 			children = (
 				8A91CE7499406EC6640F1F93 /* Shared */,
 				13372BE4DCB2183466AD3A53 /* ContentView.swift */,
+				C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */,
 				CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */,
 				EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */,
 				E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */,
@@ -448,6 +451,7 @@
 				2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */,
 				B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */,
 				DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */,
+				E2F6FF5D4CBF46C13774A890 /* PassAddedSuccessView.swift in Sources */,
 				9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */,
 				54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */,
 				6D9DD850B7184921D72245FE /* AsyncMapView.swift in Sources */,

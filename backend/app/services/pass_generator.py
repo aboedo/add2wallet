@@ -1251,9 +1251,9 @@ class PassGenerator:
         bg_luminance = calculate_luminance(bg_r, bg_g, bg_b)
         
         # Determine if background is light or dark
-        # Using 0.5 as threshold (middle of 0-1 range)
-        # For even better results, we can use 0.4 to bias towards dark text
-        is_light_background = bg_luminance > 0.4
+        # Using 0.32 as threshold (20% more aggressive than 0.4)
+        # This ensures better contrast by being more likely to use dark text on medium backgrounds
+        is_light_background = bg_luminance > 0.32
         
         # Set text colors based on background luminance
         if is_light_background:
@@ -1499,6 +1499,19 @@ class PassGenerator:
                 cleaned_fb = (fallback_name or "Digital Pass").replace("_", " ").strip()
                 print(f"⚠️ Title is just a fare class '{upper_cleaned}', using fallback: {cleaned_fb}")
                 return cleaned_fb[:30] if cleaned_fb else "Digital Pass"
+
+            # Remove redundant suffixes like "Ticket", "Event", "Receipt" from the end of titles
+            redundant_suffixes = [" Ticket", " Event", " Receipt", " Pass", " Voucher", " E-ticket", " Eticket"]
+            for suffix in redundant_suffixes:
+                if cleaned.endswith(suffix):
+                    cleaned = cleaned[:-len(suffix)].strip()
+                    print(f"🔄 Removed redundant suffix '{suffix}' from title")
+                    break
+                # Also check case-insensitive version
+                elif cleaned.lower().endswith(suffix.lower()):
+                    cleaned = cleaned[:-len(suffix)].strip()
+                    print(f"🔄 Removed redundant suffix '{suffix}' from title (case-insensitive)")
+                    break
 
             print(f"✅ Using sanitized title: {cleaned[:30]}")
             return cleaned[:30]

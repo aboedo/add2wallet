@@ -9,6 +9,8 @@ struct SavedPassDetailView: View {
     @State private var statusMessage: String?
     @State private var hasError = false
     @State private var showingFullScreenPDF = false
+    @State private var showingSuccessView = false
+    @State private var passAddedSuccessfully = false
     
     
     var body: some View {
@@ -155,10 +157,26 @@ struct SavedPassDetailView: View {
             )
             
         }
-        .sheet(isPresented: $showingAddPassVC) {
-            if let passVC = passViewController {
-                PassKitView(passViewController: passVC)
+        .sheet(isPresented: $showingAddPassVC, onDismiss: {
+            // Check if pass was added successfully
+            if passAddedSuccessfully {
+                showingSuccessView = true
+                passAddedSuccessfully = false
             }
+        }) {
+            if let passVC = passViewController {
+                PassKitView(passViewController: passVC, passAdded: $passAddedSuccessfully)
+            }
+        }
+        .fullScreenCover(isPresented: $showingSuccessView) {
+            PassAddedSuccessView(
+                isPresented: $showingSuccessView,
+                passCount: savedPass.passCount,
+                onDismiss: {
+                    // Dismiss the detail view and return to the main list
+                    dismiss()
+                }
+            )
         }
         .fullScreenCover(isPresented: $showingFullScreenPDF) {
             if let pdfData = savedPass.pdfData,
