@@ -191,13 +191,10 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showingAddPassVC, onDismiss: {
-                // Check if pass was added successfully
-                if passAddedSuccessfully {
-                    // Set the pass count for the success view
-                    addedPassCount = viewModel.ticketCount ?? 1
-                    showingSuccessView = true
-                    passAddedSuccessfully = false
-                }
+                // Reset state after dismissal
+                // Note: We can't reliably detect if the pass was actually added vs cancelled
+                // Apple's PassKit doesn't provide this information
+                passAddedSuccessfully = false
             }) {
                 if let passVC = passViewController {
                     PassKitView(passViewController: passVC, passAdded: $passAddedSuccessfully)
@@ -264,11 +261,9 @@ struct PassKitView: UIViewControllerRepresentable {
         }
         
         func addPassesViewControllerDidFinish(_ controller: PKAddPassesViewController) {
-            // When the user dismisses the add passes view controller,
-            // we assume they added the pass if they didn't cancel
-            // Unfortunately we can't directly check if the pass was added
-            // but we can provide the success flow anyway
-            parent.passAdded = true
+            // Don't automatically assume success - the user might have cancelled
+            // We'll keep the success flow disabled by default
+            parent.passAdded = false
             controller.dismiss(animated: true)
         }
     }

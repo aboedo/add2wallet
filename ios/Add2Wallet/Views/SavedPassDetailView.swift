@@ -158,11 +158,9 @@ struct SavedPassDetailView: View {
             
         }
         .sheet(isPresented: $showingAddPassVC, onDismiss: {
-            // Check if pass was added successfully
-            if passAddedSuccessfully {
-                showingSuccessView = true
-                passAddedSuccessfully = false
-            }
+            // Don't show success view since we can't reliably detect if pass was added
+            // The user will see Apple's own confirmation if they add the pass
+            passAddedSuccessfully = false
         }) {
             if let passVC = passViewController {
                 PassKitView(passViewController: passVC, passAdded: $passAddedSuccessfully)
