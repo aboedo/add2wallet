@@ -21,6 +21,7 @@
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
 		6D9DD850B7184921D72245FE /* AsyncMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */; };
+		79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5652AA292A42487F139B55E2 /* PassUsageManager.swift */; };
 		7DBCF60D8DFD81421974D801 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50AEC1A177FC2937D94926BA /* ActionViewController.swift */; };
 		7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */; };
 		83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */; };
@@ -107,6 +108,7 @@
 		50AEC1A177FC2937D94926BA /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		54837C8CBF4AA918D1214C04 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPass.swift; sourceTree = "<group>"; };
+		5652AA292A42487F139B55E2 /* PassUsageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassUsageManager.swift; sourceTree = "<group>"; };
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassColorUtils.swift; sourceTree = "<group>"; };
 		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -157,6 +159,7 @@
 		08BA36A6FACFF3EF3BC3448A /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				5652AA292A42487F139B55E2 /* PassUsageManager.swift */,
 				54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */,
 			);
 			path = Models;
@@ -444,6 +447,7 @@
 			files = (
 				2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */,
 				60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */,
+				79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */,
 				7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */,
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
 				4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */,

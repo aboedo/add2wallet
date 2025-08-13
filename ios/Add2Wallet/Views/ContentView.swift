@@ -4,6 +4,7 @@ import PassKit
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
+    @StateObject private var usageManager = PassUsageManager.shared
     @State private var passViewController: PKAddPassesViewController?
     @State private var showingAddPassVC = false
     @State private var selectedTab = 0
@@ -43,6 +44,18 @@ struct ContentView: View {
                         subtitle: "Convert PDFs to Apple Wallet passes",
                         metadata: viewModel.passMetadata
                     )
+                    
+                    // Simple usage counter display (ugly for debugging)
+                    HStack {
+                        Text("Passes Remaining: \(usageManager.remainingPasses)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(8)
+                    }
+                    .padding(.top, -8)
                     
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: 12) {
@@ -132,24 +145,36 @@ struct ContentView: View {
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.bordered)
-
-                                Button {
-                                    if passViewController != nil {
-                                        showingAddPassVC = true
-                                    } else {
-                                        viewModel.uploadSelected()
+                                
+                                // Show retry button if there was an error
+                                if viewModel.hasError {
+                                    Button {
+                                        viewModel.retryUpload()
+                                    } label: {
+                                        Label("Retry", systemImage: "arrow.clockwise")
+                                            .frame(maxWidth: .infinity)
                                     }
-                                } label: {
-                                    if passViewController != nil {
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.orange)
+                                } else if passViewController != nil {
+                                    Button {
+                                        showingAddPassVC = true
+                                    } label: {
                                         Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
                                             .frame(maxWidth: .infinity)
-                                    } else {
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.green)
+                                } else {
+                                    Button {
+                                        viewModel.uploadSelected()
+                                    } label: {
                                         Label("Create Pass", systemImage: "wallet.pass")
                                             .frame(maxWidth: .infinity)
                                     }
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(.blue)
                                 }
-                                .buttonStyle(.borderedProminent)
-                                .tint(passViewController != nil ? .green : .blue)
                             }
                         }
                     }
@@ -230,6 +255,16 @@ struct ContentView: View {
                     viewModel.statusMessage = "Error selecting PDF: \(error.localizedDescription)"
                     viewModel.hasError = true
                 }
+            }
+            .alert("Purchase Passes", isPresented: $viewModel.showingPurchaseAlert) {
+                Button("Buy 10 More Passes") {
+                    usageManager.purchasePassPack()
+                    // Retry the upload after purchase
+                    viewModel.uploadSelected()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("You have no passes remaining. Would you like to purchase 10 more passes?")
             }
         }
     }

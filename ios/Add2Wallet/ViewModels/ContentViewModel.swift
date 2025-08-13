@@ -16,12 +16,15 @@ class ContentViewModel: ObservableObject {
     @Published var warnings: [String] = []
     @Published var progress: Double = 0.0
     @Published var progressMessage: String = ""
+    @Published var isRetry = false
+    @Published var showingPurchaseAlert = false
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
     private var modelContext: ModelContext?
     private var phraseTimer: AnyCancellable?
     private var progressTimer: AnyCancellable?
+    private let usageManager = PassUsageManager.shared
     private let phrases: [String] = [
         "Sharpening digital scissors ✂️",
         "Teaching the pass to be classy 🧣",
@@ -100,6 +103,13 @@ class ContentViewModel: ObservableObject {
 
     func uploadSelected() {
         guard let url = selectedFileURL else { return }
+        
+        // Check if user has passes remaining (unless it's a retry)
+        if !isRetry && !usageManager.canCreatePass() {
+            showingPurchaseAlert = true
+            return
+        }
+        
         do {
             let data = try Data(contentsOf: url)
             processPDF(data: data, filename: url.lastPathComponent)
@@ -107,6 +117,11 @@ class ContentViewModel: ObservableObject {
             statusMessage = "Error reading PDF: \(error.localizedDescription)"
             hasError = true
         }
+    }
+    
+    func retryUpload() {
+        isRetry = true
+        uploadSelected()
     }
 
     func clearSelection() {
@@ -119,6 +134,7 @@ class ContentViewModel: ObservableObject {
         passMetadata = nil
         ticketCount = nil
         warnings = []
+        isRetry = false
         NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
     }
     
@@ -161,6 +177,11 @@ class ContentViewModel: ObservableObject {
         hasError = false
         progress = 0.0
         
+        // Consume a pass if this is not a retry
+        if !isRetry {
+            usageManager.consumePass()
+        }
+        
         networkService.uploadPDF(data: data, filename: filename)
             .receive(on: DispatchQueue.main)
             .sink(
@@ -192,6 +213,8 @@ class ContentViewModel: ObservableObject {
                         self.statusMessage = "Pass generation failed. Status: \(response.status)"
                         self.hasError = true
                     }
+                    // Reset retry flag on success or failure
+                    self.isRetry = false
                 }
             )
             .store(in: &cancellables)
