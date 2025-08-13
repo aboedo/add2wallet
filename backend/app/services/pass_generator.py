@@ -1251,9 +1251,9 @@ class PassGenerator:
         bg_luminance = calculate_luminance(bg_r, bg_g, bg_b)
         
         # Determine if background is light or dark
-        # Using 0.32 as threshold (20% more aggressive than 0.4)
-        # This ensures better contrast by being more likely to use dark text on medium backgrounds
-        is_light_background = bg_luminance > 0.32
+        # Using 0.08 as threshold (twice as aggressive as previous 0.16)
+        # This ensures much better contrast by being very likely to use dark text on medium backgrounds
+        is_light_background = bg_luminance > 0.08
         
         # Set text colors based on background luminance
         if is_light_background:
@@ -1272,11 +1272,11 @@ class PassGenerator:
         fg_luminance = calculate_luminance(fg_r, fg_g, fg_b)
         contrast = contrast_ratio(bg_luminance, fg_luminance)
         
-        print(f"📊 Contrast ratio: {contrast:.2f}:1 (WCAG AA requires 4.5:1 for normal text)")
+        print(f"📊 Contrast ratio: {contrast:.2f}:1 (Ultra-enhanced standard requires 18.0:1 for maximum readability)")
         
-        # Ensure minimum WCAG AA compliance (4.5:1 for normal text)
-        if contrast < 4.5:
-            print(f"⚠️  Warning: Contrast ratio {contrast:.2f} is below WCAG AA standard (4.5)")
+        # Ensure ultra-enhanced contrast compliance (18.0:1 for maximum readability - twice previous standard)
+        if contrast < 18.0:
+            print(f"⚠️  Warning: Contrast ratio {contrast:.2f} is below ultra-enhanced standard (18.0)")
         
         return bg_color, new_fg_color, new_label_color
     
