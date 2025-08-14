@@ -37,15 +37,20 @@ class RevenueCatService:
         Returns:
             True if deduction was successful or skipped (retry), False otherwise
         """
-        logger.info(f"🔄 Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
+        logger.info(f"🔄 DEDUCT_PASS CALLED: user_id='{user_id}' (type: {type(user_id)}), is_retry={is_retry}")
+        logger.info(f"🔑 RevenueCat service state: secret_key={'present' if self.secret_key else 'MISSING'}")
         
         if is_retry:
-            logger.info(f"Skipping PASS deduction for retry (user: {user_id})")
+            logger.info(f"⏭️ Skipping PASS deduction for retry (user: {user_id})")
             return True
         
         if not self.secret_key:
-            logger.warning("RevenueCat secret key not configured, skipping PASS deduction")
+            logger.warning("❌ RevenueCat secret key not configured, skipping PASS deduction")
             return True  # Return True to not block pass generation
+            
+        if not user_id or user_id.strip() == "":
+            logger.error(f"❌ Invalid user_id provided: '{user_id}'")
+            return False
         
         try:
             # RevenueCat virtual currency transaction endpoint
@@ -60,20 +65,28 @@ class RevenueCatService:
                 }
             }
             
+            logger.info(f"Making RevenueCat API call to: {url}")
+            logger.info(f"Payload: {payload}")
+            logger.info(f"Headers: {dict(self.headers)}")
+            
             response = requests.post(url, json=payload, headers=self.headers, timeout=10)
             
+            logger.info(f"RevenueCat API Response - Status: {response.status_code}")
+            logger.info(f"RevenueCat API Response - Body: {response.text}")
+            logger.info(f"RevenueCat API Response - Headers: {dict(response.headers)}")
+            
             if response.status_code == 200:
-                logger.info(f"Successfully deducted 1 PASS from user {user_id}")
+                logger.info(f"✅ Successfully deducted 1 PASS from user {user_id}")
                 return True
             elif response.status_code == 404:
-                logger.warning(f"User {user_id} not found in RevenueCat")
+                logger.warning(f"❌ User {user_id} not found in RevenueCat")
                 return False
             elif response.status_code == 400:
                 # Might mean insufficient balance
-                logger.warning(f"Failed to deduct PASS for user {user_id}: {response.text}")
+                logger.warning(f"❌ Failed to deduct PASS for user {user_id} (Bad Request): {response.text}")
                 return False
             else:
-                logger.error(f"RevenueCat API error: {response.status_code} - {response.text}")
+                logger.error(f"❌ RevenueCat API error: {response.status_code} - {response.text}")
                 return False
                 
         except requests.exceptions.RequestException as e:
