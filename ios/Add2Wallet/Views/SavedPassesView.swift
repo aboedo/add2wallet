@@ -40,13 +40,13 @@ struct SavedPassesView: View {
             }
             .navigationTitle("My Passes")
             .navigationBarTitleDisplayMode(.large)
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    showingCustomerCenter = true
-                }) {
-                    Image(systemName: "gearshape")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showingCustomerCenter = true
+                    }) {
+                        Image(systemName: "gearshape")
+                    }
                 }
             }
         }
