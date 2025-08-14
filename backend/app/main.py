@@ -242,9 +242,12 @@ async def upload_pdf(
             pass_paths.append(str(pass_path))
         
         # Deduct 1 PASS from user's RevenueCat balance (unless this is a retry)
+        print(f"🔄 Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
         deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
-        if not deduction_success and not is_retry:
-            print(f"⚠️ Failed to deduct PASS for user {user_id}, but continuing with pass generation")
+        if deduction_success:
+            print(f"✅ PASS deduction successful for user {user_id}")
+        else:
+            print(f"⚠️ PASS deduction failed for user {user_id}, but continuing with pass generation")
         
         # Update job information with completion
         jobs[job_id].update({

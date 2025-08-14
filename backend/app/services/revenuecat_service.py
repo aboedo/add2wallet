@@ -13,12 +13,18 @@ class RevenueCatService:
     """Service for interacting with RevenueCat API"""
     
     def __init__(self):
-        self.secret_key = os.getenv("REVENUECAT_SECRET_KEY", "sk_xYDUixBpiCkUQiwlmeMlCvvFrGjNv")
+        self.secret_key = os.getenv("REVENUECAT_SECRET_KEY")
         self.base_url = "https://api.revenuecat.com/v1"
-        self.headers = {
-            "Authorization": f"Bearer {self.secret_key}",
-            "Content-Type": "application/json"
-        }
+        
+        if self.secret_key:
+            logger.info(f"RevenueCat service initialized with secret key: sk_***{self.secret_key[-8:]}")
+            self.headers = {
+                "Authorization": f"Bearer {self.secret_key}",
+                "Content-Type": "application/json"
+            }
+        else:
+            logger.warning("RevenueCat secret key not found in environment variables")
+            self.headers = {}
     
     def deduct_pass(self, user_id: str, is_retry: bool = False) -> bool:
         """
@@ -31,11 +37,13 @@ class RevenueCatService:
         Returns:
             True if deduction was successful or skipped (retry), False otherwise
         """
+        logger.info(f"Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
+        
         if is_retry:
             logger.info(f"Skipping PASS deduction for retry (user: {user_id})")
             return True
         
-        if not self.secret_key or self.secret_key == "your-revenuecat-secret-key-here":
+        if not self.secret_key:
             logger.warning("RevenueCat secret key not configured, skipping PASS deduction")
             return True  # Return True to not block pass generation
         
