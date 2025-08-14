@@ -3,12 +3,16 @@ import Combine
 import UniformTypeIdentifiers
 import PassKit
 import SwiftData
+import RevenueCat
+import UIKit
 
 class ContentViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var statusMessage: String?
     @Published var funnyPhrase: String = ""
     @Published var hasError = false
+    @Published var errorCode: String?
+    @Published var showingContactSupport = false
     @Published var showingDocumentPicker = false
     @Published var selectedFileURL: URL?
     @Published var passMetadata: EnhancedPassMetadata?
@@ -18,6 +22,10 @@ class ContentViewModel: ObservableObject {
     @Published var progressMessage: String = ""
     @Published var isRetry = false
     @Published var showingPurchaseAlert = false
+    
+    // Store PDF data for error reporting
+    private var currentPDFData: Data?
+    private var currentPDFFileName: String?
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
@@ -177,7 +185,13 @@ class ContentViewModel: ObservableObject {
         startPhraseCycling()
         startProgressAnimation()
         hasError = false
+        errorCode = nil
+        showingContactSupport = false
         progress = 0.0
+        
+        // Store PDF data for potential error reporting
+        self.currentPDFData = data
+        self.currentPDFFileName = filename
         
         // Pass consumption is now handled server-side
         // The server will deduct 1 PASS via RevenueCat API
@@ -193,6 +207,14 @@ class ContentViewModel: ObservableObject {
                         self?.stopProgressAnimation()
                         self?.statusMessage = "Error: \(error.localizedDescription)"
                         self?.hasError = true
+                        
+                        // Check if this is a 4xx error to show contact support
+                        if let networkError = error as? NetworkError,
+                           let statusCode = networkError.statusCode,
+                           statusCode >= 400 && statusCode < 500 {
+                            self?.errorCode = "\(statusCode)"
+                            self?.showingContactSupport = true
+                        }
                     }
                 },
                 receiveValue: { [weak self] response in
@@ -554,5 +576,86 @@ class ContentViewModel: ObservableObject {
         } catch {
             print("Error saving pass: \(error)")
         }
+    }
+    
+    func contactSupport() {
+        guard let errorCode = errorCode,
+              let pdfData = currentPDFData,
+              let fileName = currentPDFFileName else {
+            print("Missing data for support email")
+            return
+        }
+        
+        // Get the user's app user ID from RevenueCat
+        let appUserID = Purchases.shared.appUserID
+        
+        // Create email content
+        let subject = "Pass Generation Error - Code \(errorCode)"
+        let body = """
+Hi Add2Wallet Support,
+
+I encountered an error while trying to generate a pass from a PDF. Here are the details:
+
+Error Code: \(errorCode)
+PDF Filename: \(fileName)
+User ID: \(appUserID)
+App Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")
+
+Please help me resolve this issue. The original PDF is attached to this email.
+
+Thank you!
+"""
+        
+        // Create temporary file for PDF attachment
+        let tempURL = createTempPDFFile(data: pdfData, fileName: fileName)
+        
+        // Open Mail app with pre-filled content
+        if let mailURL = createMailURL(to: "andresboedo@gmail.com", subject: subject, body: body) {
+            if UIApplication.shared.canOpenURL(mailURL) {
+                UIApplication.shared.open(mailURL)
+            }
+        }
+        
+        // Also trigger MFMailComposeViewController as fallback
+        sendSupportEmail(subject: subject, body: body, pdfData: pdfData, fileName: fileName)
+    }
+    
+    private func createTempPDFFile(data: Data, fileName: String) -> URL? {
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempURL = tempDir.appendingPathComponent(fileName)
+        
+        do {
+            try data.write(to: tempURL)
+            return tempURL
+        } catch {
+            print("Error creating temp PDF file: \(error)")
+            return nil
+        }
+    }
+    
+    private func createMailURL(to: String, subject: String, body: String) -> URL? {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = to
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body)
+        ]
+        return components.url
+    }
+    
+    private func sendSupportEmail(subject: String, body: String, pdfData: Data, fileName: String) {
+        // Post notification to trigger MFMailComposeViewController from the view
+        let userInfo: [String: Any] = [
+            "subject": subject,
+            "body": body,
+            "pdfData": pdfData,
+            "fileName": fileName
+        ]
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ShowSupportEmail"),
+            object: nil,
+            userInfo: userInfo
+        )
     }
 }

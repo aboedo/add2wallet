@@ -130,7 +130,7 @@ struct ErrorResponse: Codable {
 enum NetworkError: Error, LocalizedError {
     case invalidURL
     case invalidResponse
-    case serverError(String)
+    case serverError(String, statusCode: Int? = nil)
     case decodingError
     
     var errorDescription: String? {
@@ -139,10 +139,22 @@ enum NetworkError: Error, LocalizedError {
             return "Invalid server URL"
         case .invalidResponse:
             return "Invalid server response"
-        case .serverError(let message):
+        case .serverError(let message, let statusCode):
+            if let code = statusCode {
+                return "\(message) (Code: \(code))"
+            }
             return message
         case .decodingError:
             return "Failed to decode server response"
+        }
+    }
+    
+    var statusCode: Int? {
+        switch self {
+        case .serverError(_, let statusCode):
+            return statusCode
+        default:
+            return nil
         }
     }
 }
@@ -212,9 +224,9 @@ class NetworkService {
                     return data
                 } else {
                     if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                        throw NetworkError.serverError(errorResponse.error)
+                        throw NetworkError.serverError(errorResponse.error, statusCode: httpResponse.statusCode)
                     }
-                    throw NetworkError.serverError("Server error: \(httpResponse.statusCode)")
+                    throw NetworkError.serverError("Server error: \(httpResponse.statusCode)", statusCode: httpResponse.statusCode)
                 }
             }
             .decode(type: UploadResponse.self, decoder: JSONDecoder())

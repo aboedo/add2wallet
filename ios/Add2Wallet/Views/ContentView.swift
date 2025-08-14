@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import PassKit
 import RevenueCatUI
+import MessageUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
@@ -13,6 +14,8 @@ struct ContentView: View {
     @State private var showingSuccessView = false
     @State private var passAddedSuccessfully = false
     @State private var addedPassCount = 1
+    @State private var showingMailComposer = false
+    @State private var mailComposerData: [String: Any]?
     @Environment(\.modelContext) private var modelContext
     
     #if DEBUG
@@ -171,6 +174,18 @@ struct ContentView: View {
                                     }
                                     .buttonStyle(.borderedProminent)
                                     .tint(.orange)
+                                    
+                                    // Show contact support button for 4xx errors
+                                    if viewModel.showingContactSupport {
+                                        Button {
+                                            viewModel.contactSupport()
+                                        } label: {
+                                            Label("Contact Support", systemImage: "envelope")
+                                                .frame(maxWidth: .infinity)
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .tint(.blue)
+                                    }
                                 } else if passViewController != nil {
                                     Button {
                                         showingAddPassVC = true
@@ -233,6 +248,18 @@ struct ContentView: View {
                 ) { _ in
                     self.selectedTab = 0
                 }
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("ShowSupportEmail"),
+                    object: nil,
+                    queue: .main
+                ) { notification in
+                    if let userInfo = notification.userInfo {
+                        self.mailComposerData = userInfo
+                        if MFMailComposeViewController.canSendMail() {
+                            self.showingMailComposer = true
+                        }
+                    }
+                }
             }
             .sheet(isPresented: $showingAddPassVC, onDismiss: {
                 // Reset state after dismissal
@@ -293,6 +320,16 @@ struct ContentView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingMailComposer) {
+                if let data = mailComposerData {
+                    MailComposeView(
+                        subject: data["subject"] as? String ?? "",
+                        body: data["body"] as? String ?? "",
+                        pdfData: data["pdfData"] as? Data ?? Data(),
+                        fileName: data["fileName"] as? String ?? "document.pdf"
+                    )
+                }
+            }
         }
     }
     
@@ -327,6 +364,62 @@ struct PassKitView: UIViewControllerRepresentable {
             // We'll keep the success flow disabled by default
             parent.passAdded = false
             controller.dismiss(animated: true)
+        }
+    }
+}
+
+struct MailComposeView: UIViewControllerRepresentable {
+    let subject: String
+    let body: String
+    let pdfData: Data
+    let fileName: String
+    
+    @Environment(\.presentationMode) var presentationMode
+    
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let mailComposer = MFMailComposeViewController()
+        mailComposer.mailComposeDelegate = context.coordinator
+        mailComposer.setToRecipients(["andresboedo@gmail.com"])
+        mailComposer.setSubject(subject)
+        mailComposer.setMessageBody(body, isHTML: false)
+        
+        // Attach the PDF file
+        mailComposer.addAttachmentData(pdfData, mimeType: "application/pdf", fileName: fileName)
+        
+        return mailComposer
+    }
+    
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {
+        // No updates needed
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let parent: MailComposeView
+        
+        init(_ parent: MailComposeView) {
+            self.parent = parent
+        }
+        
+        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+            // Handle the result if needed
+            switch result {
+            case .sent:
+                print("Email sent successfully")
+            case .cancelled:
+                print("Email cancelled")
+            case .saved:
+                print("Email saved as draft")
+            case .failed:
+                print("Email failed to send: \(error?.localizedDescription ?? "Unknown error")")
+            @unknown default:
+                print("Unknown email result")
+            }
+            
+            parent.presentationMode.wrappedValue.dismiss()
         }
     }
 }
