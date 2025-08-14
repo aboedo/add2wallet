@@ -1,38 +1,85 @@
 import Foundation
+import RevenueCat
 
-class PassUsageManager: ObservableObject {
+@MainActor
+class PassUsageManager: NSObject, ObservableObject {
     static let shared = PassUsageManager()
     
-    private let passCountKey = "remainingPassCount"
-    private let defaults = UserDefaults.standard
+    @Published var remainingPasses: Int = 0
+    @Published var isLoadingBalance = false
+    @Published var customerInfo: CustomerInfo?
     
-    @Published var remainingPasses: Int {
-        didSet {
-            defaults.set(remainingPasses, forKey: passCountKey)
+    private override init() {
+        super.init()
+        
+        Task {
+            await refreshBalance()
         }
-    }
-    
-    private init() {
-        // Initialize with 0 passes on first launch
-        self.remainingPasses = defaults.integer(forKey: passCountKey)
+        
+        // Listen for customer info updates
+        Purchases.shared.delegate = self
     }
     
     func canCreatePass() -> Bool {
         return remainingPasses > 0
     }
     
-    func consumePass() {
-        if remainingPasses > 0 {
-            remainingPasses -= 1
+    func refreshBalance() async {
+        isLoadingBalance = true
+        defer { isLoadingBalance = false }
+        
+        do {
+            // Fetch virtual currencies from RevenueCat
+            let virtualCurrencies = try await Purchases.shared.virtualCurrencies()
+            
+            // Get PASS balance
+            if let passBalance = virtualCurrencies.all["PASS"]?.balance {
+                self.remainingPasses = passBalance
+            } else {
+                self.remainingPasses = 0
+            }
+            
+            // Also update customer info
+            self.customerInfo = try await Purchases.shared.customerInfo()
+        } catch {
+            print("Error fetching virtual currencies: \(error)")
+            self.remainingPasses = 0
         }
     }
     
+    // This will be called from server-side after successful pass generation
+    func passGenerated() {
+        // The server will handle the deduction via RevenueCat API
+        // We just refresh the balance to show updated count
+        Task {
+            await refreshBalance()
+        }
+    }
+    
+    // Legacy method for compatibility - no longer used locally
+    func consumePass() {
+        // Do nothing - server handles this now
+    }
+    
+    // Legacy method for compatibility - no longer used locally
     func addPasses(count: Int) {
-        remainingPasses += count
+        // Do nothing - RevenueCat handles this now
     }
     
     func purchasePassPack() {
-        // Simple implementation: adds 10 passes
-        addPasses(count: 10)
+        // This will be handled by PaywallView
+        Task {
+            await refreshBalance()
+        }
+    }
+}
+
+// MARK: - PurchasesDelegate
+extension PassUsageManager: PurchasesDelegate {
+    nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+        Task { @MainActor in
+            self.customerInfo = customerInfo
+            await refreshBalance()
+        }
     }
 }

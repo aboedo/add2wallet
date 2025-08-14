@@ -101,6 +101,7 @@ class ContentViewModel: ObservableObject {
         url.stopAccessingSecurityScopedResource()
     }
 
+    @MainActor
     func uploadSelected() {
         guard let url = selectedFileURL else { return }
         
@@ -119,6 +120,7 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    @MainActor
     func retryUpload() {
         isRetry = true
         uploadSelected()
@@ -177,10 +179,9 @@ class ContentViewModel: ObservableObject {
         hasError = false
         progress = 0.0
         
-        // Consume a pass if this is not a retry
-        if !isRetry {
-            usageManager.consumePass()
-        }
+        // Pass consumption is now handled server-side
+        // The server will deduct 1 PASS via RevenueCat API
+        // unless this is a retry
         
         networkService.uploadPDF(data: data, filename: filename)
             .receive(on: DispatchQueue.main)
@@ -200,6 +201,11 @@ class ContentViewModel: ObservableObject {
                     self.ticketCount = response.ticketCount
                     self.warnings = response.warnings ?? []
                     if response.status == "completed", let passUrl = response.passUrl {
+                        // Refresh balance after successful pass generation
+                        Task { @MainActor in
+                            self.usageManager.passGenerated()
+                        }
+                        
                         let count = response.ticketCount ?? 1
                         if count > 1 {
                             self.downloadAndOpenMultiplePasses(passUrl: passUrl, count: count)

@@ -47,13 +47,20 @@ struct ContentView: View {
                     
                     // Simple usage counter display (ugly for debugging)
                     HStack {
-                        Text("Passes Remaining: \(usageManager.remainingPasses)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 4)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(8)
+                        if usageManager.isLoadingBalance {
+                            SwiftUI.ProgressView()
+                                .scaleEffect(0.8)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                        } else {
+                            Text("Passes Remaining: \(usageManager.remainingPasses)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(8)
+                        }
                     }
                     .padding(.top, -8)
                     
@@ -185,6 +192,10 @@ struct ContentView: View {
                 }
             }
             .navigationBarHidden(true)
+            .task {
+                // Refresh balance when view appears
+                await usageManager.refreshBalance()
+            }
             .onAppear {
                 // Set up model context for view model
                 viewModel.setModelContext(modelContext)
