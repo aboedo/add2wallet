@@ -17,22 +17,22 @@ Adding monetization to Add2Wallet using RevenueCat SDK with Virtual Currencies f
 - [x] Initialize SDK in App startup
 - [ ] Test SDK integration
 
-### Step 3: Implement PASS Virtual Currency
-- [ ] Replace local PassUsageManager with RevenueCat Virtual Currencies
-- [ ] Fetch PASS balance from CustomerInfo
-- [ ] Update UI to display RevenueCat-based pass count
-- [ ] Remove local storage implementation
+### Step 3: Implement PASS Virtual Currency ✅
+- [x] Replace local PassUsageManager with RevenueCat Virtual Currencies
+- [x] Fetch PASS balance from CustomerInfo
+- [x] Update UI to display RevenueCat-based pass count
+- [x] Remove local storage implementation
 
-### Step 4: Server-Side Pass Deduction
-- [ ] Add RevenueCat secret key as environment variable: `sk_xYDUixBpiCkUQiwlmeMlCvvFrGjNv`
-- [ ] Implement API call to deduct 1 PASS when generating a pass
-- [ ] Ensure deduction happens after successful pass generation
-- [ ] Add error handling for failed deductions
+### Step 4: Server-Side Pass Deduction ✅
+- [x] Add RevenueCat secret key as environment variable: `sk_xYDUixBpiCkUQiwlmeMlCvvFrGjNv`
+- [x] Implement API call to deduct 1 PASS when generating a pass
+- [x] Ensure deduction happens after successful pass generation
+- [x] Add error handling for failed deductions
 
-### Step 5: Skip Deduction for Retries
-- [ ] Track retry status in ContentViewModel
-- [ ] Skip PASS deduction when isRetry flag is true
-- [ ] Test retry logic
+### Step 5: Skip Deduction for Retries ✅
+- [x] Track retry status in ContentViewModel
+- [x] Skip PASS deduction when isRetry flag is true
+- [x] Test retry logic
 
 ### Step 6: Replace Alert with PaywallView
 - [ ] Replace showingPurchaseAlert with RevenueCat PaywallView

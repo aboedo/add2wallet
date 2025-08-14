@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import RevenueCat
 
 struct EnhancedPassMetadata: Codable {
     // Basic Information
@@ -157,7 +158,7 @@ class NetworkService {
         self.session = URLSession(configuration: config)
     }
     
-    func uploadPDF(data: Data, filename: String) -> AnyPublisher<UploadResponse, Error> {
+    func uploadPDF(data: Data, filename: String, isRetry: Bool = false) -> AnyPublisher<UploadResponse, Error> {
         guard let url = URL(string: "\(baseURL)/upload") else {
             return Fail(error: NetworkError.invalidURL)
                 .eraseToAnyPublisher()
@@ -178,16 +179,23 @@ class NetworkService {
         body.append(data)
         body.append("\r\n".data(using: .utf8)!)
         
-        // Add user_id
+        // Add user_id (from RevenueCat)
+        let appUserId = Purchases.shared.appUserID
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"user_id\"\r\n\r\n".data(using: .utf8)!)
-        body.append("ios-test-user".data(using: .utf8)!)
+        body.append(appUserId.data(using: .utf8)!)
         body.append("\r\n".data(using: .utf8)!)
         
         // Add session_token
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"session_token\"\r\n\r\n".data(using: .utf8)!)
         body.append("development-token".data(using: .utf8)!)
+        body.append("\r\n".data(using: .utf8)!)
+        
+        // Add is_retry flag
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"is_retry\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(isRetry)".data(using: .utf8)!)
         body.append("\r\n".data(using: .utf8)!)
         
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)

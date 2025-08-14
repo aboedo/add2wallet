@@ -183,7 +183,7 @@ class ContentViewModel: ObservableObject {
         // The server will deduct 1 PASS via RevenueCat API
         // unless this is a retry
         
-        networkService.uploadPDF(data: data, filename: filename)
+        networkService.uploadPDF(data: data, filename: filename, isRetry: isRetry)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
