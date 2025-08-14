@@ -37,7 +37,7 @@ class RevenueCatService:
         Returns:
             True if deduction was successful or skipped (retry), False otherwise
         """
-        logger.info(f"Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
+        logger.info(f"🔄 Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
         
         if is_retry:
             logger.info(f"Skipping PASS deduction for retry (user: {user_id})")
