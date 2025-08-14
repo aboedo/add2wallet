@@ -11,8 +11,17 @@ struct Add2WalletApp: App {
     
     init() {
         // Initialize RevenueCat
+        #if DEBUG
         Purchases.logLevel = .debug
+        #else
+        Purchases.logLevel = .info
+        #endif
         Purchases.configure(withAPIKey: "appl_fYlYmWylgRwabkYEZoocYZaCOGU")
+        
+        #if DEBUG
+        // Initialize debug shake detector
+        _ = DebugShakeDetector.shared
+        #endif
         
         do {
             // Create a schema with the current model

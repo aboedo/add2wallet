@@ -21,6 +21,7 @@
 		60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */; };
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
+		668A7B6EB458AEFE79568DFF /* DebugShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D5E35468E6A18F103A070E /* DebugShakeDetector.swift */; };
 		6D9DD850B7184921D72245FE /* AsyncMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */; };
 		79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5652AA292A42487F139B55E2 /* PassUsageManager.swift */; };
 		7DBCF60D8DFD81421974D801 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50AEC1A177FC2937D94926BA /* ActionViewController.swift */; };
@@ -105,6 +106,7 @@
 		14163BCA5715B9BC2F933391 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		24D7B9D34B651C0C6D4C8D38 /* Add2WalletTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Add2WalletTests-Info.plist"; sourceTree = "<group>"; };
 		2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatter.swift; sourceTree = "<group>"; };
+		30D5E35468E6A18F103A070E /* DebugShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugShakeDetector.swift; sourceTree = "<group>"; };
 		41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtensionTests.swift; sourceTree = "<group>"; };
 		4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Add2WalletShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		50AEC1A177FC2937D94926BA /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
@@ -194,6 +196,7 @@
 				7E02BD608C5E0AAB53D25A33 /* Preview Content */,
 				C4ED5855D8BBECFD1754E03F /* Services */,
 				BEE7535C12918FADDEC7F4D8 /* Utilities */,
+				6D6E2690CFEECD5C148E16BF /* Utils */,
 				15870E9EDF09E6A365236CA7 /* ViewModels */,
 				9502FAC6D87A2BCDD2579505 /* Views */,
 				91BE638A702EBF2E23F0C455 /* Add2Wallet.entitlements */,
@@ -203,6 +206,14 @@
 				14163BCA5715B9BC2F933391 /* Info.plist */,
 			);
 			path = Add2Wallet;
+			sourceTree = "<group>";
+		};
+		6D6E2690CFEECD5C148E16BF /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				30D5E35468E6A18F103A070E /* DebugShakeDetector.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		753C0C4CF3DAE58ECDF9E12C /* Derived */ = {
@@ -461,6 +472,7 @@
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
 				4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */,
 				20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */,
+				668A7B6EB458AEFE79568DFF /* DebugShakeDetector.swift in Sources */,
 				2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */,
 				B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */,
 				DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */,
