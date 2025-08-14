@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import RevenueCat
 
 @main
 struct Add2WalletApp: App {
@@ -9,6 +10,10 @@ struct Add2WalletApp: App {
     let container: ModelContainer
     
     init() {
+        // Initialize RevenueCat
+        Purchases.logLevel = .debug
+        Purchases.configure(withAPIKey: "appl_fYlYmWylgRwabkYEZoocYZaCOGU")
+        
         do {
             // Create a schema with the current model
             let schema = Schema([SavedPass.self])

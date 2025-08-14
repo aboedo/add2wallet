@@ -2,6 +2,12 @@ import ProjectDescription
 
 let project = Project(
     name: "Add2Wallet",
+    packages: [
+        .remote(
+            url: "https://github.com/RevenueCat/purchases-ios-spm.git",
+            requirement: .upToNextMajor(from: "5.32.0")
+        )
+    ],
     targets: [
         .target(
             name: "Add2Wallet",
@@ -19,7 +25,9 @@ let project = Project(
             ],
             entitlements: "Add2Wallet/Add2Wallet.entitlements",
             dependencies: [
-                .target(name: "Add2WalletShareExtension")
+                .target(name: "Add2WalletShareExtension"),
+                .package(product: "RevenueCat"),
+                .package(product: "RevenueCatUI")
             ],
             settings: .settings(
                 base: [

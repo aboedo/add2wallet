@@ -11,6 +11,7 @@
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
 		2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */; };
+		238A82DC3E4640EF5A13AFDA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 060631A1940D5F28CD477DAA /* RevenueCat */; };
 		264E2AA0EBFE6331FA88325B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C7287DB2FC0F76437E783DEA /* Assets.xcassets */; };
 		2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */; };
 		3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */; };
@@ -27,6 +28,7 @@
 		83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */; };
 		87A8BF43639B5B64FA90634B /* PassMetadataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9AF0EB658AC2C21B655C88 /* PassMetadataView.swift */; };
 		9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */; };
+		A3BF14B25B521496ABB065BD /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 516DD5D634A86F0E2AF2612A /* RevenueCatUI */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
 		B9BEF48840DAA722B50251E8 /* PassDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE1D6BB33C4EB4252FC1E5B /* PassDetailsView.swift */; };
 		DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */; };
@@ -136,6 +138,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				238A82DC3E4640EF5A13AFDA /* RevenueCat in Frameworks */,
+				A3BF14B25B521496ABB065BD /* RevenueCatUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,6 +380,8 @@
 			);
 			name = Add2Wallet;
 			packageProductDependencies = (
+				060631A1940D5F28CD477DAA /* RevenueCat */,
+				516DD5D634A86F0E2AF2612A /* RevenueCatUI */,
 			);
 			productName = Add2Wallet;
 			productReference = F0647FA2EE1335D1CD3543C9 /* Add2Wallet.app */;
@@ -403,6 +409,9 @@
 				en,
 			);
 			mainGroup = 9ABB94B6BBF07318A6B5CD32;
+			packageReferences = (
+				1B9CFF42E6FF88182D8EAFD5 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+			);
 			productRefGroup = 1BEF356E45B24589BB0387D4 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -851,6 +860,28 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1B9CFF42E6FF88182D8EAFD5 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.32.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		060631A1940D5F28CD477DAA /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RevenueCat;
+		};
+		516DD5D634A86F0E2AF2612A /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RevenueCatUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F026834AD61CF621F951195A /* Project object */;
 }
