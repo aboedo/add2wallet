@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import PassKit
+import RevenueCatUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
@@ -267,15 +268,23 @@ struct ContentView: View {
                     viewModel.hasError = true
                 }
             }
-            .alert("Purchase Passes", isPresented: $viewModel.showingPurchaseAlert) {
-                Button("Buy 10 More Passes") {
-                    usageManager.purchasePassPack()
-                    // Retry the upload after purchase
-                    viewModel.uploadSelected()
+            .sheet(isPresented: $viewModel.showingPurchaseAlert) {
+                PaywallView { customerInfo in
+                    // Purchase successful, refresh balance
+                    print("Purchase completed, refreshing balance...")
+                    Task {
+                        await usageManager.refreshBalance()
+                        // Retry the upload after successful purchase
+                        await viewModel.uploadSelected()
+                    }
+                    return (userCancelled: false, error: nil)
                 }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("You have no passes remaining. Would you like to purchase 10 more passes?")
+                .onDisappear {
+                    // Always refresh balance when paywall closes
+                    Task {
+                        await usageManager.refreshBalance()
+                    }
+                }
             }
         }
     }

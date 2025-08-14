@@ -1,11 +1,14 @@
 import SwiftUI
 import SwiftData
+import RevenueCatUI
+import StoreKit
 
 struct SavedPassesView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedPass.createdAt, order: .reverse) private var savedPasses: [SavedPass]
     @State private var selectedPass: SavedPass?
     @State private var selectedTab = 0
+    @State private var showingCustomerCenter = false
     
     // Group passes by month based on event date (fallback to creation date)
     private var groupedPasses: [(String, [SavedPass])] {
@@ -28,7 +31,7 @@ struct SavedPassesView: View {
     
     var body: some View {
         NavigationView {
-            Group {
+            VStack {
                 if savedPasses.isEmpty {
                     emptyStateView
                 } else {
@@ -38,8 +41,20 @@ struct SavedPassesView: View {
             .navigationTitle("My Passes")
             .navigationBarTitleDisplayMode(.large)
         }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showingCustomerCenter = true
+                }) {
+                    Image(systemName: "gearshape")
+                }
+            }
+        }
         .sheet(item: $selectedPass) { pass in
             SavedPassDetailView(savedPass: pass)
+        }
+        .sheet(isPresented: $showingCustomerCenter) {
+            CustomerCenterView()
         }
     }
     
@@ -264,6 +279,35 @@ struct PassRowView: View {
             return "train.side.front.car"
         default:
             return "wallet.pass"
+        }
+    }
+    
+    private func requestAppRating() {
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            if #available(iOS 14.0, *) {
+                SKStoreReviewController.requestReview(in: scene)
+            } else {
+                SKStoreReviewController.requestReview()
+            }
+        }
+    }
+    
+    private func sendFeedbackEmail(appUserID: String) {
+        let email = "support@add2wallet.app"
+        let subject = "Add2Wallet Feedback"
+        let body = """
+        
+        
+        ---
+        App User ID: \(appUserID)
+        App Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")
+        iOS Version: \(UIDevice.current.systemVersion)
+        """
+        
+        let emailURL = "mailto:\(email)?subject=\(subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&body=\(body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+        
+        if let url = URL(string: emailURL) {
+            UIApplication.shared.open(url)
         }
     }
 }

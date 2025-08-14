@@ -34,21 +34,22 @@ Adding monetization to Add2Wallet using RevenueCat SDK with Virtual Currencies f
 - [x] Skip PASS deduction when isRetry flag is true
 - [x] Test retry logic
 
-### Step 6: Replace Alert with PaywallView
-- [ ] Replace showingPurchaseAlert with RevenueCat PaywallView
-- [ ] Handle purchase completion and refresh CustomerInfo
-- [ ] Update pass balance after successful purchase
+### Step 6: Replace Alert with PaywallView ✅
+- [x] Replace showingPurchaseAlert with RevenueCat PaywallView
+- [x] Handle purchase completion and refresh CustomerInfo
+- [x] Update pass balance after successful purchase
 - [ ] Test purchase flow
 
-### Step 7: Add Settings Button
-- [ ] Add settings button to SavedPassesView navigation bar
-- [ ] Present RevenueCat Customer Center when tapped
+### Step 7: Add Settings Button ✅
+- [x] Add settings button to SavedPassesView navigation bar
+- [x] Present RevenueCat Customer Center when tapped
 - [ ] Test Customer Center presentation
 
-### Step 8: Configure Customer Center Actions
-- [ ] Implement "rate_app" custom action for app rating
-- [ ] Implement "provide_feedback" custom action with email template
-- [ ] Include appUserID in feedback email
+### Step 8: Configure Customer Center Actions ⚠️ 
+- [x] Implement "rate_app" custom action for app rating
+- [x] Implement "provide_feedback" custom action with email template
+- [x] Include appUserID in feedback email
+- [ ] Fix Customer Center custom actions API (requires RevenueCat configuration)
 - [ ] Test custom actions
 
 ## Technical Details
