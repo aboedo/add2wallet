@@ -8,4 +8,4 @@ healthcheckPath = "/health"
 healthcheckTimeout = 300
 
 [environments.production]
-variables = {}
+variables = { REVENUECAT_SECRET_KEY = "sk_xYDUixBpiCkUQiwlmeMlCvvFrGjNv" }
