@@ -27,11 +27,12 @@ struct Add2WalletApp: App {
             // Create a schema with the current model
             let schema = Schema([SavedPass.self])
             
-            // Configure to delete existing store if incompatible
+            // Configure with iCloud sync enabled
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                allowsSave: true
+                allowsSave: true,
+                cloudKitDatabase: .automatic
             )
             
             // First, try to create the container normally

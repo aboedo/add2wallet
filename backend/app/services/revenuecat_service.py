@@ -14,7 +14,7 @@ class RevenueCatService:
     
     def __init__(self):
         self.secret_key = os.getenv("REVENUECAT_SECRET_KEY")
-        self.base_url = "https://api.revenuecat.com/v1"
+        self.base_url = "https://api.revenuecat.com/v2"
         
         if self.secret_key:
             logger.info(f"RevenueCat service initialized with secret key: sk_***{self.secret_key[-8:]}")
@@ -53,15 +53,13 @@ class RevenueCatService:
             return False
         
         try:
-            # RevenueCat virtual currency transaction endpoint
-            url = f"{self.base_url}/subscribers/{user_id}/virtual_currencies/PASS/transactions"
+            # RevenueCat V2 virtual currency transaction endpoint
+            # Note: We need to determine the correct project identifier
+            url = f"{self.base_url}/projects/projd85d45ec/customers/{user_id}/virtual_currencies/transactions"
             
             payload = {
-                "amount": -1,  # Negative value to deduct
-                "transaction_id": f"pass_gen_{user_id}_{os.urandom(8).hex()}",  # Unique transaction ID
-                "metadata": {
-                    "type": "pass_generation",
-                    "source": "backend"
+                "adjustments": {
+                    "PASS": -1  # Negative value to deduct 1 PASS
                 }
             }
             
@@ -82,8 +80,12 @@ class RevenueCatService:
                 logger.warning(f"❌ User {user_id} not found in RevenueCat")
                 return False
             elif response.status_code == 400:
-                # Might mean insufficient balance
+                # Bad request
                 logger.warning(f"❌ Failed to deduct PASS for user {user_id} (Bad Request): {response.text}")
+                return False
+            elif response.status_code == 422:
+                # Insufficient balance (unprocessable entity)
+                logger.warning(f"❌ Insufficient PASS balance for user {user_id}: {response.text}")
                 return False
             else:
                 logger.error(f"❌ RevenueCat API error: {response.status_code} - {response.text}")
@@ -112,13 +114,13 @@ class RevenueCatService:
             return None
         
         try:
-            url = f"{self.base_url}/subscribers/{user_id}"
+            url = f"{self.base_url}/projects/projd85d45ec/customers/{user_id}"
             response = requests.get(url, headers=self.headers, timeout=10)
             
             if response.status_code == 200:
                 data = response.json()
-                # Extract virtual currency balance from customer info
-                virtual_currencies = data.get("subscriber", {}).get("virtual_currencies", {})
+                # Extract virtual currency balance from customer info (V2 format)
+                virtual_currencies = data.get("customer", {}).get("virtual_currencies", {})
                 pass_balance = virtual_currencies.get("PASS", {}).get("balance", 0)
                 return pass_balance
             else:
