@@ -15,6 +15,10 @@ struct ContentView: View {
     @State private var addedPassCount = 1
     @Environment(\.modelContext) private var modelContext
     
+    #if DEBUG
+    @StateObject private var debugDetector = DebugShakeDetector.shared
+    #endif
+    
     private var titleHeaderColor: Color {
         return PassColorUtils.getPassColor(metadata: viewModel.passMetadata)
     }
@@ -33,6 +37,9 @@ struct ContentView: View {
                 }
                 .tag(1)
         }
+        #if DEBUG
+        .debugRevenueCatOverlay(isPresented: $debugDetector.isDebugOverlayPresented)
+        #endif
     }
     
     private var generatePassView: some View {

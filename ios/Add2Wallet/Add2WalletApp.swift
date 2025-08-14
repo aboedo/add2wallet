@@ -82,6 +82,10 @@ struct Add2WalletApp: App {
                     handleURL(url)
                 }
                 .onAppear {
+                    // Check if this is a fresh install and sync purchases
+                    Task {
+                        await syncPurchasesOnFreshInstall()
+                    }
                     
                     checkForSharedPDF()
                 }
@@ -182,6 +186,24 @@ struct Add2WalletApp: App {
             } catch {
                 // Silent error handling
             }
+        }
+    }
+    
+    private func syncPurchasesOnFreshInstall() async {
+        let hasLaunchedBefore = UserDefaults.standard.bool(forKey: "HasLaunchedBefore")
+        
+        if !hasLaunchedBefore {
+            print("🔄 Fresh install detected, syncing purchases with RevenueCat")
+            do {
+                let customerInfo = try await Purchases.shared.syncPurchases()
+                print("✅ Successfully synced purchases on fresh install")
+                print("📊 Customer ID: \(customerInfo.originalAppUserId)")
+            } catch {
+                print("❌ Failed to sync purchases on fresh install: \(error)")
+            }
+            
+            // Mark that the app has launched before
+            UserDefaults.standard.set(true, forKey: "HasLaunchedBefore")
         }
     }
     
