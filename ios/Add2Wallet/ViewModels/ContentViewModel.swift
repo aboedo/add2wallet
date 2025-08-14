@@ -6,6 +6,7 @@ import SwiftData
 import RevenueCat
 import UIKit
 
+@MainActor
 class ContentViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var statusMessage: String?
@@ -646,7 +647,7 @@ Thank you!
     
     private func sendSupportEmail(subject: String, body: String, pdfData: Data, fileName: String) {
         // Post notification to trigger MFMailComposeViewController from the view
-        let userInfo: [String: Any] = [
+        let userInfo: [AnyHashable: Any] = [
             "subject": subject,
             "body": body,
             "pdfData": pdfData,

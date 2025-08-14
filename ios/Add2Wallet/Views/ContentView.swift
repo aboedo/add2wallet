@@ -15,7 +15,7 @@ struct ContentView: View {
     @State private var passAddedSuccessfully = false
     @State private var addedPassCount = 1
     @State private var showingMailComposer = false
-    @State private var mailComposerData: [String: Any]?
+    @State private var mailComposerData: [AnyHashable: Any]?
     @Environment(\.modelContext) private var modelContext
     
     #if DEBUG
