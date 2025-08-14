@@ -3,7 +3,11 @@ FROM python:3.11-slim
 # Install system dependencies required for OpenCV, pyzbar, pdf2image
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
+    libglib2.0-dev \
     libgomp1 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     libzbar0 \
     libzbar-dev \
     poppler-utils \
