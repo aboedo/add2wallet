@@ -31,6 +31,10 @@ struct ContentView: View {
         return PassColorUtils.getPassColor(metadata: viewModel.passMetadata)
     }
     
+    private var backgroundGradientColor: Color {
+        return PassColorUtils.getDarkenedPassColor(metadata: viewModel.passMetadata)
+    }
+    
     var body: some View {
         TabView(selection: $selectedTab) {
             generatePassView
@@ -52,8 +56,22 @@ struct ContentView: View {
     
     private var generatePassView: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                ScrollView {
+            ZStack {
+                // Background gradient when we have pass metadata
+                if viewModel.passMetadata != nil {
+                    LinearGradient(
+                        colors: [
+                            backgroundGradientColor,
+                            backgroundGradientColor.opacity(0.6)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .ignoresSafeArea()
+                }
+                
+                VStack(spacing: 0) {
+                    ScrollView {
                     VStack(spacing: ThemeManager.Spacing.md) {
                     // Hero card stack for home screen - matches pass color when available
                     HeroCardStack(
@@ -338,7 +356,8 @@ struct ContentView: View {
                 isPresented: $showingSuccessToast,
                 message: successToastMessage
             )
-        }
+            } // End of VStack
+        } // End of ZStack
     }
     
 }

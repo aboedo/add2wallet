@@ -294,15 +294,19 @@ struct PassColorUtils {
     }
     
     /// Gets a darkened version of the pass color for better contrast in backgrounds
+    /// Always darkens by at least 30% to ensure proper contrast
     static func getDarkenedPassColor(metadata: EnhancedPassMetadata?) -> Color {
         let originalColor = getPassColor(metadata: metadata)
-        return darkenColor(originalColor, by: 0.3) // 30% darker
+        // Always darken by at least 30% for contrast
+        return darkenColor(originalColor, by: max(0.3, 0.3))
     }
     
     /// Gets a darkened version of the pass color for better contrast in backgrounds
+    /// Always darkens by at least 30% to ensure proper contrast
     static func getDarkenedPassColor(metadata: EnhancedPassMetadata?, passType: String) -> Color {
         let originalColor = getPassColor(metadata: metadata, passType: passType)
-        return darkenColor(originalColor, by: 0.3) // 30% darker
+        // Always darken by at least 30% for contrast
+        return darkenColor(originalColor, by: max(0.3, 0.3))
     }
 }
 

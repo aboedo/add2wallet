@@ -11,6 +11,10 @@ struct PassDetailPresentation: View {
         PassColorUtils.getPassColor(metadata: metadata)
     }
     
+    private var darkenedPassColor: Color {
+        PassColorUtils.getDarkenedPassColor(metadata: metadata)
+    }
+    
     var body: some View {
         VStack(spacing: 16) {
             // Header section with pass color theming - matches SavedPassDetailView
@@ -31,17 +35,6 @@ struct PassDetailPresentation: View {
             }
             .padding()
             .frame(maxWidth: .infinity)
-//            .background(
-//                LinearGradient(
-//                    colors: [
-//                        passColor.opacity(0.8),
-//                        passColor
-//                    ],
-//                    startPoint: .topLeading,
-//                    endPoint: .bottomTrailing
-//                )
-//            )
-//            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.large))
             
             // Pass details section
             PassDetailsView(metadata: metadata, ticketCount: isEmbedded ? ticketCount : nil)
