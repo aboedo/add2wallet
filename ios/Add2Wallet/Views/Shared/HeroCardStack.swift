@@ -5,6 +5,7 @@ struct HeroCardStack: View {
     let isLoadingBalance: Bool
     let onSelectPDF: () -> Void
     let onSamplePDF: () -> Void
+    @State private var buttonBounce = 0
     
     var body: some View {
         VStack(spacing: ThemeManager.Spacing.md) {
@@ -24,6 +25,7 @@ struct HeroCardStack: View {
             // Middle: Primary "Select PDF" button
             Button(action: {
                 ThemeManager.Haptics.light()
+                buttonBounce += 1
                 onSelectPDF()
             }) {
                 Label("Select PDF", systemImage: "doc.text.fill")
@@ -39,6 +41,7 @@ struct HeroCardStack: View {
                                     .stroke(.white.opacity(0.3), lineWidth: 1)
                             )
                     )
+                    .symbolEffect(.bounce, value: buttonBounce)
             }
             .buttonStyle(.plain)
             

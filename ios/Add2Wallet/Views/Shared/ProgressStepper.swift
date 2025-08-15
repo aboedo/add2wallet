@@ -7,7 +7,7 @@ struct ProgressStepper: View {
     private let steps = [
         ("Detect", "doc.text.viewfinder", "Analyzing PDF..."),
         ("Extract", "qrcode.viewfinder", "Extracting barcodes..."),
-        ("Process", "brain.head.profile", "Processing with AI..."),
+        ("Process", "brain.head.profile", "Processing metadata..."),
         ("Review", "checkmark.seal", "Generating pass..."),
         ("Add", "wallet.pass", "Signing certificate...")
     ]
@@ -145,7 +145,7 @@ struct ProgressStepper: View {
         // Step 3
         ProgressStepper(
             progress: 0.5,
-            progressMessage: "Processing with AI..."
+            progressMessage: "Processing metadata..."
         )
         
         // Completed

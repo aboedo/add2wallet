@@ -34,6 +34,7 @@
 		8BEB32256BC2CFC207B45E9C /* ProgressStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8AD24C6F19D92CD3E23138 /* ProgressStepper.swift */; };
 		9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */; };
 		A3BF14B25B521496ABB065BD /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 516DD5D634A86F0E2AF2612A /* RevenueCatUI */; };
+		B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
 		B9BEF48840DAA722B50251E8 /* PassDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE1D6BB33C4EB4252FC1E5B /* PassDetailsView.swift */; };
 		DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */; };
@@ -140,6 +141,7 @@
 		E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2WalletShareExtension.entitlements; sourceTree = "<group>"; };
 		E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPassesView.swift; sourceTree = "<group>"; };
 		E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollapsiblePDFPreview.swift; sourceTree = "<group>"; };
+		EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuccessToast.swift; sourceTree = "<group>"; };
 		EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPassDetailView.swift; sourceTree = "<group>"; };
 		EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Add2WalletApp.swift; sourceTree = "<group>"; };
 		F0647FA2EE1335D1CD3543C9 /* Add2Wallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Add2Wallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -262,6 +264,7 @@
 				7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */,
 				BF9AF0EB658AC2C21B655C88 /* PassMetadataView.swift */,
 				DD8AD24C6F19D92CD3E23138 /* ProgressStepper.swift */,
+				EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -511,6 +514,7 @@
 				0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */,
 				87A8BF43639B5B64FA90634B /* PassMetadataView.swift in Sources */,
 				8BEB32256BC2CFC207B45E9C /* ProgressStepper.swift in Sources */,
+				B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */,
 				3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */,
 				83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */,
 			);

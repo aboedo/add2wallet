@@ -13,6 +13,9 @@ struct SavedPassDetailView: View {
     @State private var showingFullScreenPDF = false
     @State private var showingSuccessView = false
     @State private var passAddedSuccessfully = false
+    @State private var showingSuccessToast = false
+    @State private var successToastMessage = ""
+    @State private var addToWalletBounce = 0
     
     
     var body: some View {
@@ -116,10 +119,12 @@ struct SavedPassDetailView: View {
                             // Primary CTA - Add to Wallet
                             Button {
                                 ThemeManager.Haptics.light()
+                                addToWalletBounce += 1
                                 addPassToWallet()
                             } label: {
                                 Label(savedPass.passCount > 1 ? "Add \(savedPass.passCount) to Wallet" : "Add to Wallet", 
                                       systemImage: "plus.rectangle.on.folder")
+                                    .symbolEffect(.bounce, value: addToWalletBounce)
                             }
                             .themedPrimaryButton()
                             
@@ -142,6 +147,7 @@ struct SavedPassDetailView: View {
                 .padding(.top, ThemeManager.Spacing.sm)
                 .padding(.bottom, ThemeManager.Spacing.md)
                 .background(.thinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
             }
             .background(
                 LinearGradient(
@@ -153,8 +159,7 @@ struct SavedPassDetailView: View {
             
         }
         .sheet(isPresented: $showingAddPassVC, onDismiss: {
-            // Don't show success view since we can't reliably detect if pass was added
-            // The user will see Apple's own confirmation if they add the pass
+            // Reset state after dismissal
             passAddedSuccessfully = false
         }) {
             if let passVC = passViewController {
@@ -177,6 +182,10 @@ struct SavedPassDetailView: View {
                 FullScreenPDFView(url: tempPDFURL)
             }
         }
+        .successToast(
+            isPresented: $showingSuccessToast,
+            message: successToastMessage
+        )
     }
     
     private func createTempPDFURL(from data: Data) -> URL? {
@@ -250,7 +259,7 @@ struct SavedPassDetailView: View {
     }
     
     private var passHeaderColor: Color {
-        return PassColorUtils.getPassColor(metadata: savedPass.metadata, passType: savedPass.passType)
+        return PassColorUtils.getDarkenedPassColor(metadata: savedPass.metadata, passType: savedPass.passType)
     }
     
     private func reportIssue() {

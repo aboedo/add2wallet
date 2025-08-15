@@ -284,7 +284,15 @@ class ContentViewModel: ObservableObject {
                             self.usageManager.passGenerated()
                         }
                         
+                        // Show success toast for pass generation
                         let count = response.ticketCount ?? 1
+                        let message = count > 1 ? "Generated \(count) passes!" : "Pass generated!"
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("PassGenerated"),
+                            object: nil,
+                            userInfo: ["message": message]
+                        )
+                        
                         if count > 1 {
                             self.downloadAndOpenMultiplePasses(passUrl: passUrl, count: count)
                         } else {
@@ -528,7 +536,7 @@ class ContentViewModel: ObservableObject {
         let steps: [(Double, String, Double)] = [
             (0.15, "Analyzing PDF...", 3.0),
             (0.40, "Extracting barcodes...", 7.0),
-            (0.65, "Processing with AI...", 8.0),
+            (0.65, "Processing metadata...", 8.0),
             (0.85, "Generating pass...", 7.0),
             (0.95, "Signing certificate...", 5.0)
         ]

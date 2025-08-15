@@ -277,6 +277,33 @@ struct PassColorUtils {
         
         return Color(red: blendedR, green: blendedG, blue: blendedB, opacity: blendedA)
     }
+    
+    /// Darkens a color by the specified percentage (0.0 to 1.0)
+    static func darkenColor(_ color: Color, by percentage: Double) -> Color {
+        let uiColor = UIColor(color)
+        
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        let factor = CGFloat(1.0 - percentage)
+        let darkenedRed = red * factor
+        let darkenedGreen = green * factor
+        let darkenedBlue = blue * factor
+        
+        return Color(red: darkenedRed, green: darkenedGreen, blue: darkenedBlue, opacity: alpha)
+    }
+    
+    /// Gets a darkened version of the pass color for better contrast in backgrounds
+    static func getDarkenedPassColor(metadata: EnhancedPassMetadata?) -> Color {
+        let originalColor = getPassColor(metadata: metadata)
+        return darkenColor(originalColor, by: 0.3) // 30% darker
+    }
+    
+    /// Gets a darkened version of the pass color for better contrast in backgrounds
+    static func getDarkenedPassColor(metadata: EnhancedPassMetadata?, passType: String) -> Color {
+        let originalColor = getPassColor(metadata: metadata, passType: passType)
+        return darkenColor(originalColor, by: 0.3) // 30% darker
+    }
 }
 
 // MARK: - UIImage Extension for Dominant Color Extraction

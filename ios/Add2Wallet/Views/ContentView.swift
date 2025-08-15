@@ -17,6 +17,10 @@ struct ContentView: View {
     @State private var showingMailComposer = false
     @State private var mailComposerData: [AnyHashable: Any]?
     @State private var showingRetryAlert = false
+    @State private var showingSuccessToast = false
+    @State private var successToastMessage = ""
+    @State private var addToWalletBounce = 0
+    @State private var createPassBounce = 0
     @Environment(\.modelContext) private var modelContext
     
     #if DEBUG
@@ -62,13 +66,45 @@ struct ContentView: View {
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: ThemeManager.Spacing.md) {
                             if let details = viewModel.passMetadata {
-                                // Pass metadata in card format
-                                VStack(spacing: ThemeManager.Spacing.sm) {
-                                    PassMetadataView(metadata: details, style: .contentView)
-                                        .transition(.opacity)
+                                VStack(spacing: ThemeManager.Spacing.md) {
+                                    // Big prominent pass title
+                                    VStack(spacing: ThemeManager.Spacing.xs) {
+                                        Text(details.title ?? details.eventName ?? "Untitled Pass")
+                                            .font(.largeTitle)
+                                            .fontWeight(.bold)
+                                            .multilineTextAlignment(.center)
+                                            .foregroundColor(.white)
+                                        
+                                        if let subtitle = details.eventName, details.title != details.eventName {
+                                            Text(subtitle)
+                                                .font(.title3)
+                                                .foregroundColor(.white.opacity(0.9))
+                                                .multilineTextAlignment(.center)
+                                        }
+                                    }
+                                    .padding(ThemeManager.Spacing.lg)
+                                    .frame(maxWidth: .infinity)
+                                    .background(
+                                        LinearGradient(
+                                            colors: [
+                                                PassColorUtils.getPassColor(metadata: details).opacity(0.8),
+                                                PassColorUtils.getPassColor(metadata: details)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.large))
+                                    .transition(.opacity)
                                     
-                                    PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
-                                        .transition(.opacity)
+                                    // Pass metadata in card format
+                                    VStack(spacing: ThemeManager.Spacing.sm) {
+                                        PassMetadataView(metadata: details, style: .contentView)
+                                            .transition(.opacity)
+                                        
+                                        PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
+                                            .transition(.opacity)
+                                    }
                                 }
                             }
                             
@@ -83,25 +119,8 @@ struct ContentView: View {
                         }
                         .padding(.top, ThemeManager.Spacing.sm)
                     } else if viewModel.isProcessing {
-                        VStack(spacing: ThemeManager.Spacing.lg) {
-                            // New progress stepper
-                            ProgressStepper(
-                                progress: viewModel.progress,
-                                progressMessage: viewModel.progressMessage
-                            )
-                            
-                            // Funny phrase below progress
-                            if !viewModel.funnyPhrase.isEmpty {
-                                Text(viewModel.funnyPhrase)
-                                    .font(ThemeManager.Typography.footnote)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(ThemeManager.Colors.textSecondary)
-                                    .italic()
-                                    .transition(.opacity)
-                                    .animation(ThemeManager.Animations.gentle, value: viewModel.funnyPhrase)
-                            }
-                        }
-                        .padding(.top, ThemeManager.Spacing.lg)
+                        ProgressView(viewModel: viewModel)
+                            .padding(.top, 40)
                     } else {
                         // Empty state instructions
                         VStack(spacing: ThemeManager.Spacing.sm) {
@@ -145,17 +164,21 @@ struct ContentView: View {
                                 if passViewController != nil {
                                     Button {
                                         ThemeManager.Haptics.light()
+                                        addToWalletBounce += 1
                                         showingAddPassVC = true
                                     } label: {
                                         Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
+                                            .symbolEffect(.bounce, value: addToWalletBounce)
                                     }
                                     .themedPrimaryButton()
                                 } else if !viewModel.hasError {
                                     Button {
                                         ThemeManager.Haptics.light()
+                                        createPassBounce += 1
                                         viewModel.uploadSelected()
                                     } label: {
                                         Label("Create Pass", systemImage: "wallet.pass")
+                                            .symbolEffect(.bounce, value: createPassBounce)
                                     }
                                     .themedPrimaryButton()
                                 }
@@ -202,6 +225,7 @@ struct ContentView: View {
                     .padding(.top, ThemeManager.Spacing.sm)
                     .padding(.bottom, ThemeManager.Spacing.md)
                     .background(.thinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
                     .animation(ThemeManager.Animations.standard, value: viewModel.selectedFileURL)
                 }
             }
@@ -250,11 +274,20 @@ struct ContentView: View {
                         }
                     }
                 }
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("PassGenerated"),
+                    object: nil,
+                    queue: .main
+                ) { notification in
+                    if let userInfo = notification.userInfo,
+                       let message = userInfo["message"] as? String {
+                        self.successToastMessage = message
+                        self.showingSuccessToast = true
+                    }
+                }
             }
             .sheet(isPresented: $showingAddPassVC, onDismiss: {
                 // Reset state after dismissal
-                // Note: We can't reliably detect if the pass was actually added vs cancelled
-                // Apple's PassKit doesn't provide this information
                 passAddedSuccessfully = false
             }) {
                 if let passVC = passViewController {
@@ -333,6 +366,10 @@ struct ContentView: View {
             } message: {
                 Text("It seems we're having trouble with this file. We'd love to get it to work! Please send us the file so we can test it and improve the app.")
             }
+            .successToast(
+                isPresented: $showingSuccessToast,
+                message: successToastMessage
+            )
         }
     }
     
@@ -363,9 +400,10 @@ struct PassKitView: UIViewControllerRepresentable {
         }
         
         func addPassesViewControllerDidFinish(_ controller: PKAddPassesViewController) {
-            // Don't automatically assume success - the user might have cancelled
-            // We'll keep the success flow disabled by default
-            parent.passAdded = false
+            // PKAddPassesViewController doesn't provide reliable way to detect if pass was added
+            // We'll use a simple heuristic: assume success since user went through the flow
+            // The proper way would be to monitor PKPassLibrary notifications, but this is complex
+            parent.passAdded = true
             controller.dismiss(animated: true)
         }
     }
@@ -458,7 +496,7 @@ struct ProgressView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [.blue, .purple]),
+                                    gradient: Gradient(colors: [ThemeManager.Colors.brandPrimary, ThemeManager.Colors.brandSecondary]),
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )

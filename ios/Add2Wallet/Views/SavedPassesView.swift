@@ -146,47 +146,44 @@ struct PassRowView: View {
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    // Subtitle and metadata
+                    // Venue row (full width)
+                    if !pass.displayVenue.isEmpty {
+                        Text(pass.displayVenue)
+                            .font(ThemeManager.Typography.footnote)
+                            .foregroundColor(ThemeManager.Colors.textSecondary)
+                            .lineLimit(2)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    
+                    // Bottom row: Ticket count (left) + Date (right)
                     HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs / 2) {
-                            // Venue on its own line
-                            if !pass.displayVenue.isEmpty {
-                                Text(pass.displayVenue)
-                                    .font(ThemeManager.Typography.footnote)
-                                    .foregroundColor(ThemeManager.Colors.textSecondary)
-                                    .lineLimit(1)
-                            }
-                            
-                            // Ticket count badge
-                            if pass.passCount > 1 {
-                                Text("\(pass.passCount) tickets")
-                                    .font(ThemeManager.Typography.caption)
-                                    .padding(.horizontal, ThemeManager.Spacing.xs)
-                                    .padding(.vertical, ThemeManager.Spacing.xs / 2)
-                                    .background(passColor.opacity(0.15))
-                                    .foregroundColor(passColor)
-                                    .clipShape(Capsule())
-                            }
+                        // Ticket count badge on bottom left
+                        if pass.passCount > 1 {
+                            Text("\(pass.passCount) tickets")
+                                .font(ThemeManager.Typography.caption)
+                                .padding(.horizontal, ThemeManager.Spacing.xs)
+                                .padding(.vertical, ThemeManager.Spacing.xs / 2)
+                                .background(passColor.opacity(0.15))
+                                .foregroundColor(passColor)
+                                .clipShape(Capsule())
                         }
                         
                         Spacer()
                         
                         // Date on bottom right - monospaced
-                        VStack(alignment: .trailing) {
-                            if let metadata = pass.metadata,
-                               let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
-                                Text(dateTimeString)
-                                    .font(ThemeManager.Typography.captionMonospaced)
-                                    .foregroundColor(ThemeManager.Colors.textSecondary)
-                            } else if let eventDate = pass.eventDate, !eventDate.isEmpty {
-                                Text(PassDateTimeFormatter.formatEventDate(eventDate))
-                                    .font(ThemeManager.Typography.captionMonospaced)
-                                    .foregroundColor(ThemeManager.Colors.textSecondary)
-                            } else {
-                                Text(PassDateTimeFormatter.formatDateLocalized(pass.createdAt))
-                                    .font(ThemeManager.Typography.captionMonospaced)
-                                    .foregroundColor(ThemeManager.Colors.textSecondary)
-                            }
+                        if let metadata = pass.metadata,
+                           let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
+                            Text(dateTimeString)
+                                .font(ThemeManager.Typography.captionMonospaced)
+                                .foregroundColor(ThemeManager.Colors.textSecondary)
+                        } else if let eventDate = pass.eventDate, !eventDate.isEmpty {
+                            Text(PassDateTimeFormatter.formatEventDate(eventDate))
+                                .font(ThemeManager.Typography.captionMonospaced)
+                                .foregroundColor(ThemeManager.Colors.textSecondary)
+                        } else {
+                            Text(PassDateTimeFormatter.formatDateLocalized(pass.createdAt))
+                                .font(ThemeManager.Typography.captionMonospaced)
+                                .foregroundColor(ThemeManager.Colors.textSecondary)
                         }
                     }
                 }
