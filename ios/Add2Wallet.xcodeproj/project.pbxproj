@@ -23,6 +23,7 @@
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
 		668A7B6EB458AEFE79568DFF /* DebugShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D5E35468E6A18F103A070E /* DebugShakeDetector.swift */; };
 		6D9DD850B7184921D72245FE /* AsyncMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */; };
+		712F644BC2183AD74F05902D /* torre_ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 6328294BD904F874321F4287 /* torre_ifel.pdf */; };
 		79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5652AA292A42487F139B55E2 /* PassUsageManager.swift */; };
 		7DBCF60D8DFD81421974D801 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50AEC1A177FC2937D94926BA /* ActionViewController.swift */; };
 		7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */; };
@@ -116,6 +117,7 @@
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassColorUtils.swift; sourceTree = "<group>"; };
 		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6328294BD904F874321F4287 /* torre_ifel.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = torre_ifel.pdf; sourceTree = "<group>"; };
 		7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassHeaderView.swift; sourceTree = "<group>"; };
 		7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncMapView.swift; sourceTree = "<group>"; };
 		857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+Add2Wallet.swift"; sourceTree = "<group>"; };
@@ -194,6 +196,7 @@
 			children = (
 				08BA36A6FACFF3EF3BC3448A /* Models */,
 				7E02BD608C5E0AAB53D25A33 /* Preview Content */,
+				43AD0E82244A3CA901F98D57 /* Resources */,
 				C4ED5855D8BBECFD1754E03F /* Services */,
 				BEE7535C12918FADDEC7F4D8 /* Utilities */,
 				6D6E2690CFEECD5C148E16BF /* Utils */,
@@ -206,6 +209,14 @@
 				14163BCA5715B9BC2F933391 /* Info.plist */,
 			);
 			path = Add2Wallet;
+			sourceTree = "<group>";
+		};
+		43AD0E82244A3CA901F98D57 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6328294BD904F874321F4287 /* torre_ifel.pdf */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		6D6E2690CFEECD5C148E16BF /* Utils */ = {
@@ -448,6 +459,7 @@
 			files = (
 				264E2AA0EBFE6331FA88325B /* Assets.xcassets in Resources */,
 				1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */,
+				712F644BC2183AD74F05902D /* torre_ifel.pdf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

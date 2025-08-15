@@ -21,7 +21,8 @@ let project = Project(
             ],
             resources: [
                 "Add2Wallet/Assets.xcassets",
-                "Add2Wallet/Preview Content/**"
+                "Add2Wallet/Preview Content/**",
+                "Add2Wallet/Resources/**"
             ],
             entitlements: "Add2Wallet/Add2Wallet.entitlements",
             dependencies: [
