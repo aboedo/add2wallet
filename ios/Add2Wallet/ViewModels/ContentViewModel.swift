@@ -111,7 +111,7 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
-            statusMessage = "Demo mode - This is a sample ticket"
+            statusMessage = nil
             hasError = false
         } catch {
             statusMessage = "Error loading demo: \(error.localizedDescription)"

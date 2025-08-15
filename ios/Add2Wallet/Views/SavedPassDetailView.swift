@@ -1,5 +1,7 @@
 import SwiftUI
 import PassKit
+import RevenueCat
+import MessageUI
 
 struct SavedPassDetailView: View {
     let savedPass: SavedPass
@@ -76,40 +78,13 @@ struct SavedPassDetailView: View {
                     
                 }
                 
-                // PDF Preview section if available
-                if let pdfData = savedPass.pdfData {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Original PDF")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        // Create a temporary URL for the PDF preview
-                        if let tempPDFURL = createTempPDFURL(from: pdfData) {
-                            PDFPreviewView(url: tempPDFURL)
-                                .frame(height: 250)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    showingFullScreenPDF = true
-                                }
-                                .overlay(
-                                    VStack {
-                                        Spacer()
-                                        HStack {
-                                            Spacer()
-                                            Label("Tap to view full screen", systemImage: "arrow.up.left.and.arrow.down.right")
-                                                .font(.caption)
-                                                .padding(8)
-                                                .background(.ultraThinMaterial)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                .padding(8)
-                                        }
-                                    }
-                                )
-                        }
-                    }
-                    .padding(.bottom)
+                // PDF Preview section if available (collapsed by default)
+                if let pdfData = savedPass.pdfData,
+                   let tempPDFURL = createTempPDFURL(from: pdfData) {
+                    CollapsiblePDFPreview(url: tempPDFURL)
+                        .padding(.bottom, ThemeManager.Spacing.md)
+                    
                     Spacer(minLength: 80)
-
                 }
                 
                 
@@ -122,31 +97,51 @@ struct SavedPassDetailView: View {
                         dismiss()
                     }
                 }
-                
-                if !savedPass.passDatas.isEmpty {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(savedPass.passCount > 1 ? "Add \(savedPass.passCount) to Wallet" : "Add to Wallet") {
-                            addPassToWallet()
-                        }
-                        .fontWeight(.medium)
-                    }
-                }
             }
             .safeAreaInset(edge: .bottom) {
-                // Status message at bottom
-                if let message = statusMessage, !message.isEmpty {
-                    VStack(spacing: 8) {
+                // Sticky bottom CTA using ThemeManager design system
+                VStack(spacing: ThemeManager.Spacing.sm) {
+                    // Status message
+                    if let message = statusMessage, !message.isEmpty {
                         Text(message)
-                            .font(.footnote)
-                            .foregroundColor(hasError ? .red : .green)
+                            .font(ThemeManager.Typography.footnote)
+                            .foregroundColor(hasError ? ThemeManager.Colors.error : ThemeManager.Colors.success)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: .infinity)
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 16)
-                    .background(.thinMaterial)
+                    
+                    // Primary CTA and secondary actions
+                    if !savedPass.passDatas.isEmpty {
+                        VStack(spacing: ThemeManager.Spacing.sm) {
+                            // Primary CTA - Add to Wallet
+                            Button {
+                                ThemeManager.Haptics.light()
+                                addPassToWallet()
+                            } label: {
+                                Label(savedPass.passCount > 1 ? "Add \(savedPass.passCount) to Wallet" : "Add to Wallet", 
+                                      systemImage: "plus.rectangle.on.folder")
+                            }
+                            .themedPrimaryButton()
+                            
+                            // Secondary actions row
+                            HStack(spacing: ThemeManager.Spacing.sm) {
+                                // Report issue button
+                                Button {
+                                    ThemeManager.Haptics.selection()
+                                    reportIssue()
+                                } label: {
+                                    Label("Report Issue", systemImage: "exclamationmark.bubble")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .themedSecondaryButton()
+                            }
+                        }
+                    }
                 }
+                .padding(.horizontal, ThemeManager.Spacing.md)
+                .padding(.top, ThemeManager.Spacing.sm)
+                .padding(.bottom, ThemeManager.Spacing.md)
+                .background(.thinMaterial)
             }
             .background(
                 LinearGradient(
@@ -258,6 +253,54 @@ struct SavedPassDetailView: View {
         return PassColorUtils.getPassColor(metadata: savedPass.metadata, passType: savedPass.passType)
     }
     
+    private func reportIssue() {
+        guard let pdfData = savedPass.pdfData else {
+            print("No PDF data available for issue report")
+            return
+        }
+        
+        // Get the user's app user ID from RevenueCat
+        let appUserID = Purchases.shared.appUserID
+        
+        // Create email subject and body
+        let subject = "Add2Wallet Issue Report - Pass: \(savedPass.displayTitle)"
+        let body = """
+        I'm having an issue with a pass in Add2Wallet.
+        
+        Pass Details:
+        - Title: \(savedPass.displayTitle)
+        - Type: \(savedPass.passType)
+        - Venue: \(savedPass.displayVenue)
+        - Created: \(savedPass.createdAt)
+        
+        Issue Description:
+        [Please describe the issue you're experiencing]
+        
+        ---
+        Diagnostic Information:
+        App User ID: \(appUserID)
+        App Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")
+        iOS Version: \(UIDevice.current.systemVersion)
+        Device: \(UIDevice.current.model)
+        Pass Count: \(savedPass.passCount)
+        """
+        
+        // Generate a filename for the PDF attachment
+        let fileName = "\(savedPass.displayTitle.replacingOccurrences(of: " ", with: "_"))_report.pdf"
+        
+        // Send notification to show support email
+        let userInfo: [String: Any] = [
+            "subject": subject,
+            "body": body,
+            "pdfData": pdfData,
+            "fileName": fileName
+        ]
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ShowSupportEmail"),
+            object: nil,
+            userInfo: userInfo
+        )
+    }
 }
 
 struct FullScreenPDFView: View {

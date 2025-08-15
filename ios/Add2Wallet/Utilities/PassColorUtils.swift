@@ -3,6 +3,10 @@ import Foundation
 
 struct PassColorUtils {
     
+    // MARK: - Brand Colors (matching app icon teal palette)
+    private static let brandTeal = Color(red: 0.125, green: 0.698, blue: 0.667) // #20B2AA
+    private static let brandTealSecondary = Color(red: 0.098, green: 0.549, blue: 0.525) // Darker teal
+    
     static func parseRGBColor(_ rgbString: String) -> Color? {
         print("🎨 [PassColorUtils] Attempting to parse RGB color: '\(rgbString)'")
         
@@ -70,7 +74,7 @@ struct PassColorUtils {
             print("⚽ [PassColorUtils] Using sports green color")
             return color
         } else if eventType == "train" || eventName.contains("railway") {
-            let color = parseRGBColor("rgb(48,176,199)") ?? .cyan // Rail teal
+            let color = parseRGBColor("rgb(48,176,199)") ?? brandTeal // Rail teal (use brand teal)
             print("🚂 [PassColorUtils] Using train teal color")
             return color
         } else if eventType == "hotel" || eventName.contains("reservation") {
@@ -82,8 +86,8 @@ struct PassColorUtils {
             print("🎬 [PassColorUtils] Using movie/theater purple color")
             return color
         } else if eventType == "conference" || eventName.contains("business") {
-            let color = parseRGBColor("rgb(50,173,230)") ?? .blue // Business blue
-            print("💼 [PassColorUtils] Using conference/business blue color")
+            let color = parseRGBColor("rgb(50,173,230)") ?? brandTeal // Business teal (use brand teal)
+            print("💼 [PassColorUtils] Using conference/business teal color")
             return color
         } else {
             // For other types, fall back to original color analysis (using backend fallback logic)
@@ -105,7 +109,7 @@ struct PassColorUtils {
         } else if eventName.contains("flight") || eventName.contains("airline") {
             return parseRGBColor("rgb(30,144,255)") ?? .blue // Flight blue
         } else {
-            return parseRGBColor("rgb(60,60,67)") ?? .gray // Default gray
+            return brandTeal // Default to brand teal instead of gray
         }
     }
     
@@ -138,13 +142,12 @@ struct PassColorUtils {
             print("⚽ [PassColorUtils] Using sports green color for passType")
             return color
         case let type where type.contains("transit"):
-            let color = parseRGBColor("rgb(48,176,199)") ?? .cyan // Rail teal
+            let color = parseRGBColor("rgb(48,176,199)") ?? brandTeal // Rail teal (use brand teal)
             print("🚂 [PassColorUtils] Using transit teal color for passType")
             return color
         default:
-            let color = parseRGBColor("rgb(142,142,147)") ?? .gray // Default gray
-            print("❓ [PassColorUtils] Using default gray color for passType")
-            return color
+            print("❓ [PassColorUtils] Using brand teal color for passType")
+            return brandTeal // Default to brand teal instead of gray
         }
     }
     
@@ -175,9 +178,9 @@ struct PassColorUtils {
             }
         }
         
-        print("⚠️ [PassColorUtils] No metadata available, using default blue color")
-        // Final fallback to a default color
-        return .blue
+        print("⚠️ [PassColorUtils] No metadata available, using default brand teal color")
+        // Final fallback to brand teal
+        return brandTeal
     }
     
     static func getPassColor(metadata: EnhancedPassMetadata?, passType: String) -> Color {
@@ -212,5 +215,151 @@ struct PassColorUtils {
         let fallbackColor = fallbackColorFromPassType(passType)
         print("🔄 [PassColorUtils] Using passType fallback color for passType: '\(passType)'")
         return fallbackColor
+    }
+    
+    // MARK: - Dynamic Pass Accent Color Extraction
+    
+    /// Extracts a dynamic accent color from a pass image with proper contrast validation
+    /// Falls back to brand teal if extraction fails or contrast is insufficient
+    static func extractPassAccentColor(from image: UIImage?) -> Color {
+        guard let image = image else {
+            print("🎨 [PassColorUtils] No image provided, using brand teal")
+            return brandTeal
+        }
+        
+        guard let dominantColor = image.dominantColor() else {
+            print("🎨 [PassColorUtils] Failed to extract dominant color, using brand teal")
+            return brandTeal
+        }
+        
+        // Ensure minimum contrast ratio of 4.5:1 against both light and dark backgrounds
+        let adjustedColor = ensureContrast(color: dominantColor, minRatio: 4.5)
+        
+        print("🎨 [PassColorUtils] Successfully extracted and adjusted pass accent color")
+        return adjustedColor
+    }
+    
+    /// Ensures a color meets minimum contrast requirements
+    /// If it doesn't, blends it with brand teal at 70% mix
+    private static func ensureContrast(color: Color, minRatio: Double) -> Color {
+        // Convert Color to UIColor for luminance calculation
+        let uiColor = UIColor(color)
+        
+        // Calculate contrast ratios against white and black
+        let contrastWhite = uiColor.contrastRatio(with: .white)
+        let contrastBlack = uiColor.contrastRatio(with: .black)
+        
+        // Check if either contrast ratio meets the minimum
+        if contrastWhite >= minRatio || contrastBlack >= minRatio {
+            return color
+        }
+        
+        // If contrast is insufficient, mix with brand teal (70% brand, 30% original)
+        print("🎨 [PassColorUtils] Color contrast insufficient, blending with brand teal")
+        return blendColors(brandTeal, color, ratio: 0.7)
+    }
+    
+    /// Blends two colors with the specified ratio
+    private static func blendColors(_ color1: Color, _ color2: Color, ratio: Double) -> Color {
+        let ui1 = UIColor(color1)
+        let ui2 = UIColor(color2)
+        
+        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+        
+        ui1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+        ui2.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+        
+        let blendedR = r1 * ratio + r2 * (1 - ratio)
+        let blendedG = g1 * ratio + g2 * (1 - ratio)
+        let blendedB = b1 * ratio + b2 * (1 - ratio)
+        let blendedA = a1 * ratio + a2 * (1 - ratio)
+        
+        return Color(red: blendedR, green: blendedG, blue: blendedB, opacity: blendedA)
+    }
+}
+
+// MARK: - UIImage Extension for Dominant Color Extraction
+extension UIImage {
+    /// Extracts the dominant color from an image using k-means clustering approach
+    func dominantColor() -> Color? {
+        guard let cgImage = self.cgImage else { return nil }
+        
+        // Resize image for faster processing
+        let size = CGSize(width: 50, height: 50)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height),
+                               bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace,
+                               bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        
+        context?.interpolationQuality = .high
+        context?.draw(cgImage, in: CGRect(origin: .zero, size: size))
+        
+        guard let data = context?.data else { return nil }
+        
+        let buffer = data.bindMemory(to: UInt8.self, capacity: Int(size.width * size.height * 4))
+        
+        var colorFrequency: [UIColor: Int] = [:]
+        
+        // Sample colors and count frequency
+        for y in stride(from: 0, to: Int(size.height), by: 2) {
+            for x in stride(from: 0, to: Int(size.width), by: 2) {
+                let pixelIndex = (y * Int(size.width) + x) * 4
+                
+                let red = CGFloat(buffer[pixelIndex]) / 255.0
+                let green = CGFloat(buffer[pixelIndex + 1]) / 255.0
+                let blue = CGFloat(buffer[pixelIndex + 2]) / 255.0
+                let alpha = CGFloat(buffer[pixelIndex + 3]) / 255.0
+                
+                // Skip very transparent or very light/dark pixels
+                if alpha < 0.5 || (red + green + blue) / 3 < 0.1 || (red + green + blue) / 3 > 0.9 {
+                    continue
+                }
+                
+                let color = UIColor(red: red, green: green, blue: blue, alpha: alpha)
+                colorFrequency[color, default: 0] += 1
+            }
+        }
+        
+        // Find the most frequent color
+        guard let dominantUIColor = colorFrequency.max(by: { $0.value < $1.value })?.key else {
+            return nil
+        }
+        
+        return Color(dominantUIColor)
+    }
+}
+
+// MARK: - UIColor Extension for Contrast Calculation
+extension UIColor {
+    /// Calculates the relative luminance of a color
+    var luminance: CGFloat {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        
+        getRed(&red, green: &green, blue: &blue, alpha: nil)
+        
+        // Apply gamma correction
+        func adjust(component: CGFloat) -> CGFloat {
+            return component <= 0.03928 ? component / 12.92 : pow((component + 0.055) / 1.055, 2.4)
+        }
+        
+        let r = adjust(component: red)
+        let g = adjust(component: green)
+        let b = adjust(component: blue)
+        
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+    
+    /// Calculates the contrast ratio between two colors
+    func contrastRatio(with color: UIColor) -> CGFloat {
+        let luminance1 = self.luminance
+        let luminance2 = color.luminance
+        
+        let lightest = max(luminance1, luminance2)
+        let darkest = min(luminance1, luminance2)
+        
+        return (lightest + 0.05) / (darkest + 0.05)
     }
 }

@@ -99,6 +99,7 @@ struct Add2WalletApp: App {
         WindowGroup {
             ContentView()
                 .modelContainer(container)
+                .tint(ThemeManager.Colors.brandPrimary)
                 .onOpenURL { url in
                     handleURL(url)
                 }

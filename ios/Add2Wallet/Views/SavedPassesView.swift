@@ -71,9 +71,9 @@ struct SavedPassesView: View {
             
             Group {
                 Text("Start by ")
-                    .foregroundColor(.secondary) +
+                    .foregroundColor(ThemeManager.Colors.textSecondary) +
                 Text("generating your first Pass")
-                    .foregroundColor(.blue)
+                    .foregroundColor(ThemeManager.Colors.brandPrimary)
                     .underline()
             }
             .font(.body)
@@ -94,7 +94,12 @@ struct SavedPassesView: View {
     private var passListView: some View {
         List {
             ForEach(groupedPasses, id: \.0) { month, passes in
-                Section(header: Text(month)) {
+                Section(header: 
+                    Text(month.uppercased())
+                        .font(ThemeManager.Typography.sectionHeader)
+                        .foregroundColor(ThemeManager.Colors.textSecondary)
+                        .padding(.top, ThemeManager.Spacing.sm)
+                ) {
                     ForEach(passes) { pass in
                         PassRowView(pass: pass) {
                             selectedPass = pass
@@ -107,7 +112,7 @@ struct SavedPassesView: View {
             }
         }
         .listStyle(InsetGroupedListStyle())
-        .background(Color(.systemGroupedBackground))
+        .background(ThemeManager.Colors.surfaceDefault)
     }
     
     private func deletePassesInSection(passes: [SavedPass], offsets: IndexSet) {
@@ -128,73 +133,76 @@ struct PassRowView: View {
     let onTap: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Pass type icon
-            passIcon
-            
-            VStack(alignment: .leading, spacing: 4) {
-                // Top row: Pass title
-                Text(pass.displayTitle)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        ThemeManager.ComponentStyle.listRowWithStripe(accentColor: passColor) {
+            HStack(spacing: ThemeManager.Spacing.md) {
+                // Pass type icon
+                passIcon
                 
-                // Bottom row: Venue and ticket count on left (separate lines), Date on right
-                HStack(alignment: .bottom) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        // Venue on its own line
-                        if !pass.displayVenue.isEmpty {
-                            Text(pass.displayVenue)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
+                VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs) {
+                    // Title row
+                    Text(pass.displayTitle)
+                        .font(ThemeManager.Typography.bodySemibold)
+                        .foregroundColor(ThemeManager.Colors.textPrimary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Subtitle and metadata
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs / 2) {
+                            // Venue on its own line
+                            if !pass.displayVenue.isEmpty {
+                                Text(pass.displayVenue)
+                                    .font(ThemeManager.Typography.footnote)
+                                    .foregroundColor(ThemeManager.Colors.textSecondary)
+                                    .lineLimit(1)
+                            }
+                            
+                            // Ticket count badge
+                            if pass.passCount > 1 {
+                                Text("\(pass.passCount) tickets")
+                                    .font(ThemeManager.Typography.caption)
+                                    .padding(.horizontal, ThemeManager.Spacing.xs)
+                                    .padding(.vertical, ThemeManager.Spacing.xs / 2)
+                                    .background(passColor.opacity(0.15))
+                                    .foregroundColor(passColor)
+                                    .clipShape(Capsule())
+                            }
                         }
                         
-                        // Ticket count on separate line
-                        if pass.passCount > 1 {
-                            Text("\(pass.passCount) tickets")
-                                .font(.caption)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(passColor.opacity(0.15))
-                                .foregroundColor(passColor)
-                                .clipShape(Capsule())
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // Date on bottom right - use same format as SavedPassDetailView
-                    VStack(alignment: .trailing) {
-                        if let metadata = pass.metadata,
-                           let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
-                            Text(dateTimeString)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        } else if let eventDate = pass.eventDate, !eventDate.isEmpty {
-                            Text(PassDateTimeFormatter.formatEventDate(eventDate))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        } else {
-                            Text(PassDateTimeFormatter.formatDateLocalized(pass.createdAt))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                        Spacer()
+                        
+                        // Date on bottom right - monospaced
+                        VStack(alignment: .trailing) {
+                            if let metadata = pass.metadata,
+                               let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
+                                Text(dateTimeString)
+                                    .font(ThemeManager.Typography.captionMonospaced)
+                                    .foregroundColor(ThemeManager.Colors.textSecondary)
+                            } else if let eventDate = pass.eventDate, !eventDate.isEmpty {
+                                Text(PassDateTimeFormatter.formatEventDate(eventDate))
+                                    .font(ThemeManager.Typography.captionMonospaced)
+                                    .foregroundColor(ThemeManager.Colors.textSecondary)
+                            } else {
+                                Text(PassDateTimeFormatter.formatDateLocalized(pass.createdAt))
+                                    .font(ThemeManager.Typography.captionMonospaced)
+                                    .foregroundColor(ThemeManager.Colors.textSecondary)
+                            }
                         }
                     }
                 }
+                
+                // Chevron indicator
+                Image(systemName: "chevron.right")
+                    .font(ThemeManager.Typography.caption)
+                    .foregroundColor(ThemeManager.Colors.textTertiary)
             }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onTap()
+            .padding(.vertical, ThemeManager.Spacing.sm)
+            .padding(.trailing, ThemeManager.Spacing.md)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                ThemeManager.Haptics.selection()
+                onTap()
+            }
         }
     }
     
@@ -202,12 +210,12 @@ struct PassRowView: View {
     @ViewBuilder
     private var passIcon: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.small)
                 .fill(passColor)
-                .frame(width: 40, height: 40)
+                .frame(width: 28, height: 28) // Consistent icon size as specified
             
             Image(systemName: passIconName)
-                .font(.system(size: 20, weight: .medium))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.white)
         }
     }

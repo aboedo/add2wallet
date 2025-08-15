@@ -37,7 +37,7 @@ struct PassMetadataView: View {
     private var iconColor: Color {
         switch style {
         case .contentView:
-            return .blue
+            return ThemeManager.Colors.brandPrimary
         case .detailView:
             return .white.opacity(0.9)
         }
@@ -58,7 +58,7 @@ struct PassMetadataView: View {
             if let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
                 HStack(spacing: 8) {
                     Image(systemName: "calendar")
-                        .foregroundColor(style == .contentView ? .blue : iconColor)
+                        .foregroundColor(style == .contentView ? ThemeManager.Colors.brandPrimary : iconColor)
                         .font(.subheadline)
                     Text(dateTimeString)
                         .font(.subheadline)
@@ -89,7 +89,7 @@ struct PassMetadataView: View {
                 VStack(alignment: .leading) {
                     HStack(spacing: 8) {
                         Image(systemName: "mappin")
-                            .foregroundColor(style == .contentView ? .red : iconColor)
+                            .foregroundColor(style == .contentView ? ThemeManager.Colors.brandSecondary : iconColor)
                             .font(.subheadline)
                         Text(venue)
                             .font(.subheadline)

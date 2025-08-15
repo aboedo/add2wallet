@@ -50,59 +50,20 @@ struct ContentView: View {
         NavigationView {
             VStack(spacing: 0) {
                 ScrollView {
-                    VStack(spacing: 16) {
-                    PassHeaderView(
-                        title: "Add2Wallet",
-                        subtitle: "Convert PDFs to Apple Wallet passes",
-                        metadata: viewModel.passMetadata
+                    VStack(spacing: ThemeManager.Spacing.md) {
+                    // Hero card stack for home screen
+                    HeroCardStack(
+                        remainingPasses: usageManager.remainingPasses,
+                        isLoadingBalance: usageManager.isLoadingBalance,
+                        onSelectPDF: { viewModel.selectPDF() },
+                        onSamplePDF: { viewModel.loadDemoFile() }
                     )
                     
-                    // Simple usage counter display (ugly for debugging)
-                    HStack {
-                        if usageManager.isLoadingBalance {
-                            SwiftUI.ProgressView()
-                                .scaleEffect(0.8)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
-                        } else {
-                            Text("Passes Remaining: \(usageManager.remainingPasses)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(8)
-                        }
-                    }
-                    .padding(.top, -8)
-                    
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
-                        VStack(alignment: .leading, spacing: 12) {
-                            PDFPreviewView(url: url)
-                                .frame(height: 320)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.secondary.opacity(0.2)))
-                                .onTapGesture {
-                                    showingFullScreenPDF = true
-                                }
-                                .overlay(
-                                    VStack {
-                                        Spacer()
-                                        HStack {
-                                            Spacer()
-                                            Label("Tap to view full screen", systemImage: "arrow.up.left.and.arrow.down.right")
-                                                .font(.caption)
-                                                .padding(8)
-                                                .background(.ultraThinMaterial)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                .padding(8)
-                                        }
-                                    }
-                                )
-
+                        VStack(alignment: .leading, spacing: ThemeManager.Spacing.md) {
                             if let details = viewModel.passMetadata {
-                                // Split subtitle into three components
-                                VStack(spacing: 8) {
+                                // Pass metadata in card format
+                                VStack(spacing: ThemeManager.Spacing.sm) {
                                     PassMetadataView(metadata: details, style: .contentView)
                                         .transition(.opacity)
                                     
@@ -115,38 +76,46 @@ struct ContentView: View {
                                 WarningsView(warnings: viewModel.warnings)
                                     .transition(.opacity)
                             }
-                        }
-                        .padding(.top, 8)
-                    } else if viewModel.isProcessing {
-                        ProgressView(viewModel: viewModel)
-                            .padding(.top, 40)
-                    } else {
-                        VStack(spacing: 12) {
-                            Button(action: { viewModel.selectPDF() }) {
-                                Label("Select PDF", systemImage: "doc.fill")
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                            }
-                            Text("Or use the Share Extension from any app")
-                                .font(.caption).foregroundColor(.secondary)
-                            Text("Open a PDF in Files, Safari, or any app and tap Share → Add to Wallet")
-                                .font(.caption2).foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
                             
-                            // Demo button
-                            Button(action: { viewModel.loadDemoFile() }) {
-                                Text("Try a Demo")
-                                    .font(.footnote)
-                                    .foregroundColor(.blue)
-                                    .padding(.vertical, 8)
-                            }
-                            .padding(.top, 16)
+                            // Collapsed PDF preview at the bottom
+                            CollapsiblePDFPreview(url: url)
+                                .transition(.opacity)
                         }
-                        .padding(.top, 24)
+                        .padding(.top, ThemeManager.Spacing.sm)
+                    } else if viewModel.isProcessing {
+                        VStack(spacing: ThemeManager.Spacing.lg) {
+                            // New progress stepper
+                            ProgressStepper(
+                                progress: viewModel.progress,
+                                progressMessage: viewModel.progressMessage
+                            )
+                            
+                            // Funny phrase below progress
+                            if !viewModel.funnyPhrase.isEmpty {
+                                Text(viewModel.funnyPhrase)
+                                    .font(ThemeManager.Typography.footnote)
+                                    .multilineTextAlignment(.center)
+                                    .foregroundColor(ThemeManager.Colors.textSecondary)
+                                    .italic()
+                                    .transition(.opacity)
+                                    .animation(ThemeManager.Animations.gentle, value: viewModel.funnyPhrase)
+                            }
+                        }
+                        .padding(.top, ThemeManager.Spacing.lg)
+                    } else {
+                        // Empty state instructions
+                        VStack(spacing: ThemeManager.Spacing.sm) {
+                            Text("Or use the Share Extension from any app")
+                                .font(ThemeManager.Typography.caption)
+                                .foregroundColor(ThemeManager.Colors.textSecondary)
+                            
+                            Text("Open a PDF in Files, Safari, or any app and tap Share → Add to Wallet")
+                                .font(ThemeManager.Typography.caption)
+                                .foregroundColor(ThemeManager.Colors.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, ThemeManager.Spacing.md)
+                        }
+                        .padding(.top, ThemeManager.Spacing.sm)
                     }
                     
                     Spacer(minLength: 80)
@@ -154,77 +123,88 @@ struct ContentView: View {
                     .padding()
                 }
 
-                // Fixed bottom action bar - only show when needed
+            }
+            .navigationBarHidden(true)
+            .safeAreaInset(edge: .bottom) {
+                // Sticky bottom CTA using ThemeManager design system
                 if viewModel.selectedFileURL != nil || viewModel.isProcessing || (viewModel.statusMessage != nil && !viewModel.statusMessage!.isEmpty) {
-                    VStack(spacing: 8) {
+                    VStack(spacing: ThemeManager.Spacing.sm) {
+                        // Status message
                         if let message = viewModel.statusMessage, !message.isEmpty {
                             Text(message)
-                                .font(.footnote)
-                                .foregroundColor(viewModel.hasError ? .red : .green)
+                                .font(ThemeManager.Typography.footnote)
+                                .foregroundColor(viewModel.hasError ? ThemeManager.Colors.error : ThemeManager.Colors.success)
                                 .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity)
                         }
+                        
+                        // Primary CTA and secondary actions
                         if let _ = viewModel.selectedFileURL, !viewModel.isProcessing {
-                            HStack(spacing: 12) {
-                                Button(role: .cancel) {
-                                    viewModel.clearSelection()
-                                } label: {
-                                    Label("Cancel", systemImage: "xmark")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                
-                                // Show retry button if there was an error
-                                if viewModel.hasError {
+                            VStack(spacing: ThemeManager.Spacing.sm) {
+                                // Primary CTA - full width, prominent
+                                if passViewController != nil {
                                     Button {
-                                        viewModel.retryUpload()
-                                    } label: {
-                                        Label("Retry", systemImage: "arrow.clockwise")
-                                            .frame(maxWidth: .infinity)
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.orange)
-                                    
-                                    // Show contact support button for 4xx errors
-                                    if viewModel.showingContactSupport {
-                                        Button {
-                                            viewModel.contactSupport()
-                                        } label: {
-                                            Label("Contact Support", systemImage: "envelope")
-                                                .frame(maxWidth: .infinity)
-                                        }
-                                        .buttonStyle(.bordered)
-                                        .tint(.blue)
-                                    }
-                                } else if passViewController != nil {
-                                    Button {
+                                        ThemeManager.Haptics.light()
                                         showingAddPassVC = true
                                     } label: {
                                         Label("Add to Wallet", systemImage: "plus.rectangle.on.folder")
-                                            .frame(maxWidth: .infinity)
                                     }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.green)
-                                } else {
+                                    .themedPrimaryButton()
+                                } else if !viewModel.hasError {
                                     Button {
+                                        ThemeManager.Haptics.light()
                                         viewModel.uploadSelected()
                                     } label: {
                                         Label("Create Pass", systemImage: "wallet.pass")
+                                    }
+                                    .themedPrimaryButton()
+                                }
+                                
+                                // Secondary actions row
+                                HStack(spacing: ThemeManager.Spacing.sm) {
+                                    Button(role: .cancel) {
+                                        ThemeManager.Haptics.selection()
+                                        viewModel.clearSelection()
+                                    } label: {
+                                        Label("Cancel", systemImage: "xmark")
                                             .frame(maxWidth: .infinity)
                                     }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.blue)
+                                    .themedSecondaryButton()
+                                    
+                                    // Show retry button if there was an error
+                                    if viewModel.hasError {
+                                        Button {
+                                            ThemeManager.Haptics.light()
+                                            viewModel.retryUpload()
+                                        } label: {
+                                            Label("Retry", systemImage: "arrow.clockwise")
+                                                .frame(maxWidth: .infinity)
+                                        }
+                                        .themedSecondaryButton()
+                                        
+                                        // Show contact support button for 4xx errors
+                                        if viewModel.showingContactSupport {
+                                            Button {
+                                                ThemeManager.Haptics.light()
+                                                viewModel.contactSupport()
+                                            } label: {
+                                                Label("Contact Support", systemImage: "envelope")
+                                                    .frame(maxWidth: .infinity)
+                                            }
+                                            .themedSecondaryButton()
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.horizontal, ThemeManager.Spacing.md)
+                    .padding(.top, ThemeManager.Spacing.sm)
+                    .padding(.bottom, ThemeManager.Spacing.md)
+                    .background(.thinMaterial)
+                    .animation(ThemeManager.Animations.standard, value: viewModel.selectedFileURL)
                 }
             }
-            .navigationBarHidden(true)
             .task {
                 // Refresh balance when view appears
                 await usageManager.refreshBalance()
