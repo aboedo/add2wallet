@@ -144,10 +144,10 @@ struct SavedPassDetailView: View {
                     }
                 }
                 .padding(.horizontal, ThemeManager.Spacing.md)
-                .padding(.top, ThemeManager.Spacing.sm)
+                .padding(.top, ThemeManager.Spacing.md)
                 .padding(.bottom, ThemeManager.Spacing.md)
+                .frame(maxWidth: .infinity)
                 .background(.thinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
             }
             .background(
                 LinearGradient(

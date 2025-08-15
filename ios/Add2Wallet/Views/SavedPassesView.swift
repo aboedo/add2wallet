@@ -170,19 +170,19 @@ struct PassRowView: View {
                         
                         Spacer()
                         
-                        // Date on bottom right - monospaced
+                        // Date on bottom right
                         if let metadata = pass.metadata,
                            let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
                             Text(dateTimeString)
-                                .font(ThemeManager.Typography.captionMonospaced)
+                                .font(ThemeManager.Typography.footnote)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                         } else if let eventDate = pass.eventDate, !eventDate.isEmpty {
                             Text(PassDateTimeFormatter.formatEventDate(eventDate))
-                                .font(ThemeManager.Typography.captionMonospaced)
+                                .font(ThemeManager.Typography.footnote)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                         } else {
                             Text(PassDateTimeFormatter.formatDateLocalized(pass.createdAt))
-                                .font(ThemeManager.Typography.captionMonospaced)
+                                .font(ThemeManager.Typography.footnote)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                         }
                     }
@@ -194,7 +194,7 @@ struct PassRowView: View {
                     .foregroundColor(ThemeManager.Colors.textTertiary)
             }
             .padding(.vertical, ThemeManager.Spacing.sm)
-            .padding(.trailing, ThemeManager.Spacing.sm)
+            .padding(.trailing, ThemeManager.Spacing.xs)
             .contentShape(Rectangle())
             .onTapGesture {
                 ThemeManager.Haptics.selection()

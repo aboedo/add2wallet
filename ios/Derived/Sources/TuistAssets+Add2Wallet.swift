@@ -20,6 +20,7 @@
 public enum Add2WalletAsset: Sendable {
   public enum Assets {
   public static let accentColor = Add2WalletColors(name: "AccentColor")
+    public static let launchScreenBackground = Add2WalletColors(name: "LaunchScreenBackground")
   }
   public enum PreviewAssets {
   }

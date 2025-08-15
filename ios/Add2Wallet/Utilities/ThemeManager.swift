@@ -133,6 +133,7 @@ struct ThemeManager {
                 .frame(maxWidth: .infinity)
                 .background(Colors.brandPrimary)
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.button))
+                .contentShape(Rectangle())
         }
         
         // Secondary Button
@@ -142,11 +143,13 @@ struct ThemeManager {
                 .foregroundColor(Colors.brandPrimary)
                 .padding(.vertical, Spacing.sm)
                 .padding(.horizontal, Spacing.md)
+                .frame(maxWidth: .infinity)
                 .background(Colors.surfaceCard)
                 .overlay(
                     RoundedRectangle(cornerRadius: CornerRadius.button)
                         .stroke(Colors.brandPrimary, lineWidth: 1)
                 )
+                .contentShape(Rectangle())
         }
         
         // Usage Pill
@@ -233,20 +236,61 @@ extension View {
     }
     
     func themedPrimaryButton() -> some View {
-        ThemeManager.ComponentStyle.primaryButton {
-            self
-        }
+        self
+            .buttonStyle(ThemedPrimaryButtonStyle())
     }
     
     func themedSecondaryButton() -> some View {
-        ThemeManager.ComponentStyle.secondaryButton {
-            self
-        }
+        self
+            .buttonStyle(ThemedSecondaryButtonStyle())
     }
     
     func themedUsagePill() -> some View {
         ThemeManager.ComponentStyle.usagePill {
             self
         }
+    }
+}
+
+// MARK: - Button Styles
+struct ThemedPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(ThemeManager.Typography.bodySemibold)
+            .foregroundColor(.white)
+            .padding(.vertical, ThemeManager.Spacing.md)
+            .padding(.horizontal, ThemeManager.Spacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(
+                configuration.isPressed 
+                    ? ThemeManager.Colors.brandSecondary 
+                    : ThemeManager.Colors.brandPrimary
+            )
+            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+struct ThemedSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(ThemeManager.Typography.body)
+            .foregroundColor(ThemeManager.Colors.brandPrimary)
+            .padding(.vertical, ThemeManager.Spacing.sm)
+            .padding(.horizontal, ThemeManager.Spacing.md)
+            .frame(maxWidth: .infinity)
+            .background(
+                configuration.isPressed 
+                    ? ThemeManager.Colors.surfaceCardElevated 
+                    : ThemeManager.Colors.surfaceCard
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button)
+                    .stroke(ThemeManager.Colors.brandPrimary, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
