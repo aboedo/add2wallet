@@ -55,10 +55,11 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: ThemeManager.Spacing.md) {
-                    // Hero card stack for home screen
+                    // Hero card stack for home screen - matches pass color when available
                     HeroCardStack(
                         remainingPasses: usageManager.remainingPasses,
                         isLoadingBalance: usageManager.isLoadingBalance,
+                        passColor: viewModel.passMetadata != nil ? PassColorUtils.getPassColor(metadata: viewModel.passMetadata) : nil,
                         onSelectPDF: { viewModel.selectPDF() },
                         onSamplePDF: { viewModel.loadDemoFile() }
                     )
@@ -66,46 +67,13 @@ struct ContentView: View {
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: ThemeManager.Spacing.md) {
                             if let details = viewModel.passMetadata {
-                                VStack(spacing: ThemeManager.Spacing.md) {
-                                    // Big prominent pass title
-                                    VStack(spacing: ThemeManager.Spacing.xs) {
-                                        Text(details.title ?? details.eventName ?? "Untitled Pass")
-                                            .font(.largeTitle)
-                                            .fontWeight(.bold)
-                                            .multilineTextAlignment(.center)
-                                            .foregroundColor(.white)
-                                        
-                                        if let subtitle = details.eventName, details.title != details.eventName {
-                                            Text(subtitle)
-                                                .font(.title3)
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .multilineTextAlignment(.center)
-                                        }
-                                    }
-                                    .padding(ThemeManager.Spacing.lg)
-                                    .frame(maxWidth: .infinity)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [
-                                                PassColorUtils.getPassColor(metadata: details).opacity(0.8),
-                                                PassColorUtils.getPassColor(metadata: details)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.large))
-                                    .transition(.opacity)
-                                    
-                                    // Pass metadata in card format
-                                    VStack(spacing: ThemeManager.Spacing.sm) {
-                                        PassMetadataView(metadata: details, style: .contentView)
-                                            .transition(.opacity)
-                                        
-                                        PassDetailsView(metadata: details, ticketCount: viewModel.ticketCount)
-                                            .transition(.opacity)
-                                    }
-                                }
+                                // Unified pass detail presentation matching SavedPassDetailView
+                                PassDetailPresentation(
+                                    metadata: details,
+                                    ticketCount: viewModel.ticketCount,
+                                    isEmbedded: true
+                                )
+                                .transition(.opacity)
                             }
                             
                             if !viewModel.warnings.isEmpty {

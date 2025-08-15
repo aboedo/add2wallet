@@ -14,6 +14,7 @@
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
 		2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */; };
 		238A82DC3E4640EF5A13AFDA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 060631A1940D5F28CD477DAA /* RevenueCat */; };
+		254011287AA9D3BFA5F1E12D /* PassDetailPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */; };
 		264E2AA0EBFE6331FA88325B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C7287DB2FC0F76437E783DEA /* Assets.xcassets */; };
 		2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */; };
 		3430A34FB8CECB28216ACB19 /* HeroCardStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */; };
@@ -120,6 +121,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailPresentation.swift; sourceTree = "<group>"; };
 		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
 		0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2Wallet.swift"; sourceTree = "<group>"; };
 		0CE5125D2B22D9E8C032B3FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -303,6 +305,7 @@
 				7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */,
 				E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */,
 				2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */,
+				04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */,
 				BAE1D6BB33C4EB4252FC1E5B /* PassDetailsView.swift */,
 				7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */,
 				BF9AF0EB658AC2C21B655C88 /* PassMetadataView.swift */,
@@ -571,6 +574,7 @@
 				6D9DD850B7184921D72245FE /* AsyncMapView.swift in Sources */,
 				DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */,
 				3430A34FB8CECB28216ACB19 /* HeroCardStack.swift in Sources */,
+				254011287AA9D3BFA5F1E12D /* PassDetailPresentation.swift in Sources */,
 				B9BEF48840DAA722B50251E8 /* PassDetailsView.swift in Sources */,
 				0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */,
 				87A8BF43639B5B64FA90634B /* PassMetadataView.swift in Sources */,

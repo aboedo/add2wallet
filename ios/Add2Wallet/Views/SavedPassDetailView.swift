@@ -22,61 +22,55 @@ struct SavedPassDetailView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Header section with pass color theming
-                    VStack(spacing: 8) {
-                        if let metadata = savedPass.metadata {
-                            // Custom header for detail view
+                    // Use unified pass detail presentation
+                    if let metadata = savedPass.metadata {
+                        PassDetailPresentation(
+                            metadata: metadata,
+                            ticketCount: savedPass.passCount > 1 ? savedPass.passCount : nil,
+                            isEmbedded: false
+                        )
+                    } else {
+                        // Fallback for passes without metadata
+                        VStack(spacing: 16) {
+                            // Header without metadata
                             VStack(spacing: 8) {
                                 Text(savedPass.displayTitle)
                                     .font(.largeTitle)
                                     .fontWeight(.bold)
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.white)
+                                
+                                Text(savedPass.displaySubtitle)
+                                    .font(.title3)
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .multilineTextAlignment(.center)
                             }
-                            
-                            // Use shared PassMetadataView for subtitle info
-                            PassMetadataView(
-                                metadata: metadata,
-                                style: .detailView,
-                                ticketCount: savedPass.passCount > 1 ? savedPass.passCount : nil
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                LinearGradient(
+                                    colors: [passHeaderColor, passHeaderColor.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        } else {
-                            Text(savedPass.displayTitle)
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .multilineTextAlignment(.center)
-                                .foregroundColor(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.large))
                             
-                            Text(savedPass.displaySubtitle)
-                                .font(.title3)
-                                .foregroundColor(.white.opacity(0.9))
-                                .multilineTextAlignment(.center)
-                        }
-                        
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    
-                    // Pass details section
-                    if let metadata = savedPass.metadata {
-                        PassDetailsView(metadata: metadata, ticketCount: nil)
-                            .transition(.opacity)
-                    } else {
-                        // Fallback if detailed metadata is not available
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Pass Information")
-                                .font(.headline)
-                            
-                            Group {
-                                keyValueRow("Type", savedPass.passType.capitalized)
+                            // Basic pass info
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Pass Information")
+                                    .font(.headline)
+                                
+                                Group {
+                                    keyValueRow("Type", savedPass.passType.capitalized)
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                             }
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .padding()
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .padding()
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal)
                     }
                     
                 }
@@ -151,7 +145,7 @@ struct SavedPassDetailView: View {
             }
             .background(
                 LinearGradient(
-                    colors: [passHeaderColor.opacity(0.6), passHeaderColor],
+                    colors: [passHeaderColor, passHeaderColor.opacity(0.6)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )

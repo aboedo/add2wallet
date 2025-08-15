@@ -3,6 +3,7 @@ import SwiftUI
 struct HeroCardStack: View {
     let remainingPasses: Int
     let isLoadingBalance: Bool
+    let passColor: Color?
     let onSelectPDF: () -> Void
     let onSamplePDF: () -> Void
     @State private var buttonBounce = 0
@@ -102,8 +103,8 @@ struct HeroCardStack: View {
         .background(
             LinearGradient(
                 colors: [
-                    ThemeManager.Colors.brandPrimary,
-                    ThemeManager.Colors.brandSecondary
+                    passColor?.opacity(0.8) ?? ThemeManager.Colors.brandPrimary,
+                    passColor ?? ThemeManager.Colors.brandSecondary
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -118,6 +119,15 @@ struct HeroCardStack: View {
         HeroCardStack(
             remainingPasses: 9,
             isLoadingBalance: false,
+            passColor: nil,
+            onSelectPDF: { print("Select PDF") },
+            onSamplePDF: { print("Sample PDF") }
+        )
+        
+        HeroCardStack(
+            remainingPasses: 5,
+            isLoadingBalance: false,
+            passColor: .purple,
             onSelectPDF: { print("Select PDF") },
             onSamplePDF: { print("Sample PDF") }
         )
