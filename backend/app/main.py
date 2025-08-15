@@ -269,11 +269,19 @@ async def upload_pdf(
         })
         
         # Use enhanced metadata with colors from ticket_info for the upload response
+        # For multi-pass documents, use base metadata without ticket-specific numbering
         enhanced_metadata = ai_metadata  # fallback to original
         if ticket_info and len(ticket_info) > 0:
             first_ticket = ticket_info[0]
             if "metadata" in first_ticket and first_ticket["metadata"]:
-                enhanced_metadata = first_ticket["metadata"]
+                enhanced_metadata = first_ticket["metadata"].copy()
+                # Remove ticket-specific numbering from title for upload response
+                if len(ticket_info) > 1 and enhanced_metadata.get("title"):
+                    title = enhanced_metadata["title"]
+                    # Remove "(#N)" pattern from title
+                    import re
+                    clean_title = re.sub(r'\s*\(#\d+\)\s*$', '', title)
+                    enhanced_metadata["title"] = clean_title
                 print(f"🎨 Using enhanced metadata with colors for upload response")
         
         return UploadResponse(

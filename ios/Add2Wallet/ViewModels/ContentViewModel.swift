@@ -442,6 +442,11 @@ class ContentViewModel: ObservableObject {
                 },
                 receiveValue: { [weak self] indexed in
                     let sorted = indexed.sorted { $0.0 < $1.0 }.map { $0.1 }
+                    print("🎫 Downloaded \(indexed.count) pass files:")
+                    for (index, data) in indexed {
+                        print("  Pass \(index): \(data.count) bytes")
+                    }
+                    print("🎫 Sorted pass data sizes: \(sorted.map { $0.count })")
                     self?.openPassesInWallet(passDatas: sorted)
                 }
             )
@@ -450,8 +455,18 @@ class ContentViewModel: ObservableObject {
 
     private func openPassesInWallet(passDatas: [Data]) {
         do {
+            print("🎫 Creating PKPass objects from \(passDatas.count) data blobs")
             // Save each pass to a temporary file (optional; PassKit can take Data directly)
-            let passes: [PKPass] = try passDatas.map { try PKPass(data: $0) }
+            let passes: [PKPass] = try passDatas.enumerated().compactMap { (index, data) in
+                do {
+                    let pass = try PKPass(data: data)
+                    print("  Pass \(index + 1): \(pass.passTypeIdentifier) - \(pass.serialNumber)")
+                    return pass
+                } catch {
+                    print("  ❌ Failed to create Pass \(index + 1): \(error.localizedDescription)")
+                    return nil
+                }
+            }
 
             guard PKPassLibrary.isPassLibraryAvailable() else {
                 statusMessage = "Apple Wallet is not available on this device"
@@ -463,6 +478,7 @@ class ContentViewModel: ObservableObject {
             saveMultiplePassesToPersistentStorage(passDatas: passDatas)
 
             let passVC = PKAddPassesViewController(passes: passes)
+            print("🎫 Created PKAddPassesViewController with \(passes.count) passes")
 
             statusMessage = nil
             hasError = false
