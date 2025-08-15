@@ -145,6 +145,7 @@ async def upload_pdf(
     user_id: str = Form(...),
     session_token: str = Form(...),
     is_retry: bool = Form(False),
+    is_demo: bool = Form(False),
     x_api_key: Optional[str] = Header(None)
 ):
     """Upload a PDF file for processing into an Apple Wallet pass."""
@@ -241,13 +242,17 @@ async def upload_pdf(
                 f.write(pkpass_data)
             pass_paths.append(str(pass_path))
         
-        # Deduct 1 PASS from user's RevenueCat balance (unless this is a retry)
-        print(f"🔄 Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
-        deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
-        if deduction_success:
-            print(f"✅ PASS deduction successful for user {user_id}")
+        # Deduct 1 PASS from user's RevenueCat balance (unless this is a retry or demo)
+        if is_demo:
+            print(f"🎮 Demo mode: Skipping PASS deduction for user {user_id}")
+            deduction_success = True
         else:
-            print(f"⚠️ PASS deduction failed for user {user_id}, but continuing with pass generation")
+            print(f"🔄 Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
+            deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
+            if deduction_success:
+                print(f"✅ PASS deduction successful for user {user_id}")
+            else:
+                print(f"⚠️ PASS deduction failed for user {user_id}, but continuing with pass generation")
         
         # Update job information with completion
         jobs[job_id].update({

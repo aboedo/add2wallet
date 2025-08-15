@@ -1,72 +1,76 @@
-# Add2Wallet Monetization Implementation Plan
+# Add2Wallet Implementation Plan
 
-## Overview
-Adding monetization to Add2Wallet using RevenueCat SDK with Virtual Currencies for pass management and in-app purchases.
+## Current Phase: App Polish & Demo Mode
+
+### Overview
+Implementing error handling improvements, retry experience enhancements, and demo mode functionality for the Add2Wallet iOS app.
 
 ## Implementation Checklist
 
-### Step 1: Fix Railway Deployment Issue ✅
-- [x] Investigate dependency issues in Railway deployment
-- [x] Ensure numpy version compatibility (currently using numpy<2.0)
-- [x] Test deployment without degrading functionality
-- [x] Verify all backend services work properly in production
+### Phase 1: Error Handling & Retry Experience
+- [ ] Fix "data isn't in the right format" error with better PKPass error handling
+- [ ] Add retry count tracking to ContentViewModel
+- [ ] Implement alert after 2nd retry attempt offering support contact
+- [ ] Include PDF and appUserID in support email (already implemented)
 
-### Step 2: Integrate RevenueCat SDK ✅
-- [x] Add RevenueCat SDK via Swift Package Manager (latest version up to next major)
-- [x] Configure with public API key: `appl_fYlYmWylgRwabkYEZoocYZaCOGU`
-- [x] Initialize SDK in App startup
-- [ ] Test SDK integration
+### Phase 2: Demo Mode Implementation
+- [ ] Copy "torre ifel.pdf" from backend test files to iOS app Resources
+- [ ] Add demo mode flag to ContentViewModel
+- [ ] Add "Try a Demo" button to main screen (text-only, bottom position)
+- [ ] Implement demo file loading from app bundle
+- [ ] Pass demo flag through upload chain to backend
+- [ ] Update backend to skip RevenueCat pass deduction for demo mode
+- [ ] Ensure demo mode doesn't require pass balance check
 
-### Step 3: Implement PASS Virtual Currency ✅
-- [x] Replace local PassUsageManager with RevenueCat Virtual Currencies
-- [x] Fetch PASS balance from CustomerInfo
-- [x] Update UI to display RevenueCat-based pass count
-- [x] Remove local storage implementation
-
-### Step 4: Server-Side Pass Deduction ✅
-- [x] Add RevenueCat secret key as environment variable: `sk_xYDUixBpiCkUQiwlmeMlCvvFrGjNv`
-- [x] Implement API call to deduct 1 PASS when generating a pass
-- [x] Ensure deduction happens after successful pass generation
-- [x] Add error handling for failed deductions
-
-### Step 5: Skip Deduction for Retries ✅
-- [x] Track retry status in ContentViewModel
-- [x] Skip PASS deduction when isRetry flag is true
-- [x] Test retry logic
-
-### Step 6: Replace Alert with PaywallView ✅
-- [x] Replace showingPurchaseAlert with RevenueCat PaywallView
-- [x] Handle purchase completion and refresh CustomerInfo
-- [x] Update pass balance after successful purchase
-- [ ] Test purchase flow
-
-### Step 7: Add Settings Button ✅
-- [x] Add settings button to SavedPassesView navigation bar
-- [x] Present RevenueCat Customer Center when tapped
-- [ ] Test Customer Center presentation
-
-### Step 8: Configure Customer Center Actions ⚠️ 
-- [x] Implement "rate_app" custom action for app rating
-- [x] Implement "provide_feedback" custom action with email template
-- [x] Include appUserID in feedback email
-- [ ] Fix Customer Center custom actions API (requires RevenueCat configuration)
-- [ ] Test custom actions
+### Phase 3: Testing & Verification
+- [ ] Test retry flow with problematic PDFs
+- [ ] Verify support email includes correct attachments
+- [ ] Test demo mode end-to-end
+- [ ] Ensure demo doesn't affect pass balance
+- [ ] Test error messages are user-friendly
 
 ## Technical Details
 
-### RevenueCat Configuration
-- **Public API Key**: `appl_fYlYmWylgRwabkYEZoocYZaCOGU` (hardcoded in app)
-- **Secret API Key**: `sk_xYDUixBpiCkUQiwlmeMlCvvFrGjNv` (server environment variable)
-- **Virtual Currency**: PASS
+### Error Handling Improvements
+- Better error catching around PKPass initialization
+- Specific error messages for different failure types
+- Logging for debugging intermittent issues
 
-### API Endpoints to Modify
-- `POST /upload` - Deduct 1 PASS after successful generation
-- Add user identification for pass tracking
+### Retry Experience
+- Track retry attempts in ContentViewModel
+- Show helpful alert after 2nd retry
+- Offer to send problematic file to support
+- Pre-fill email with diagnostic information
 
-### iOS Changes
-- SwiftUI/Swift Concurrency APIs preferred
-- Customer Center with custom actions
-- PaywallView for purchases
+### Demo Mode
+- Demo PDF: "torre ifel.pdf" (Eiffel Tower ticket)
+- No pass balance required
+- No pass deduction on backend
+- Same UI flow as regular processing
+- Clear indication this is a demo
 
-## Deployment Notes
-Each step will be committed separately with proper testing before proceeding to the next.
+## Previous Phases (Completed)
+
+### Monetization Implementation ✅
+- [x] Fix Railway deployment issue
+- [x] Integrate RevenueCat SDK
+- [x] Implement PASS Virtual Currency
+- [x] Server-side pass deduction
+- [x] Skip deduction for retries
+- [x] Replace alert with PaywallView
+- [x] Add settings button
+- [x] Configure customer center actions
+
+### Core Functionality ✅
+- [x] PDF upload and processing
+- [x] Multi-format barcode detection
+- [x] AI-powered metadata extraction
+- [x] Apple Wallet pass generation
+- [x] iOS app with share extension
+- [x] SwiftData persistence
+- [x] Production deployment
+
+## Notes
+- Demo mode helps users try the app without commitment
+- Better error handling reduces user frustration
+- Support contact flow helps gather problematic PDFs for testing

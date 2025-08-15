@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var addedPassCount = 1
     @State private var showingMailComposer = false
     @State private var mailComposerData: [AnyHashable: Any]?
+    @State private var showingRetryAlert = false
     @Environment(\.modelContext) private var modelContext
     
     #if DEBUG
@@ -135,6 +136,15 @@ struct ContentView: View {
                                 .font(.caption2).foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
+                            
+                            // Demo button
+                            Button(action: { viewModel.loadDemoFile() }) {
+                                Text("Try a Demo")
+                                    .font(.footnote)
+                                    .foregroundColor(.blue)
+                                    .padding(.vertical, 8)
+                            }
+                            .padding(.top, 16)
                         }
                         .padding(.top, 24)
                     }
@@ -329,6 +339,19 @@ struct ContentView: View {
                         fileName: data["fileName"] as? String ?? "document.pdf"
                     )
                 }
+            }
+            .alert("Having trouble with this file?", isPresented: $viewModel.showingRetryAlert) {
+                Button("Try Again") {
+                    viewModel.retryAfterAlert()
+                }
+                Button("Send to Support") {
+                    viewModel.contactSupport()
+                }
+                Button("Cancel", role: .cancel) {
+                    // Just dismiss
+                }
+            } message: {
+                Text("It seems we're having trouble with this file. We'd love to get it to work! Please send us the file so we can test it and improve the app.")
             }
         }
     }

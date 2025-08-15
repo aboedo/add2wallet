@@ -170,7 +170,7 @@ class NetworkService {
         self.session = URLSession(configuration: config)
     }
     
-    func uploadPDF(data: Data, filename: String, isRetry: Bool = false) -> AnyPublisher<UploadResponse, Error> {
+    func uploadPDF(data: Data, filename: String, isRetry: Bool = false, isDemo: Bool = false) -> AnyPublisher<UploadResponse, Error> {
         guard let url = URL(string: "\(baseURL)/upload") else {
             return Fail(error: NetworkError.invalidURL)
                 .eraseToAnyPublisher()
@@ -208,6 +208,12 @@ class NetworkService {
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"is_retry\"\r\n\r\n".data(using: .utf8)!)
         body.append("\(isRetry)".data(using: .utf8)!)
+        body.append("\r\n".data(using: .utf8)!)
+        
+        // Add is_demo flag
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"is_demo\"\r\n\r\n".data(using: .utf8)!)
+        body.append("\(isDemo)".data(using: .utf8)!)
         body.append("\r\n".data(using: .utf8)!)
         
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)

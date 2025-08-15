@@ -23,6 +23,9 @@ class ContentViewModel: ObservableObject {
     @Published var progressMessage: String = ""
     @Published var isRetry = false
     @Published var showingPurchaseAlert = false
+    @Published var retryCount = 0
+    @Published var showingRetryAlert = false
+    @Published var isDemo = false
     
     // Store PDF data for error reporting
     private var currentPDFData: Data?
@@ -79,6 +82,43 @@ class ContentViewModel: ObservableObject {
         hasError = false
     }
     
+    @MainActor
+    func loadDemoFile() {
+        // Load the demo PDF from app bundle
+        guard let demoURL = Bundle.main.url(forResource: "torre_ifel", withExtension: "pdf") else {
+            statusMessage = "Demo file not found. Please update the app."
+            hasError = true
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: demoURL)
+            
+            // Create a temporary copy for preview
+            let tempDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            let tempURL = tempDir.appendingPathComponent("Eiffel_Tower_Demo.pdf")
+            try data.write(to: tempURL, options: [.atomic])
+            
+            // Set as selected file
+            selectedFileURL = tempURL
+            
+            // Mark as demo mode
+            isDemo = true
+            
+            // Reset any previous state
+            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+            passMetadata = nil
+            warnings = []
+            statusMessage = "Demo mode - This is a sample ticket"
+            hasError = false
+        } catch {
+            statusMessage = "Error loading demo: \(error.localizedDescription)"
+            hasError = true
+        }
+    }
+    
     func handleSelectedDocument(url: URL) {
         // Copy PDF into our sandbox for reliable preview/access
         guard url.startAccessingSecurityScopedResource() else {
@@ -114,8 +154,8 @@ class ContentViewModel: ObservableObject {
     func uploadSelected() {
         guard let url = selectedFileURL else { return }
         
-        // Check if user has passes remaining (unless it's a retry)
-        if !isRetry && !usageManager.canCreatePass() {
+        // Check if user has passes remaining (unless it's a retry or demo)
+        if !isRetry && !isDemo && !usageManager.canCreatePass() {
             showingPurchaseAlert = true
             return
         }
@@ -131,6 +171,19 @@ class ContentViewModel: ObservableObject {
     
     @MainActor
     func retryUpload() {
+        retryCount += 1
+        
+        // Show alert after second retry attempt
+        if retryCount >= 2 {
+            showingRetryAlert = true
+        } else {
+            isRetry = true
+            uploadSelected()
+        }
+    }
+    
+    @MainActor
+    func retryAfterAlert() {
         isRetry = true
         uploadSelected()
     }
@@ -146,6 +199,8 @@ class ContentViewModel: ObservableObject {
         ticketCount = nil
         warnings = []
         isRetry = false
+        retryCount = 0
+        isDemo = false
         NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
     }
     
@@ -196,9 +251,9 @@ class ContentViewModel: ObservableObject {
         
         // Pass consumption is now handled server-side
         // The server will deduct 1 PASS via RevenueCat API
-        // unless this is a retry
+        // unless this is a retry or demo
         
-        networkService.uploadPDF(data: data, filename: filename, isRetry: isRetry)
+        networkService.uploadPDF(data: data, filename: filename, isRetry: isRetry, isDemo: isDemo)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
@@ -273,6 +328,13 @@ class ContentViewModel: ObservableObject {
     
     private func openPassInWallet(passData: Data) {
         do {
+            // First validate the pass data has minimum size
+            guard passData.count > 100 else {
+                throw NSError(domain: "PassError", code: 1, userInfo: [
+                    NSLocalizedDescriptionKey: "Pass data is too small. The file may be corrupted."
+                ])
+            }
+            
             // Save pass data to temporary file
             let tempURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
@@ -280,8 +342,31 @@ class ContentViewModel: ObservableObject {
             
             try passData.write(to: tempURL)
             
-            // Create PKPass from the data
-            let pass = try PKPass(data: passData)
+            // Create PKPass from the data with better error handling
+            let pass: PKPass
+            do {
+                pass = try PKPass(data: passData)
+            } catch let passError as NSError {
+                // Check for specific PKPass errors
+                if passError.domain == "PKPassKitErrorDomain" {
+                    switch passError.code {
+                    case 1:
+                        throw NSError(domain: "PassError", code: 2, userInfo: [
+                            NSLocalizedDescriptionKey: "The pass file format is invalid. Please try again or contact support."
+                        ])
+                    case 2:
+                        throw NSError(domain: "PassError", code: 3, userInfo: [
+                            NSLocalizedDescriptionKey: "The pass signature is invalid. Please try again."
+                        ])
+                    default:
+                        throw NSError(domain: "PassError", code: 4, userInfo: [
+                            NSLocalizedDescriptionKey: "Unable to read the pass file. Error: \(passError.localizedDescription)"
+                        ])
+                    }
+                } else {
+                    throw passError
+                }
+            }
             
             // Check if PassKit is available and pass can be added
             guard PKPassLibrary.isPassLibraryAvailable() else {
@@ -294,7 +379,11 @@ class ContentViewModel: ObservableObject {
             savePassToPersistentStorage(passData: passData)
             
             // Present the add pass view controller
-            let passVC = PKAddPassesViewController(pass: pass)
+            guard let passVC = PKAddPassesViewController(pass: pass) else {
+                throw NSError(domain: "PassError", code: 5, userInfo: [
+                    NSLocalizedDescriptionKey: "Unable to create pass viewer. Please try again."
+                ])
+            }
             
             hasError = false
             
@@ -302,17 +391,27 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(
                 name: NSNotification.Name("PassReadyToAdd"),
                 object: nil,
-                userInfo: ["passViewController": passVC!, "tempURL": tempURL]
+                userInfo: ["passViewController": passVC, "tempURL": tempURL]
             )
             isProcessing = false
             stopPhraseCycling()
             completeProgress()
             
-        } catch {
+        } catch let error as NSError {
             isProcessing = false
             stopPhraseCycling()
             stopProgressAnimation()
-            statusMessage = "Error creating pass: \(error.localizedDescription)"
+            
+            // Log detailed error for debugging
+            print("❌ PKPass creation failed: \(error.domain) - Code: \(error.code) - \(error.localizedDescription)")
+            print("❌ Pass data size: \(passData.count) bytes")
+            
+            // Provide user-friendly error message
+            if error.domain == "PassError" {
+                statusMessage = error.localizedDescription
+            } else {
+                statusMessage = "Error creating pass: \(error.localizedDescription)"
+            }
             hasError = true
         }
     }
