@@ -12,12 +12,15 @@ class PassUsageManager: NSObject, ObservableObject {
     private override init() {
         super.init()
         
-        Task {
-            await refreshBalance()
-        }
-        
         // Listen for customer info updates
         Purchases.shared.delegate = self
+        
+        // Fetch initial balance after a brief delay to ensure RevenueCat is ready
+        Task {
+            // Small delay to ensure RevenueCat SDK is fully initialized
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            await refreshBalance()
+        }
     }
     
     func canCreatePass() -> Bool {

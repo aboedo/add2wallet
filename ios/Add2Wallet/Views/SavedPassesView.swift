@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import RevenueCatUI
 import StoreKit
+import CloudKit
 
 struct SavedPassesView: View {
     @Environment(\.modelContext) private var modelContext

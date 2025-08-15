@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 class SavedPass {
-    var id: String
-    var createdAt: Date
-    var passType: String
-    var title: String
+    var id: String = UUID().uuidString
+    var createdAt: Date = Date()
+    var passType: String = ""
+    var title: String = ""
     var eventDate: String?
     var venue: String?
     var city: String?
-    var passDatas: [Data]
+    var passDatas: [Data] = []
     var passURL: String?
     var pdfData: Data?
     
