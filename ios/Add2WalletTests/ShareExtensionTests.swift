@@ -1,49 +1,47 @@
 import XCTest
+import Combine
 @testable import Add2Wallet
 
+@MainActor
 class ShareExtensionTests: XCTestCase {
     var viewModel: ContentViewModel!
+    var cancellables: Set<AnyCancellable>!
     
     override func setUp() {
         super.setUp()
         viewModel = ContentViewModel()
+        cancellables = Set<AnyCancellable>()
     }
     
     override func tearDown() {
+        cancellables = nil
         viewModel = nil
         super.tearDown()
     }
     
-    func testSharedPDFNotification() {
+    func testSharedPDFNotification() async {
         let expectation = XCTestExpectation(description: "Shared PDF notification")
         let testData = "Test PDF Content".data(using: .utf8)!
         let testFilename = "test.pdf"
         
         // Monitor for processing state change
-        let cancellable = viewModel.$isProcessing.sink { isProcessing in
+        viewModel.$isProcessing.sink { isProcessing in
             if isProcessing {
                 expectation.fulfill()
             }
-        }
+        }.store(in: &cancellables)
         
-        // Simulate shared PDF notification
-        NotificationCenter.default.post(
-            name: NSNotification.Name("SharedPDFReceived"),
-            object: nil,
-            userInfo: ["filename": testFilename, "data": testData]
-        )
+        // Simulate shared PDF notification using NotificationManager
+        NotificationManager.postSharedPDFReceived(filename: testFilename, data: testData)
         
-        wait(for: [expectation], timeout: 2.0)
+        await fulfillment(of: [expectation], timeout: 2.0)
         
         XCTAssertTrue(viewModel.isProcessing)
-        XCTAssertEqual(viewModel.statusMessage, "Processing \(testFilename)...")
         XCTAssertFalse(viewModel.hasError)
-        
-        cancellable.cancel()
     }
     
     func testSharedPDFWithInvalidData() {
-        // Test with missing filename
+        // Test with missing filename - should not trigger processing
         NotificationCenter.default.post(
             name: NSNotification.Name("SharedPDFReceived"),
             object: nil,
@@ -52,7 +50,7 @@ class ShareExtensionTests: XCTestCase {
         
         XCTAssertFalse(viewModel.isProcessing)
         
-        // Test with missing data
+        // Test with missing data - should not trigger processing
         NotificationCenter.default.post(
             name: NSNotification.Name("SharedPDFReceived"),
             object: nil,

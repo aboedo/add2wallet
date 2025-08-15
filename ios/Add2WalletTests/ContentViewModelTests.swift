@@ -2,6 +2,7 @@ import XCTest
 import Combine
 @testable import Add2Wallet
 
+@MainActor
 class ContentViewModelTests: XCTestCase {
     var viewModel: ContentViewModel!
     
@@ -24,9 +25,8 @@ class ContentViewModelTests: XCTestCase {
     func testSelectPDF() {
         viewModel.selectPDF()
         
-        XCTAssertNotNil(viewModel.statusMessage)
+        XCTAssertTrue(viewModel.showingDocumentPicker)
         XCTAssertFalse(viewModel.hasError)
-        XCTAssertEqual(viewModel.statusMessage, "PDF selection will be implemented with document picker")
     }
     
     func testProcessPDFStartsProcessing() {
@@ -37,5 +37,30 @@ class ContentViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isProcessing)
         XCTAssertNil(viewModel.statusMessage)
         XCTAssertFalse(viewModel.hasError)
+    }
+    
+    func testClearSelection() {
+        // Set some initial state
+        viewModel.selectedFileURL = URL(fileURLWithPath: "/tmp/test.pdf")
+        viewModel.statusMessage = "Test message"
+        viewModel.hasError = true
+        
+        viewModel.clearSelection()
+        
+        XCTAssertNil(viewModel.selectedFileURL)
+        XCTAssertNil(viewModel.statusMessage)
+        XCTAssertFalse(viewModel.hasError)
+        XCTAssertFalse(viewModel.isRetry)
+        XCTAssertEqual(viewModel.retryCount, 0)
+        XCTAssertFalse(viewModel.isDemo)
+    }
+    
+    func testLoadDemoFile() {
+        viewModel.loadDemoFile()
+        
+        XCTAssertNotNil(viewModel.selectedFileURL)
+        XCTAssertTrue(viewModel.isDemo)
+        XCTAssertFalse(viewModel.hasError)
+        XCTAssertNil(viewModel.statusMessage)
     }
 }

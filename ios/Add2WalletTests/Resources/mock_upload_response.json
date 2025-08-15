@@ -1,0 +1,26 @@
+{
+  "job_id": "test-job-123",
+  "status": "completed",
+  "pass_url": "/pass/test-job-123",
+  "ai_metadata": {
+    "event_type": "concert",
+    "event_name": "Test Concert",
+    "title": "Test Event Title",
+    "description": "A test event for unit testing",
+    "date": "2024-12-15",
+    "time": "19:30",
+    "venue_name": "Test Venue",
+    "venue_address": "123 Test Street",
+    "city": "Test City",
+    "state_country": "Test State",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "barcode_data": "123456789",
+    "background_color": "rgb(255,45,85)",
+    "foreground_color": "rgb(255,255,255)",
+    "ai_processed": true,
+    "confidence_score": 85
+  },
+  "ticket_count": 1,
+  "warnings": []
+}

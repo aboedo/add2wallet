@@ -125,31 +125,141 @@ API_KEY=development-api-key pytest tests/test_main.py::test_upload_data_matrix_p
 
 **Framework**: XCTest  
 **Test Files**: `ios/Add2WalletTests/`  
-**Commands**:
+
+#### Quick Setup & Run Commands
 
 ```bash
 # Setup (requires Tuist)
 cd ios
 tuist generate
 
+# Run all tests from command line
+xcodebuild test -scheme Add2Wallet -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.2'
+
 # Run tests from Xcode
 # Product > Test (⌘+U)
 
-# Or via command line
-xcodebuild test -scheme Add2Wallet
+# Build only (faster for compilation checks)
+xcodebuild build -scheme Add2Wallet -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.2'
+
+# Run specific test class
+xcodebuild test -scheme Add2Wallet -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.2' -only-testing:Add2WalletTests.NetworkServiceTests
+
+# Run specific test method
+xcodebuild test -scheme Add2Wallet -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.2' -only-testing:Add2WalletTests.NetworkServiceTests/testMockUploadPDFSuccess
 ```
 
-**Key Test Files**:
-- `NetworkServiceTests.swift` - API communication tests
-- `ContentViewModelTests.swift` - View model logic tests
-- `ShareExtensionTests.swift` - Share extension tests
+#### Test Architecture
 
-### Manual Testing
+**Unit Tests**:
+- `NetworkServiceTests.swift` - Comprehensive API communication tests with mock service
+- `PassUsageManagerTests.swift` - RevenueCat integration and pass balance management
+- `ContentViewModelTests.swift` - Core app state management and PDF processing logic
+- `DateTimeFormatterTests.swift` - Date/time parsing and formatting utilities
+- `PassColorUtilsTests.swift` - Color extraction, parsing, and pass theming
+- `SavedPassTests.swift` - SwiftData model validation and persistence
+- `ShareExtensionTests.swift` - Share extension integration and notification handling
+
+**Integration Tests**:
+- `PDFProcessingIntegrationTests.swift` - End-to-end PDF → pass generation workflow
+- `SwiftDataIntegrationTests.swift` - Database operations and iCloud sync scenarios
+- `RevenueCatIntegrationTests.swift` - Purchase flows and customer management
+
+**Mock Services**:
+- `MockNetworkService.swift` - Configurable network responses with delay simulation
+- `MockRevenueCat.swift` - RevenueCat purchase and balance management mocking
+- `TestHelpers.swift` - Test utilities, SwiftData containers, and data factories
+
+**Test Resources**:
+- `Add2WalletTests/Resources/` - Demo PDF files and mock JSON responses
+- Automatic bundle inclusion in test target for realistic file processing tests
+
+#### Testing Best Practices
+
+**For Unit Tests**:
+```swift
+@MainActor  // Required for UI-related tests due to SwiftUI actor isolation
+class YourTests: XCTestCase {
+    var cancellables: Set<AnyCancellable>!
+    
+    override func setUp() {
+        super.setUp()
+        cancellables = Set<AnyCancellable>()
+    }
+    
+    override func tearDown() {
+        cancellables = nil
+        super.tearDown()
+    }
+}
+```
+
+**For Async Tests**:
+```swift
+func testAsyncOperation() async {
+    let expectation = XCTestExpectation(description: "Async operation")
+    
+    // Perform async work...
+    
+    await fulfillment(of: [expectation], timeout: 5.0)
+}
+```
+
+**Using Mock Services**:
+```swift
+let mockService = MockNetworkService()
+mockService.setSuccessResponse(expectedResponse)
+// or
+mockService.setErrorResponse(NetworkError.serverError("Test error", statusCode: 500))
+```
+
+**Using Test Helpers**:
+```swift
+let testPDF = TestHelpers.loadTestPDF(named: "torre_ifel")
+let testMetadata = TestHelpers.createTestEnhancedPassMetadata()
+let testContext = createTestModelContext()
+```
+
+#### Debugging Test Failures
+
+**Common Issues**:
+1. **MainActor Isolation**: Add `@MainActor` to test classes that interact with UI components
+2. **Async Timing**: Use `await fulfillment(of:timeout:)` for proper async test handling
+3. **Mock Configuration**: Ensure mock services are configured before test execution
+4. **Resource Loading**: Verify test resources are included in the test bundle
+
+**Test Output Interpretation**:
+- Tests may fail initially when testing against real network endpoints
+- Mock tests should pass consistently and quickly
+- Integration tests validate end-to-end workflows
+- Focus on achieving >80% code coverage on business logic classes
+
+### Manual Testing Guidelines
 
 **Note**: Claude Code doesn't need to run the iOS app directly for testing. Manual testing will be done by the user after code changes are complete. Claude should focus on:
 - Ensuring compilation works correctly after each change
-- Verifying code syntax and structure
+- Verifying code syntax and structure  
+- Running automated tests to validate logic
 - Following established patterns in the codebase
+- Using mock services for predictable test scenarios
+
+### Continuous Integration
+
+The test suite is designed to:
+- ✅ Compile cleanly on each change
+- ✅ Run quickly with mock services (< 30 seconds)
+- ✅ Provide comprehensive coverage of business logic
+- ✅ Validate integration points without external dependencies
+- ✅ Support both Xcode and command-line execution
+
+### Code Organization Benefits
+
+With the new testing infrastructure:
+- **URLHandler**: Centralized URL processing with testable methods
+- **NotificationManager**: Type-safe notification handling with helper methods
+- **Mock Services**: Predictable testing environment with configurable responses
+- **Test Helpers**: Reusable utilities for common test scenarios
+- **Resource Management**: Proper test bundle configuration for realistic testing
 
 ## Development Setup
 

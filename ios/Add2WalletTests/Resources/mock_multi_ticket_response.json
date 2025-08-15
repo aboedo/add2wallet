@@ -1,0 +1,28 @@
+{
+  "job_id": "test-multi-job-456",
+  "status": "completed",
+  "pass_url": "/pass/test-multi-job-456",
+  "ai_metadata": {
+    "event_type": "sports",
+    "event_name": "Test Game",
+    "title": "Championship Game",
+    "description": "A test sports event with multiple tickets",
+    "date": "2024-12-20",
+    "time": "15:00",
+    "venue_name": "Test Stadium",
+    "venue_address": "456 Stadium Drive",
+    "city": "Sports City",
+    "state_country": "Test State",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "barcode_data": "987654321",
+    "background_color": "rgb(52,199,89)",
+    "foreground_color": "rgb(255,255,255)",
+    "ai_processed": true,
+    "confidence_score": 92
+  },
+  "ticket_count": 4,
+  "warnings": [
+    "Multiple barcodes detected. Generated 4 separate passes."
+  ]
+}

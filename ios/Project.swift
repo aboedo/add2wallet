@@ -73,6 +73,9 @@ let project = Project(
             sources: [
                 "Add2WalletTests/**/*.swift"
             ],
+            resources: [
+                "Add2WalletTests/Resources/**"
+            ],
             dependencies: [
                 .target(name: "Add2Wallet")
             ],

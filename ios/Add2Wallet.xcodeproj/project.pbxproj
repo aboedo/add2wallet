@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */; };
+		03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = C0628EC3E9565A946EC494F7 /* torre ifel.pdf */; };
 		0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
@@ -17,13 +18,19 @@
 		2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */; };
 		3430A34FB8CECB28216ACB19 /* HeroCardStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */; };
 		3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */; };
+		3BFA31B85752B5F7CACFD04F /* PassColorUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC32204616148833F8A5E01 /* PassColorUtilsTests.swift */; };
 		3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54837C8CBF4AA918D1214C04 /* NetworkService.swift */; };
+		429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056189355BE651B878F8CD19 /* MockRevenueCat.swift */; };
+		4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */; };
 		4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */; };
+		4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */; };
 		54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */; };
+		5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */ = {isa = PBXBuildFile; fileRef = 5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */; };
 		60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */; };
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
 		668A7B6EB458AEFE79568DFF /* DebugShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D5E35468E6A18F103A070E /* DebugShakeDetector.swift */; };
+		67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */ = {isa = PBXBuildFile; fileRef = B6C011F6A92AC034CC0AEF0D /* mock_error_response.json */; };
 		6D9DD850B7184921D72245FE /* AsyncMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */; };
 		712F644BC2183AD74F05902D /* torre_ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 6328294BD904F874321F4287 /* torre_ifel.pdf */; };
 		79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5652AA292A42487F139B55E2 /* PassUsageManager.swift */; };
@@ -33,14 +40,22 @@
 		87A8BF43639B5B64FA90634B /* PassMetadataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF9AF0EB658AC2C21B655C88 /* PassMetadataView.swift */; };
 		8BEB32256BC2CFC207B45E9C /* ProgressStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8AD24C6F19D92CD3E23138 /* ProgressStepper.swift */; };
 		9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */; };
+		A0BA476BAF50473741E021BD /* MockNetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF82BD9C1A86CC59B78A265E /* MockNetworkService.swift */; };
 		A3BF14B25B521496ABB065BD /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 516DD5D634A86F0E2AF2612A /* RevenueCatUI */; };
+		AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */; };
 		B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
 		B9BEF48840DAA722B50251E8 /* PassDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE1D6BB33C4EB4252FC1E5B /* PassDetailsView.swift */; };
+		C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */; };
+		D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2518CFE7B9502126499FA643 /* TestHelpers.swift */; };
 		DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */; };
+		DA762FCAB2B8BA3B36E6ACDD /* eTicket.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 2A325F414CB4D737F46E1705 /* eTicket.pdf */; };
 		DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */; };
+		E0849A5D57E3132B1E9683B3 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 169E5D42997400CE2FC8E0A8 /* NotificationManager.swift */; };
 		E218D7BB1695B1A64D72FADD /* Add2WalletShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2F6FF5D4CBF46C13774A890 /* PassAddedSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */; };
+		EBAC9EE2C2144B5B220202EE /* URLHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8379EB966293400461957261 /* URLHandler.swift */; };
+		EDC5D55FDEB0DE4AA9373979 /* mock_upload_response.json in Resources */ = {isa = PBXBuildFile; fileRef = 1CE7FC42ECD8EB77B1730666 /* mock_upload_response.json */; };
 		FC1358C8D4ADD78243CEA248 /* ContentViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -105,17 +120,26 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
 		0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2Wallet.swift"; sourceTree = "<group>"; };
 		0CE5125D2B22D9E8C032B3FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		13372BE4DCB2183466AD3A53 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		14163BCA5715B9BC2F933391 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		169E5D42997400CE2FC8E0A8 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		1CE7FC42ECD8EB77B1730666 /* mock_upload_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_upload_response.json; sourceTree = "<group>"; };
+		231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatterTests.swift; sourceTree = "<group>"; };
 		24D7B9D34B651C0C6D4C8D38 /* Add2WalletTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Add2WalletTests-Info.plist"; sourceTree = "<group>"; };
+		2518CFE7B9502126499FA643 /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroCardStack.swift; sourceTree = "<group>"; };
+		2A325F414CB4D737F46E1705 /* eTicket.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = eTicket.pdf; sourceTree = "<group>"; };
 		2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatter.swift; sourceTree = "<group>"; };
 		30D5E35468E6A18F103A070E /* DebugShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugShakeDetector.swift; sourceTree = "<group>"; };
+		3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2WalletTests.swift"; sourceTree = "<group>"; };
+		40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = pass_with_data_matrix.pdf; sourceTree = "<group>"; };
 		41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtensionTests.swift; sourceTree = "<group>"; };
 		4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Add2WalletShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassUsageManagerTests.swift; sourceTree = "<group>"; };
 		50AEC1A177FC2937D94926BA /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		54837C8CBF4AA918D1214C04 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
 		54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPass.swift; sourceTree = "<group>"; };
@@ -123,17 +147,22 @@
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassColorUtils.swift; sourceTree = "<group>"; };
 		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_multi_ticket_response.json; sourceTree = "<group>"; };
 		6328294BD904F874321F4287 /* torre_ifel.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = torre_ifel.pdf; sourceTree = "<group>"; };
 		7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassHeaderView.swift; sourceTree = "<group>"; };
 		7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncMapView.swift; sourceTree = "<group>"; };
+		8379EB966293400461957261 /* URLHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLHandler.swift; sourceTree = "<group>"; };
 		857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+Add2Wallet.swift"; sourceTree = "<group>"; };
 		91BE638A702EBF2E23F0C455 /* Add2Wallet.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2Wallet.entitlements; sourceTree = "<group>"; };
 		93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
 		A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		B6C011F6A92AC034CC0AEF0D /* mock_error_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_error_response.json; sourceTree = "<group>"; };
 		B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModelTests.swift; sourceTree = "<group>"; };
 		BAE1D6BB33C4EB4252FC1E5B /* PassDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailsView.swift; sourceTree = "<group>"; };
+		BF82BD9C1A86CC59B78A265E /* MockNetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNetworkService.swift; sourceTree = "<group>"; };
 		BF9AF0EB658AC2C21B655C88 /* PassMetadataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassMetadataView.swift; sourceTree = "<group>"; };
+		C0628EC3E9565A946EC494F7 /* torre ifel.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "torre ifel.pdf"; sourceTree = "<group>"; };
 		C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassAddedSuccessView.swift; sourceTree = "<group>"; };
 		C7287DB2FC0F76437E783DEA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPreviewView.swift; sourceTree = "<group>"; };
@@ -141,6 +170,7 @@
 		E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2WalletShareExtension.entitlements; sourceTree = "<group>"; };
 		E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPassesView.swift; sourceTree = "<group>"; };
 		E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollapsiblePDFPreview.swift; sourceTree = "<group>"; };
+		EBC32204616148833F8A5E01 /* PassColorUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassColorUtilsTests.swift; sourceTree = "<group>"; };
 		EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuccessToast.swift; sourceTree = "<group>"; };
 		EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPassDetailView.swift; sourceTree = "<group>"; };
 		EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Add2WalletApp.swift; sourceTree = "<group>"; };
@@ -181,6 +211,19 @@
 				54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		0F35DBD2C1C78B1703696DA6 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2A325F414CB4D737F46E1705 /* eTicket.pdf */,
+				B6C011F6A92AC034CC0AEF0D /* mock_error_response.json */,
+				5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */,
+				1CE7FC42ECD8EB77B1730666 /* mock_upload_response.json */,
+				40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */,
+				C0628EC3E9565A946EC494F7 /* torre ifel.pdf */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		15870E9EDF09E6A365236CA7 /* ViewModels */ = {
@@ -324,6 +367,7 @@
 			children = (
 				857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */,
 				0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */,
+				3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -341,9 +385,16 @@
 		C421AFE6D43ED3B53CD1D43E /* Add2WalletTests */ = {
 			isa = PBXGroup;
 			children = (
+				0F35DBD2C1C78B1703696DA6 /* Resources */,
 				B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */,
+				231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */,
+				BF82BD9C1A86CC59B78A265E /* MockNetworkService.swift */,
+				056189355BE651B878F8CD19 /* MockRevenueCat.swift */,
 				9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */,
+				EBC32204616148833F8A5E01 /* PassColorUtilsTests.swift */,
+				4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */,
 				41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */,
+				2518CFE7B9502126499FA643 /* TestHelpers.swift */,
 			);
 			path = Add2WalletTests;
 			sourceTree = "<group>";
@@ -352,6 +403,8 @@
 			isa = PBXGroup;
 			children = (
 				54837C8CBF4AA918D1214C04 /* NetworkService.swift */,
+				169E5D42997400CE2FC8E0A8 /* NotificationManager.swift */,
+				8379EB966293400461957261 /* URLHandler.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -482,6 +535,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DA762FCAB2B8BA3B36E6ACDD /* eTicket.pdf in Resources */,
+				67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */,
+				5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */,
+				EDC5D55FDEB0DE4AA9373979 /* mock_upload_response.json in Resources */,
+				4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */,
+				03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -497,6 +556,8 @@
 				79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */,
 				7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */,
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
+				E0849A5D57E3132B1E9683B3 /* NotificationManager.swift in Sources */,
+				EBAC9EE2C2144B5B220202EE /* URLHandler.swift in Sources */,
 				4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */,
 				20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */,
 				02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */,
@@ -533,8 +594,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC1358C8D4ADD78243CEA248 /* ContentViewModelTests.swift in Sources */,
+				C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */,
+				A0BA476BAF50473741E021BD /* MockNetworkService.swift in Sources */,
+				429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */,
 				64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */,
+				3BFA31B85752B5F7CACFD04F /* PassColorUtilsTests.swift in Sources */,
+				AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */,
 				658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */,
+				D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */,
+				4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
