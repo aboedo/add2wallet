@@ -13,7 +13,6 @@ struct PassDetailsView: View {
             // Other information below the map
             Group {
                 keyValueRow("Seat", metadata.seatInfo)
-                keyValueRow("Barcode", metadata.barcodeData)
                 keyValueRow("Price", metadata.price)
                 keyValueRow("Confirmation", metadata.confirmationNumber)
                 keyValueRow("Gate", metadata.gateInfo)

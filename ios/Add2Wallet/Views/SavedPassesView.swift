@@ -194,7 +194,7 @@ struct PassRowView: View {
                     .foregroundColor(ThemeManager.Colors.textTertiary)
             }
             .padding(.vertical, ThemeManager.Spacing.sm)
-            .padding(.trailing, ThemeManager.Spacing.md)
+            .padding(.trailing, ThemeManager.Spacing.sm)
             .contentShape(Rectangle())
             .onTapGesture {
                 ThemeManager.Haptics.selection()
