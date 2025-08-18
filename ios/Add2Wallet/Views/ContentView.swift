@@ -87,7 +87,7 @@ struct ContentView: View {
                     HeroCardStack(
                         remainingPasses: usageManager.remainingPasses,
                         isLoadingBalance: usageManager.isLoadingBalance,
-                        passColor: viewModel.passMetadata != nil ? PassColorUtils.getPassColor(metadata: viewModel.passMetadata) : nil,
+                        passColor: viewModel.passMetadata != nil ? cachedTitleHeaderColor : nil,
                         onSelectPDF: { viewModel.selectPDF() },
                         onSamplePDF: { viewModel.loadDemoFile() }
                     )
@@ -115,7 +115,7 @@ struct ContentView: View {
                         }
                         .padding(.top, ThemeManager.Spacing.sm)
                     } else if viewModel.isProcessing {
-                        ProgressView(viewModel: viewModel)
+                        ProgressView(contentViewModel: viewModel)
                             .padding(.top, 40)
                     } else {
                         // Empty state instructions

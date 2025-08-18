@@ -19,8 +19,6 @@ class ContentViewModel: ObservableObject {
     @Published var passMetadata: EnhancedPassMetadata?
     @Published var ticketCount: Int? = nil
     @Published var warnings: [String] = []
-    @Published var progress: Double = 0.0
-    @Published var progressMessage: String = ""
     @Published var isRetry = false
     @Published var showingPurchaseAlert = false
     @Published var retryCount = 0
@@ -34,21 +32,10 @@ class ContentViewModel: ObservableObject {
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
     private var modelContext: ModelContext?
-    private var phraseTimer: AnyCancellable?
-    private var progressTimer: AnyCancellable?
     private let usageManager = PassUsageManager.shared
-    private let phrases: [String] = [
-        "Sharpening digital scissors ✂️",
-        "Teaching the pass to be classy 🧣",
-        "Taming barcodes in the wild 🦓",
-        "Politely asking pixels to line up 📐",
-        "Squeezing the PDF into your Wallet 💼",
-        "Convincing Apple to like this pass 🍏",
-        "Adding just a pinch of magic ✨",
-        "Enrolling pass in wallet etiquette school 🎓",
-        "Ironing out the manifest wrinkles 🧺",
-        "Signing with a very fancy pen 🖋️",
-    ]
+    
+    // Progress handling - owned by ContentViewModel to persist across tab switches
+    @Published var progressViewModel = ProgressViewModel()
     
     init() {
         // Listen for shared PDFs from the Share Extension
@@ -92,11 +79,7 @@ class ContentViewModel: ObservableObject {
     }
     
     deinit {
-        // Clean up timers and cancellables to prevent memory leaks
-        progressTimer?.cancel()
-        progressTimer = nil
-        phraseTimer?.cancel()
-        phraseTimer = nil
+        // Clean up cancellables to prevent memory leaks
         cancellables.removeAll()
         
         NotificationCenter.default.removeObserver(self)
@@ -218,12 +201,9 @@ class ContentViewModel: ObservableObject {
     }
 
     func clearSelection() {
-        // Stop any running animations/timers
-        if isProcessing {
-            stopProgressAnimation()
-            stopPhraseCycling()
-            isProcessing = false
-        }
+        // Reset processing state
+        isProcessing = false
+        progressViewModel.stopProgress()
         
         if let url = selectedFileURL {
             try? FileManager.default.removeItem(at: url)
@@ -274,12 +254,12 @@ class ContentViewModel: ObservableObject {
     func processPDF(data: Data, filename: String) {
         isProcessing = true
         errorMessage = nil
-        startPhraseCycling()
-        startProgressAnimation()
         hasError = false
         errorCode = nil
         showingContactSupport = false
-        progress = 0.0
+        
+        // Start progress animation
+        progressViewModel.startProgress()
         
         // Store PDF data for potential error reporting
         self.currentPDFData = data
@@ -295,8 +275,7 @@ class ContentViewModel: ObservableObject {
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
                         self?.isProcessing = false
-                        self?.stopPhraseCycling()
-                        self?.stopProgressAnimation()
+                        self?.progressViewModel.stopProgress()
                         self?.errorMessage = "Error: \(error.localizedDescription)"
                         self?.hasError = true
                         
@@ -336,8 +315,7 @@ class ContentViewModel: ObservableObject {
                         }
                     } else {
                         self.isProcessing = false
-                        self.stopPhraseCycling()
-                        self.stopProgressAnimation()
+                        self.progressViewModel.stopProgress()
                         self.errorMessage = "Pass generation failed. Status: \(response.status)"
                         self.hasError = true
                     }
@@ -357,8 +335,7 @@ class ContentViewModel: ObservableObject {
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
                         self?.isProcessing = false
-                        self?.stopPhraseCycling()
-                        self?.stopProgressAnimation()
+                        self?.progressViewModel.stopProgress()
                         self?.errorMessage = "Error downloading pass: \(error.localizedDescription)"
                         self?.hasError = true
                     }
@@ -438,13 +415,11 @@ class ContentViewModel: ObservableObject {
                 userInfo: ["passViewController": passVC, "tempURL": tempURL]
             )
             isProcessing = false
-            stopPhraseCycling()
-            completeProgress()
+            progressViewModel.completeProgress()
             
         } catch let error as NSError {
             isProcessing = false
-            stopPhraseCycling()
-            stopProgressAnimation()
+            progressViewModel.stopProgress()
             
             // Log detailed error for debugging
             print("❌ PKPass creation failed: \(error.domain) - Code: \(error.code) - \(error.localizedDescription)")
@@ -478,8 +453,7 @@ class ContentViewModel: ObservableObject {
                 receiveCompletion: { [weak self] completion in
                     if case .failure(let error) = completion {
                         self?.isProcessing = false
-                        self?.stopPhraseCycling()
-                        self?.stopProgressAnimation()
+                        self?.progressViewModel.stopProgress()
                         self?.errorMessage = "Error downloading passes: \(error.localizedDescription)"
                         self?.hasError = true
                     }
@@ -533,136 +507,15 @@ class ContentViewModel: ObservableObject {
                 userInfo: ["passViewController": passVC!]
             )
             isProcessing = false
-            stopPhraseCycling()
-            completeProgress()
+            progressViewModel.completeProgress()
         } catch {
             isProcessing = false
-            stopPhraseCycling()
-            stopProgressAnimation()
+            progressViewModel.stopProgress()
             errorMessage = "Error creating passes: \(error.localizedDescription)"
             hasError = true
         }
     }
 
-    private func startPhraseCycling() {
-        // Immediately set a phrase
-        funnyPhrase = phrases.randomElement() ?? "Getting things ready..."
-        phraseTimer?.cancel()
-        
-        // Coordinate phrase timer with progress timer to avoid overlapping UI updates
-        // Use 2.0s interval (10x the progress timer) for better coordination
-        phraseTimer = Timer.publish(every: 2.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                var next = phrases.randomElement() ?? "Almost there..."
-                if next == funnyPhrase { next = phrases.shuffled().first ?? next }
-                
-                // Use animation to coordinate with progress updates
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    self.funnyPhrase = next
-                }
-            }
-    }
-
-    private func stopPhraseCycling() {
-        phraseTimer?.cancel()
-        phraseTimer = nil
-        funnyPhrase = ""
-    }
-    
-    private func startProgressAnimation() {
-        progress = 0.0
-        progressMessage = "Analyzing PDF..."
-        
-        // Define progress steps with non-linear timing
-        let steps: [(Double, String, Double)] = [
-            (0.15, "Analyzing PDF...", 3.0),
-            (0.40, "Extracting barcodes...", 7.0),
-            (0.65, "Processing metadata...", 8.0),
-            (0.85, "Generating pass...", 7.0),
-            (0.95, "Signing certificate...", 5.0)
-        ]
-        
-        var currentStep = 0
-        var elapsedTime: Double = 0
-        let timerInterval: Double = 0.2 // Reduced from 0.1s to 0.2s for better performance
-        
-        progressTimer?.cancel()
-        progressTimer = Timer.publish(every: timerInterval, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                
-                elapsedTime += timerInterval
-                
-                // Pre-calculate cumulative times to avoid repeated calculations
-                var cumulativeTime: Double = 0
-                for i in 0..<currentStep {
-                    cumulativeTime += steps[i].2
-                }
-                
-                var shouldUpdateMessage = false
-                var newMessage = ""
-                var newProgress = self.progress
-                
-                // Check if we should move to next step
-                if currentStep < steps.count {
-                    let (targetProgress, message, duration) = steps[currentStep]
-                    
-                    if elapsedTime >= cumulativeTime + duration {
-                        // Move to next step
-                        if currentStep < steps.count - 1 {
-                            currentStep += 1
-                            newMessage = steps[currentStep].1
-                            shouldUpdateMessage = true
-                        }
-                    }
-                    
-                    // Calculate progress smoothly towards target
-                    let startProgress = currentStep > 0 ? steps[currentStep - 1].0 : 0.0
-                    let progressRange = targetProgress - startProgress
-                    let stepElapsed = elapsedTime - cumulativeTime
-                    let stepProgress = min(stepElapsed / duration, 1.0)
-                    
-                    newProgress = startProgress + (progressRange * stepProgress)
-                }
-                
-                // Batch UI updates with animation to reduce redraws
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    self.progress = newProgress
-                    if shouldUpdateMessage {
-                        self.progressMessage = newMessage
-                    }
-                }
-                
-                // Stop at 95% and wait for actual completion
-                if newProgress >= 0.95 {
-                    self.progressTimer?.cancel()
-                    self.progressTimer = nil
-                }
-            }
-    }
-    
-    private func stopProgressAnimation() {
-        progressTimer?.cancel()
-        progressTimer = nil
-        progress = 0.0
-        progressMessage = ""
-    }
-    
-    private func completeProgress() {
-        // Animate to 100% completion
-        withAnimation(.easeInOut(duration: 0.3)) {
-            progress = 1.0
-            progressMessage = "Complete!"
-        }
-        
-        // Reset after a short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            self?.stopProgressAnimation()
-        }
-    }
     
     #if DEBUG
     // MARK: - Preview Helpers
@@ -708,9 +561,6 @@ class ContentViewModel: ObservableObject {
     private func setupProcessingPreviewState() {
         // Set up processing state for preview
         self.isProcessing = true
-        self.progress = 0.65
-        self.progressMessage = "Analyzing ticket contents..."
-        self.funnyPhrase = phrases.randomElement() ?? ""
         
         // Create a temporary PDF URL for display
         let tempDir = FileManager.default.temporaryDirectory

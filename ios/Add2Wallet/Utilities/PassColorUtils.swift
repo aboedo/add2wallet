@@ -8,8 +8,6 @@ struct PassColorUtils {
     private static let brandTealSecondary = Color(red: 0.098, green: 0.549, blue: 0.525) // Darker teal
     
     static func parseRGBColor(_ rgbString: String) -> Color? {
-        print("🎨 [PassColorUtils] Attempting to parse RGB color: '\(rgbString)'")
-        
         // Clean and normalize the input string
         let cleanString = rgbString.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -39,17 +37,14 @@ struct PassColorUtils {
                       r >= 0, r <= 255,
                       g >= 0, g <= 255,
                       b >= 0, b <= 255 else {
-                    print("🚨 [PassColorUtils] RGB values out of range (0-255): r=\(rString), g=\(gString), b=\(bString)")
                     continue
                 }
                 
                 let color = Color(red: r/255.0, green: g/255.0, blue: b/255.0)
-                print("✅ [PassColorUtils] Successfully parsed RGB color: r=\(r), g=\(g), b=\(b) using pattern: \(pattern)")
                 return color
             }
         }
         
-        print("🚨 [PassColorUtils] Failed to parse RGB color - no pattern matched: '\(cleanString)'")
         return nil
     }
     
@@ -58,40 +53,23 @@ struct PassColorUtils {
         let eventName = (metadata.eventName ?? "").lowercased()
         let venueType = (metadata.venueType ?? "").lowercased()
         
-        print("🔄 [PassColorUtils] Determining fallback color for eventType: '\(eventType)', eventName: '\(eventName)', venueType: '\(venueType)'")
-        
         // Match backend's _analyze_pdf_colors_enhanced logic exactly
         if eventType == "flight" || eventName.contains("airline") || venueType.contains("airport") {
-            let color = parseRGBColor("rgb(0,122,255)") ?? .blue // Aviation blue
-            print("✈️ [PassColorUtils] Using flight/aviation blue color")
-            return color
+            return parseRGBColor("rgb(0,122,255)") ?? .blue // Aviation blue
         } else if eventType == "concert" || eventName.contains("music") || venueType.contains("concert") {
-            let color = parseRGBColor("rgb(255,45,85)") ?? .red // Concert red
-            print("🎵 [PassColorUtils] Using concert red color")
-            return color
+            return parseRGBColor("rgb(255,45,85)") ?? .red // Concert red
         } else if eventType == "sports" || venueType.contains("stadium") {
-            let color = parseRGBColor("rgb(52,199,89)") ?? .green // Sports green
-            print("⚽ [PassColorUtils] Using sports green color")
-            return color
+            return parseRGBColor("rgb(52,199,89)") ?? .green // Sports green
         } else if eventType == "train" || eventName.contains("railway") {
-            let color = parseRGBColor("rgb(48,176,199)") ?? brandTeal // Rail teal (use brand teal)
-            print("🚂 [PassColorUtils] Using train teal color")
-            return color
+            return parseRGBColor("rgb(48,176,199)") ?? brandTeal // Rail teal (use brand teal)
         } else if eventType == "hotel" || eventName.contains("reservation") {
-            let color = parseRGBColor("rgb(142,142,147)") ?? .gray // Hotel gray
-            print("🏨 [PassColorUtils] Using hotel gray color")
-            return color
+            return parseRGBColor("rgb(142,142,147)") ?? .gray // Hotel gray
         } else if eventType == "movie" || venueType.contains("theater") {
-            let color = parseRGBColor("rgb(94,92,230)") ?? .purple // Theater purple
-            print("🎬 [PassColorUtils] Using movie/theater purple color")
-            return color
+            return parseRGBColor("rgb(94,92,230)") ?? .purple // Theater purple
         } else if eventType == "conference" || eventName.contains("business") {
-            let color = parseRGBColor("rgb(50,173,230)") ?? brandTeal // Business teal (use brand teal)
-            print("💼 [PassColorUtils] Using conference/business teal color")
-            return color
+            return parseRGBColor("rgb(50,173,230)") ?? brandTeal // Business teal (use brand teal)
         } else {
             // For other types, fall back to original color analysis (using backend fallback logic)
-            print("❓ [PassColorUtils] Using default analysis for unmatched type")
             return fallbackColorFromContentAnalysis(eventType: eventType, eventName: eventName)
         }
     }
@@ -114,106 +92,70 @@ struct PassColorUtils {
     }
     
     static func fallbackColorFromPassType(_ passType: String) -> Color {
-        print("🔄 [PassColorUtils] Determining fallback color for passType: '\(passType)'")
-        
         switch passType.lowercased() {
         case let type where type.contains("evt"):
-            let color = parseRGBColor("rgb(255,140,0)") ?? .orange // Event orange
-            print("📅 [PassColorUtils] Using event orange color for passType")
-            return color
+            return parseRGBColor("rgb(255,140,0)") ?? .orange // Event orange
         case let type where type.contains("event"):
-            let color = parseRGBColor("rgb(255,140,0)") ?? .orange // Event orange
-            print("📅 [PassColorUtils] Using event orange color for passType")
-            return color
+            return parseRGBColor("rgb(255,140,0)") ?? .orange // Event orange
         case let type where type.contains("concert"):
-            let color = parseRGBColor("rgb(255,45,85)") ?? .red // Concert red
-            print("🎵 [PassColorUtils] Using concert red color for passType")
-            return color
+            return parseRGBColor("rgb(255,45,85)") ?? .red // Concert red
         case let type where type.contains("flight"):
-            let color = parseRGBColor("rgb(0,122,255)") ?? .blue // Aviation blue
-            print("✈️ [PassColorUtils] Using flight blue color for passType")
-            return color
+            return parseRGBColor("rgb(0,122,255)") ?? .blue // Aviation blue
         case let type where type.contains("movie"):
-            let color = parseRGBColor("rgb(94,92,230)") ?? .purple // Theater purple
-            print("🎬 [PassColorUtils] Using movie purple color for passType")
-            return color
+            return parseRGBColor("rgb(94,92,230)") ?? .purple // Theater purple
         case let type where type.contains("sport"):
-            let color = parseRGBColor("rgb(52,199,89)") ?? .green // Sports green
-            print("⚽ [PassColorUtils] Using sports green color for passType")
-            return color
+            return parseRGBColor("rgb(52,199,89)") ?? .green // Sports green
         case let type where type.contains("transit"):
-            let color = parseRGBColor("rgb(48,176,199)") ?? brandTeal // Rail teal (use brand teal)
-            print("🚂 [PassColorUtils] Using transit teal color for passType")
-            return color
+            return parseRGBColor("rgb(48,176,199)") ?? brandTeal // Rail teal (use brand teal)
         default:
-            print("❓ [PassColorUtils] Using brand teal color for passType")
             return brandTeal // Default to brand teal instead of gray
         }
     }
     
     static func getPassColor(metadata: EnhancedPassMetadata?) -> Color {
-        print("🎨 [PassColorUtils] Getting pass color for metadata")
         
         // First try to use actual pass colors from metadata
         if let metadata = metadata {
-            print("🔍 [PassColorUtils] Metadata available - eventType: \(metadata.eventType ?? "nil"), backgroundColor: \(metadata.backgroundColor ?? "nil")")
             
             // Check if we have the actual pass colors
             if let backgroundColor = metadata.backgroundColor {
-                print("🎯 [PassColorUtils] Found backgroundColor in metadata: '\(backgroundColor)'")
                 if let parsedColor = parseRGBColor(backgroundColor) {
-                    print("✅ [PassColorUtils] Using parsed background color from metadata")
                     return parsedColor
                 } else {
-                    print("⚠️ [PassColorUtils] Failed to parse backgroundColor, falling back to event type color")
                     let fallbackColor = fallbackColorFromEventType(metadata)
-                    print("🔄 [PassColorUtils] Using event type fallback color for eventType: \(metadata.eventType ?? "unknown")")
                     return fallbackColor
                 }
             } else {
-                print("⚠️ [PassColorUtils] No backgroundColor in metadata, using event type fallback")
                 let fallbackColor = fallbackColorFromEventType(metadata)
-                print("🔄 [PassColorUtils] Using event type fallback color for eventType: \(metadata.eventType ?? "unknown")")
                 return fallbackColor
             }
         }
         
-        print("⚠️ [PassColorUtils] No metadata available, using default brand teal color")
         // Final fallback to brand teal
         return brandTeal
     }
     
     static func getPassColor(metadata: EnhancedPassMetadata?, passType: String) -> Color {
-        print("🎨 [PassColorUtils] Getting pass color for metadata with passType: '\(passType)'")
         
         // First try to use actual pass colors from metadata
         if let metadata = metadata {
-            print("🔍 [PassColorUtils] Metadata available - eventType: \(metadata.eventType ?? "nil"), backgroundColor: \(metadata.backgroundColor ?? "nil")")
             
             // Check if we have the actual pass colors
             if let backgroundColor = metadata.backgroundColor {
-                print("🎯 [PassColorUtils] Found backgroundColor in metadata: '\(backgroundColor)'")
                 if let parsedColor = parseRGBColor(backgroundColor) {
-                    print("✅ [PassColorUtils] Using parsed background color from metadata")
                     return parsedColor
                 } else {
-                    print("⚠️ [PassColorUtils] Failed to parse backgroundColor, falling back to event type color")
                     let fallbackColor = fallbackColorFromEventType(metadata)
-                    print("🔄 [PassColorUtils] Using event type fallback color for eventType: \(metadata.eventType ?? "unknown")")
                     return fallbackColor
                 }
             } else {
-                print("⚠️ [PassColorUtils] No backgroundColor in metadata, using event type fallback")
                 let fallbackColor = fallbackColorFromEventType(metadata)
-                print("🔄 [PassColorUtils] Using event type fallback color for eventType: \(metadata.eventType ?? "unknown")")
                 return fallbackColor
             }
         }
         
-        print("⚠️ [PassColorUtils] No metadata available, using passType fallback: '\(passType)'")
         // Final fallback to basic pass type
         let fallbackColor = fallbackColorFromPassType(passType)
-        print("🔄 [PassColorUtils] Using passType fallback color for passType: '\(passType)'")
         return fallbackColor
     }
     

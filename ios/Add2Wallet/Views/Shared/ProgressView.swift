@@ -1,21 +1,28 @@
 import SwiftUI
 
-// Progress view with non-linear animation
+// Progress view with time-based progress calculation
 struct ProgressView: View {
-    @ObservedObject var viewModel: ContentViewModel
+    @ObservedObject var contentViewModel: ContentViewModel
+    
+    init(contentViewModel: ContentViewModel) {
+        self.contentViewModel = contentViewModel
+        self.progressViewModel = contentViewModel.progressViewModel
+    }
+    
+    @ObservedObject private var progressViewModel: ProgressViewModel
     
     var body: some View {
         VStack(spacing: 24) {
             // Progress bar
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text(viewModel.progressMessage)
+                    Text(progressViewModel.progressMessage)
                         .font(.headline)
                         .foregroundColor(.primary)
                     
                     Spacer()
                     
-                    Text("\(Int(viewModel.progress * 100))%")
+                    Text("\(Int(progressViewModel.progress * 100))%")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -36,8 +43,8 @@ struct ProgressView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: geometry.size.width * viewModel.progress, height: 8)
-                            .animation(.easeInOut(duration: 0.15), value: viewModel.progress)
+                            .frame(width: geometry.size.width * progressViewModel.progress, height: 8)
+                            .animation(.easeInOut(duration: 0.5), value: progressViewModel.progress)
                     }
                 }
                 .frame(height: 8)
@@ -45,14 +52,14 @@ struct ProgressView: View {
             .padding(.horizontal)
             
             // Funny phrase below progress
-            if !viewModel.funnyPhrase.isEmpty {
-                Text(viewModel.funnyPhrase)
+            if !progressViewModel.funnyPhrase.isEmpty {
+                Text(progressViewModel.funnyPhrase)
                     .font(.callout)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .italic()
                     .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.15), value: viewModel.funnyPhrase)
+                    .animation(.easeInOut(duration: 0.3), value: progressViewModel.funnyPhrase)
             }
         }
         .padding()
