@@ -554,6 +554,89 @@ struct WarningsView: View {
     }
 }
 
-#Preview {
+#Preview("Pass Ready to Add") {
+    // Create a ContentView with mock data showing a pass ready to be added
     ContentView()
+        .onAppear {
+            // Create sample pass metadata for preview
+            let mockMetadata = EnhancedPassMetadata(
+                eventType: "concert",
+                eventName: "The Weeknd - After Hours Til Dawn Tour",
+                title: "The Weeknd Concert",
+                description: "Experience an unforgettable night of music",
+                date: "2024-07-15",
+                time: "8:00 PM",
+                duration: "3 hours",
+                venueName: "Madison Square Garden",
+                venueAddress: "4 Pennsylvania Plaza",
+                city: "New York",
+                stateCountry: "NY, USA",
+                latitude: 40.7505,
+                longitude: -73.9934,
+                organizer: "Live Nation",
+                performerArtist: "The Weeknd",
+                seatInfo: "Section 102, Row J, Seats 15-16",
+                barcodeData: "WKND2024NYC071520",
+                price: "$350.00",
+                confirmationNumber: "CONF-2024-78945",
+                gateInfo: "Gate A - West Entrance",
+                eventDescription: "The Weeknd brings his record-breaking After Hours Til Dawn Tour to Madison Square Garden",
+                venueType: "Arena",
+                capacity: "20,000",
+                website: "https://www.msg.com",
+                phone: "+1 (212) 465-6741",
+                nearbyLandmarks: ["Penn Station", "Empire State Building"],
+                publicTransport: "Penn Station - LIRR, NJ Transit, Subway Lines 1,2,3,A,C,E",
+                parkingInfo: "Multiple parking garages available within 2 blocks",
+                ageRestriction: "All ages",
+                dressCode: "Casual",
+                weatherConsiderations: "Indoor venue - weather protected",
+                amenities: ["Concessions", "Merchandise", "ATMs", "Restrooms"],
+                accessibility: "ADA compliant with wheelchair accessible seating",
+                aiProcessed: true,
+                confidenceScore: 95,
+                processingTimestamp: Date().ISO8601Format(),
+                modelUsed: "gpt-4",
+                enrichmentCompleted: true,
+                backgroundColor: "rgb(139,69,19)",  // Saddle brown for The Weeknd aesthetic
+                foregroundColor: "rgb(255,255,255)",
+                labelColor: "rgb(255,223,186)"
+            )
+            
+            // Set up the preview state
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                // Access the ContentViewModel to set up preview state
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = windowScene.windows.first,
+                   let rootView = window.rootViewController?.view,
+                   let hostingController = window.rootViewController as? UIHostingController<ContentView> {
+                    // Note: This is a simplified approach for preview
+                    // In a real scenario, we'd need to properly inject the view model
+                }
+                
+                // Post notifications to simulate the state
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("PreviewMockData"),
+                    object: nil,
+                    userInfo: ["metadata": mockMetadata]
+                )
+            }
+        }
+        .preferredColorScheme(.dark) // Shows better with pass colors
+}
+
+#Preview("Empty State") {
+    ContentView()
+}
+
+#Preview("Processing State") {
+    ContentView()
+        .onAppear {
+            // Simulate processing state
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PreviewProcessingState"),
+                object: nil,
+                userInfo: nil
+            )
+        }
 }

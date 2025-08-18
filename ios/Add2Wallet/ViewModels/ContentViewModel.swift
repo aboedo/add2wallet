@@ -67,6 +67,28 @@ class ContentViewModel: ObservableObject {
                 print("🔴 ContentViewModel: Invalid notification userInfo")
             }
         }
+        
+        #if DEBUG
+        // Listen for preview mock data notifications
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PreviewMockData"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let userInfo = notification.userInfo,
+               let metadata = userInfo["metadata"] as? EnhancedPassMetadata {
+                self?.setupPreviewState(with: metadata)
+            }
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PreviewProcessingState"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.setupProcessingPreviewState()
+        }
+        #endif
     }
     
     deinit {
@@ -606,6 +628,70 @@ class ContentViewModel: ObservableObject {
             self?.stopProgressAnimation()
         }
     }
+    
+    #if DEBUG
+    // MARK: - Preview Helpers
+    
+    @MainActor
+    private func setupPreviewState(with metadata: EnhancedPassMetadata) {
+        // Set up the view model state for preview
+        self.passMetadata = metadata
+        self.ticketCount = 2
+        self.hasError = false
+        self.isProcessing = false
+        
+        // Create a temporary PDF URL for display
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempPDFURL = tempDir.appendingPathComponent("preview_ticket.pdf")
+        
+        // Create minimal valid PDF data for preview
+        let pdfHeader = "%PDF-1.4\n"
+        let pdfBody = "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+        let pdfFooter = "xref\n0 3\n0000000000 65535 f \ntrailer\n<< /Size 3 /Root 1 0 R >>\nstartxref\n9\n%%EOF"
+        let pdfData = (pdfHeader + pdfBody + pdfFooter).data(using: .utf8) ?? Data()
+        try? pdfData.write(to: tempPDFURL)
+        
+        self.selectedFileURL = tempPDFURL
+        self.currentPDFFileName = "The_Weeknd_Tickets.pdf"
+        
+        // Simulate having a pass ready to add
+        // Post notification to simulate pass ready
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Create a mock PKPass (note: in preview this won't actually work with real PKPass)
+            // But we can simulate the UI state
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PassReadyToAdd"),
+                object: nil,
+                userInfo: [
+                    "passViewController": NSObject() // Mock object for preview
+                ]
+            )
+        }
+    }
+    
+    @MainActor  
+    private func setupProcessingPreviewState() {
+        // Set up processing state for preview
+        self.isProcessing = true
+        self.progress = 0.65
+        self.progressMessage = "Analyzing ticket contents..."
+        self.funnyPhrase = phrases.randomElement() ?? ""
+        
+        // Create a temporary PDF URL for display
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempPDFURL = tempDir.appendingPathComponent("processing_ticket.pdf")
+        
+        // Create minimal valid PDF data
+        let pdfHeader = "%PDF-1.4\n"
+        let pdfBody = "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+        let pdfFooter = "xref\n0 3\n0000000000 65535 f \ntrailer\n<< /Size 3 /Root 1 0 R >>\nstartxref\n9\n%%EOF"
+        let pdfData = (pdfHeader + pdfBody + pdfFooter).data(using: .utf8) ?? Data()
+        try? pdfData.write(to: tempPDFURL)
+        
+        self.selectedFileURL = tempPDFURL
+        self.currentPDFFileName = "Concert_Ticket.pdf"
+    }
+    #endif
     
     private func saveMultiplePassesToPersistentStorage(passDatas: [Data]) {
         guard let modelContext = modelContext,
