@@ -132,10 +132,10 @@ struct ContentView: View {
             .navigationBarHidden(true)
             .safeAreaInset(edge: .bottom) {
                 // Sticky bottom CTA using ThemeManager design system
-                if viewModel.selectedFileURL != nil || viewModel.isProcessing || (viewModel.statusMessage != nil && !viewModel.statusMessage!.isEmpty) {
+                if viewModel.selectedFileURL != nil || viewModel.isProcessing || (viewModel.errorMessage != nil && !viewModel.errorMessage!.isEmpty) {
                     VStack(spacing: ThemeManager.Spacing.sm) {
                         // Status message
-                        if let message = viewModel.statusMessage, !message.isEmpty {
+                        if let message = viewModel.errorMessage, !message.isEmpty {
                             Text(message)
                                 .font(ThemeManager.Typography.footnote)
                                 .foregroundColor(viewModel.hasError ? ThemeManager.Colors.error : ThemeManager.Colors.success)
@@ -307,7 +307,7 @@ struct ContentView: View {
                         viewModel.handleSelectedDocument(url: url)
                     }
                 case .failure(let error):
-                    viewModel.statusMessage = "Error selecting PDF: \(error.localizedDescription)"
+                    viewModel.errorMessage = "Error selecting PDF: \(error.localizedDescription)"
                     viewModel.hasError = true
                 }
             }
@@ -318,7 +318,7 @@ struct ContentView: View {
                     Task {
                         await usageManager.refreshBalance()
                         // Retry the upload after successful purchase
-                        await viewModel.uploadSelected()
+                        viewModel.uploadSelected()
                     }
                     return (userCancelled: false, error: nil)
                 }
@@ -362,197 +362,9 @@ struct ContentView: View {
     
 }
 
-struct PassKitView: UIViewControllerRepresentable {
-    let passViewController: PKAddPassesViewController
-    @Binding var passAdded: Bool
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    func makeUIViewController(context: Context) -> PKAddPassesViewController {
-        passViewController.delegate = context.coordinator
-        return passViewController
-    }
-    
-    func updateUIViewController(_ uiViewController: PKAddPassesViewController, context: Context) {
-        // No updates needed
-    }
-    
-    class Coordinator: NSObject, PKAddPassesViewControllerDelegate {
-        let parent: PassKitView
-        
-        init(_ parent: PassKitView) {
-            self.parent = parent
-        }
-        
-        func addPassesViewControllerDidFinish(_ controller: PKAddPassesViewController) {
-            // PKAddPassesViewController doesn't provide reliable way to detect if pass was added
-            // We'll use a simple heuristic: assume success since user went through the flow
-            // The proper way would be to monitor PKPassLibrary notifications, but this is complex
-            parent.passAdded = true
-            controller.dismiss(animated: true)
-        }
-    }
-}
 
-struct MailComposeView: UIViewControllerRepresentable {
-    let subject: String
-    let body: String
-    let pdfData: Data
-    let fileName: String
-    
-    @Environment(\.presentationMode) var presentationMode
-    
-    func makeUIViewController(context: Context) -> MFMailComposeViewController {
-        let mailComposer = MFMailComposeViewController()
-        mailComposer.mailComposeDelegate = context.coordinator
-        mailComposer.setToRecipients(["andresboedo@gmail.com"])
-        mailComposer.setSubject(subject)
-        mailComposer.setMessageBody(body, isHTML: false)
-        
-        // Attach the PDF file
-        mailComposer.addAttachmentData(pdfData, mimeType: "application/pdf", fileName: fileName)
-        
-        return mailComposer
-    }
-    
-    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {
-        // No updates needed
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
-        let parent: MailComposeView
-        
-        init(_ parent: MailComposeView) {
-            self.parent = parent
-        }
-        
-        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
-            // Handle the result if needed
-            switch result {
-            case .sent:
-                print("Email sent successfully")
-            case .cancelled:
-                print("Email cancelled")
-            case .saved:
-                print("Email saved as draft")
-            case .failed:
-                print("Email failed to send: \(error?.localizedDescription ?? "Unknown error")")
-            @unknown default:
-                print("Unknown email result")
-            }
-            
-            parent.presentationMode.wrappedValue.dismiss()
-        }
-    }
-}
 
-// Progress view with non-linear animation
-struct ProgressView: View {
-    @ObservedObject var viewModel: ContentViewModel
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            // Progress bar
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(viewModel.progressMessage)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Text("\(Int(viewModel.progress * 100))%")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        // Background
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 8)
-                        
-                        // Progress
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [ThemeManager.Colors.brandPrimary, ThemeManager.Colors.brandSecondary]),
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: geometry.size.width * viewModel.progress, height: 8)
-                            .animation(.easeInOut(duration: 0.3), value: viewModel.progress)
-                    }
-                }
-                .frame(height: 8)
-            }
-            .padding(.horizontal)
-            
-            // Funny phrase below progress
-            if !viewModel.funnyPhrase.isEmpty {
-                Text(viewModel.funnyPhrase)
-                    .font(.callout)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
-                    .italic()
-                    .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.funnyPhrase)
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
-        )
-        .padding(.horizontal)
-    }
-}
 
-// MARK: - WarningsView
-struct WarningsView: View {
-    let warnings: [String]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(warnings, id: \.self) { warning in
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                        .font(.title2)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Warning")
-                            .font(.headline)
-                            .foregroundColor(.orange)
-                        
-                        Text(warning)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .multilineTextAlignment(.leading)
-                    }
-                    
-                    Spacer()
-                }
-                .padding()
-                .background(Color.orange.opacity(0.1))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                )
-                .cornerRadius(8)
-            }
-        }
-    }
-}
 
 #Preview("Pass Ready to Add") {
     // Create a ContentView with mock data showing a pass ready to be added

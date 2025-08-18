@@ -68,21 +68,6 @@ struct PassDateTimeFormatter {
         return nil
     }
     
-    /// Simple version for basic date/time combination (used as fallback)
-    static func simpleCombineDateTime(date: String?, time: String?) -> String? {
-        let cleanDate = date?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanTime = time?.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if let date = cleanDate, !date.isEmpty, let time = cleanTime, !time.isEmpty {
-            return "\(date) at \(time)"
-        } else if let date = cleanDate, !date.isEmpty {
-            return date
-        } else if let time = cleanTime, !time.isEmpty {
-            return time
-        } else {
-            return nil
-        }
-    }
     
     /// Format event date string with various input formats (from SavedPassesView)
     static func formatEventDate(_ eventDateString: String) -> String {

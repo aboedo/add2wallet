@@ -225,25 +225,6 @@ class PassColorUtilsTests: XCTestCase {
         XCTAssertNotNil(darkenedWithPassType, "Should return a darkened pass color with pass type")
     }
     
-    // MARK: - Dynamic Color Extraction Tests
-    
-    func testExtractPassAccentColorWithNilImage() {
-        let color = PassColorUtils.extractPassAccentColor(from: nil)
-        XCTAssertNotNil(color, "Should return brand teal when no image provided")
-    }
-    
-    func testExtractPassAccentColorWithValidImage() {
-        // Create a simple test image
-        let size = CGSize(width: 100, height: 100)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let testImage = renderer.image { context in
-            UIColor.red.setFill()
-            context.fill(CGRect(origin: .zero, size: size))
-        }
-        
-        let color = PassColorUtils.extractPassAccentColor(from: testImage)
-        XCTAssertNotNil(color, "Should return a color from valid image")
-    }
     
     // MARK: - UIImage Extension Tests
     

@@ -9,7 +9,7 @@ import UIKit
 @MainActor
 class ContentViewModel: ObservableObject {
     @Published var isProcessing = false
-    @Published var statusMessage: String?
+    @Published var errorMessage: String?
     @Published var funnyPhrase: String = ""
     @Published var hasError = false
     @Published var errorCode: String?
@@ -108,7 +108,7 @@ class ContentViewModel: ObservableObject {
     func loadDemoFile() {
         // Load the demo PDF from app bundle
         guard let demoURL = Bundle.main.url(forResource: "torre_ifel", withExtension: "pdf") else {
-            statusMessage = "Demo file not found. Please update the app."
+            errorMessage = "Demo file not found. Please update the app."
             hasError = true
             return
         }
@@ -133,10 +133,10 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
-            statusMessage = nil
+            errorMessage = nil
             hasError = false
         } catch {
-            statusMessage = "Error loading demo: \(error.localizedDescription)"
+            errorMessage = "Error loading demo: \(error.localizedDescription)"
             hasError = true
         }
     }
@@ -144,7 +144,7 @@ class ContentViewModel: ObservableObject {
     func handleSelectedDocument(url: URL) {
         // Copy PDF into our sandbox for reliable preview/access
         guard url.startAccessingSecurityScopedResource() else {
-            statusMessage = "Unable to access selected file"
+            errorMessage = "Unable to access selected file"
             hasError = true
             return
         }
@@ -163,10 +163,10 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
-            statusMessage = nil
+            errorMessage = nil
             hasError = false
         } catch {
-            statusMessage = "Error reading PDF: \(error.localizedDescription)"
+            errorMessage = "Error reading PDF: \(error.localizedDescription)"
             hasError = true
         }
         url.stopAccessingSecurityScopedResource()
@@ -186,7 +186,7 @@ class ContentViewModel: ObservableObject {
             let data = try Data(contentsOf: url)
             processPDF(data: data, filename: url.lastPathComponent)
         } catch {
-            statusMessage = "Error reading PDF: \(error.localizedDescription)"
+            errorMessage = "Error reading PDF: \(error.localizedDescription)"
             hasError = true
         }
     }
@@ -215,7 +215,7 @@ class ContentViewModel: ObservableObject {
             try? FileManager.default.removeItem(at: url)
         }
         selectedFileURL = nil
-        statusMessage = nil
+        errorMessage = nil
         hasError = false
         passMetadata = nil
         ticketCount = nil
@@ -245,21 +245,21 @@ class ContentViewModel: ObservableObject {
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
-            statusMessage = nil
+            errorMessage = nil
             hasError = false
             
             print("🟢 ContentViewModel: PDF ready for preview and manual upload")
             // Don't automatically process - let user hit "Create Pass" button
         } catch {
             print("🔴 ContentViewModel: Error handling shared PDF: \(error)")
-            statusMessage = "Error handling shared PDF: \(error.localizedDescription)"
+            errorMessage = "Error handling shared PDF: \(error.localizedDescription)"
             hasError = true
         }
     }
     
     func processPDF(data: Data, filename: String) {
         isProcessing = true
-        statusMessage = nil
+        errorMessage = nil
         startPhraseCycling()
         startProgressAnimation()
         hasError = false
@@ -283,7 +283,7 @@ class ContentViewModel: ObservableObject {
                         self?.isProcessing = false
                         self?.stopPhraseCycling()
                         self?.stopProgressAnimation()
-                        self?.statusMessage = "Error: \(error.localizedDescription)"
+                        self?.errorMessage = "Error: \(error.localizedDescription)"
                         self?.hasError = true
                         
                         // Check if this is a 4xx error to show contact support
@@ -324,7 +324,7 @@ class ContentViewModel: ObservableObject {
                         self.isProcessing = false
                         self.stopPhraseCycling()
                         self.stopProgressAnimation()
-                        self.statusMessage = "Pass generation failed. Status: \(response.status)"
+                        self.errorMessage = "Pass generation failed. Status: \(response.status)"
                         self.hasError = true
                     }
                     // Reset retry flag on success or failure
@@ -335,7 +335,7 @@ class ContentViewModel: ObservableObject {
     }
     
     private func downloadAndOpenPass(passUrl: String) {
-        statusMessage = ""
+        errorMessage = ""
         
         networkService.downloadPass(from: passUrl)
             .receive(on: DispatchQueue.main)
@@ -345,7 +345,7 @@ class ContentViewModel: ObservableObject {
                         self?.isProcessing = false
                         self?.stopPhraseCycling()
                         self?.stopProgressAnimation()
-                        self?.statusMessage = "Error downloading pass: \(error.localizedDescription)"
+                        self?.errorMessage = "Error downloading pass: \(error.localizedDescription)"
                         self?.hasError = true
                     }
                 },
@@ -400,7 +400,7 @@ class ContentViewModel: ObservableObject {
             
             // Check if PassKit is available and pass can be added
             guard PKPassLibrary.isPassLibraryAvailable() else {
-                statusMessage = "Apple Wallet is not available on this device"
+                errorMessage = "Apple Wallet is not available on this device"
                 hasError = true
                 return
             }
@@ -438,16 +438,16 @@ class ContentViewModel: ObservableObject {
             
             // Provide user-friendly error message
             if error.domain == "PassError" {
-                statusMessage = error.localizedDescription
+                errorMessage = error.localizedDescription
             } else {
-                statusMessage = "Error creating pass: \(error.localizedDescription)"
+                errorMessage = "Error creating pass: \(error.localizedDescription)"
             }
             hasError = true
         }
     }
 
     private func downloadAndOpenMultiplePasses(passUrl: String, count: Int) {
-        statusMessage = ""
+        errorMessage = ""
 
         let publishers: [AnyPublisher<(Int, Data), Error>] = (1...count).map { index in
             let urlWithQuery = "\(passUrl)?ticket_number=\(index)"
@@ -466,7 +466,7 @@ class ContentViewModel: ObservableObject {
                         self?.isProcessing = false
                         self?.stopPhraseCycling()
                         self?.stopProgressAnimation()
-                        self?.statusMessage = "Error downloading passes: \(error.localizedDescription)"
+                        self?.errorMessage = "Error downloading passes: \(error.localizedDescription)"
                         self?.hasError = true
                     }
                 },
@@ -499,7 +499,7 @@ class ContentViewModel: ObservableObject {
             }
 
             guard PKPassLibrary.isPassLibraryAvailable() else {
-                statusMessage = "Apple Wallet is not available on this device"
+                errorMessage = "Apple Wallet is not available on this device"
                 hasError = true
                 return
             }
@@ -510,7 +510,7 @@ class ContentViewModel: ObservableObject {
             let passVC = PKAddPassesViewController(passes: passes)
             print("🎫 Created PKAddPassesViewController with \(passes.count) passes")
 
-            statusMessage = nil
+            errorMessage = nil
             hasError = false
 
             NotificationCenter.default.post(
@@ -525,7 +525,7 @@ class ContentViewModel: ObservableObject {
             isProcessing = false
             stopPhraseCycling()
             stopProgressAnimation()
-            statusMessage = "Error creating passes: \(error.localizedDescription)"
+            errorMessage = "Error creating passes: \(error.localizedDescription)"
             hasError = true
         }
     }

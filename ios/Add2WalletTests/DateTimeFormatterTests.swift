@@ -78,54 +78,6 @@ class DateTimeFormatterTests: XCTestCase {
         XCTAssertTrue(result?.contains("12") ?? false, "Should contain month")
     }
     
-    // MARK: - simpleCombineDateTime Tests
-    
-    func testSimpleCombineDateTimeWithBoth() {
-        let result = PassDateTimeFormatter.simpleCombineDateTime(
-            date: "December 15, 2024",
-            time: "7:30 PM"
-        )
-        
-        XCTAssertEqual(result, "December 15, 2024 at 7:30 PM")
-    }
-    
-    func testSimpleCombineDateTimeWithDateOnly() {
-        let result = PassDateTimeFormatter.simpleCombineDateTime(
-            date: "December 15, 2024",
-            time: nil
-        )
-        
-        XCTAssertEqual(result, "December 15, 2024")
-    }
-    
-    func testSimpleCombineDateTimeWithTimeOnly() {
-        let result = PassDateTimeFormatter.simpleCombineDateTime(
-            date: nil,
-            time: "7:30 PM"
-        )
-        
-        XCTAssertEqual(result, "7:30 PM")
-    }
-    
-    func testSimpleCombineDateTimeWithEmptyValues() {
-        let result1 = PassDateTimeFormatter.simpleCombineDateTime(date: "", time: "")
-        XCTAssertNil(result1)
-        
-        let result2 = PassDateTimeFormatter.simpleCombineDateTime(date: "   ", time: "   ")
-        XCTAssertNil(result2)
-        
-        let result3 = PassDateTimeFormatter.simpleCombineDateTime(date: nil, time: nil)
-        XCTAssertNil(result3)
-    }
-    
-    func testSimpleCombineDateTimeWithWhitespace() {
-        let result = PassDateTimeFormatter.simpleCombineDateTime(
-            date: "  December 15, 2024  ",
-            time: "  7:30 PM  "
-        )
-        
-        XCTAssertEqual(result, "December 15, 2024 at 7:30 PM")
-    }
     
     // MARK: - formatEventDate Tests
     

@@ -18,7 +18,7 @@ class ContentViewModelTests: XCTestCase {
     
     func testInitialState() {
         XCTAssertFalse(viewModel.isProcessing)
-        XCTAssertNil(viewModel.statusMessage)
+        XCTAssertNil(viewModel.errorMessage)
         XCTAssertFalse(viewModel.hasError)
     }
     
@@ -35,20 +35,20 @@ class ContentViewModelTests: XCTestCase {
         viewModel.processPDF(data: testData, filename: "test.pdf")
         
         XCTAssertTrue(viewModel.isProcessing)
-        XCTAssertNil(viewModel.statusMessage)
+        XCTAssertNil(viewModel.errorMessage)
         XCTAssertFalse(viewModel.hasError)
     }
     
     func testClearSelection() {
         // Set some initial state
         viewModel.selectedFileURL = URL(fileURLWithPath: "/tmp/test.pdf")
-        viewModel.statusMessage = "Test message"
+        viewModel.errorMessage = "Test message"
         viewModel.hasError = true
         
         viewModel.clearSelection()
         
         XCTAssertNil(viewModel.selectedFileURL)
-        XCTAssertNil(viewModel.statusMessage)
+        XCTAssertNil(viewModel.errorMessage)
         XCTAssertFalse(viewModel.hasError)
         XCTAssertFalse(viewModel.isRetry)
         XCTAssertEqual(viewModel.retryCount, 0)
@@ -61,6 +61,6 @@ class ContentViewModelTests: XCTestCase {
         XCTAssertNotNil(viewModel.selectedFileURL)
         XCTAssertTrue(viewModel.isDemo)
         XCTAssertFalse(viewModel.hasError)
-        XCTAssertNil(viewModel.statusMessage)
+        XCTAssertNil(viewModel.errorMessage)
     }
 }

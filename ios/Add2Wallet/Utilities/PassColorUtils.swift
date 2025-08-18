@@ -217,66 +217,6 @@ struct PassColorUtils {
         return fallbackColor
     }
     
-    // MARK: - Dynamic Pass Accent Color Extraction
-    
-    /// Extracts a dynamic accent color from a pass image with proper contrast validation
-    /// Falls back to brand teal if extraction fails or contrast is insufficient
-    static func extractPassAccentColor(from image: UIImage?) -> Color {
-        guard let image = image else {
-            print("🎨 [PassColorUtils] No image provided, using brand teal")
-            return brandTeal
-        }
-        
-        guard let dominantColor = image.dominantColor() else {
-            print("🎨 [PassColorUtils] Failed to extract dominant color, using brand teal")
-            return brandTeal
-        }
-        
-        // Ensure minimum contrast ratio of 4.5:1 against both light and dark backgrounds
-        let adjustedColor = ensureContrast(color: dominantColor, minRatio: 4.5)
-        
-        print("🎨 [PassColorUtils] Successfully extracted and adjusted pass accent color")
-        return adjustedColor
-    }
-    
-    /// Ensures a color meets minimum contrast requirements
-    /// If it doesn't, blends it with brand teal at 70% mix
-    private static func ensureContrast(color: Color, minRatio: Double) -> Color {
-        // Convert Color to UIColor for luminance calculation
-        let uiColor = UIColor(color)
-        
-        // Calculate contrast ratios against white and black
-        let contrastWhite = uiColor.contrastRatio(with: .white)
-        let contrastBlack = uiColor.contrastRatio(with: .black)
-        
-        // Check if either contrast ratio meets the minimum
-        if contrastWhite >= minRatio || contrastBlack >= minRatio {
-            return color
-        }
-        
-        // If contrast is insufficient, mix with brand teal (70% brand, 30% original)
-        print("🎨 [PassColorUtils] Color contrast insufficient, blending with brand teal")
-        return blendColors(brandTeal, color, ratio: 0.7)
-    }
-    
-    /// Blends two colors with the specified ratio
-    private static func blendColors(_ color1: Color, _ color2: Color, ratio: Double) -> Color {
-        let ui1 = UIColor(color1)
-        let ui2 = UIColor(color2)
-        
-        var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
-        var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
-        
-        ui1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
-        ui2.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
-        
-        let blendedR = r1 * ratio + r2 * (1 - ratio)
-        let blendedG = g1 * ratio + g2 * (1 - ratio)
-        let blendedB = b1 * ratio + b2 * (1 - ratio)
-        let blendedA = a1 * ratio + a2 * (1 - ratio)
-        
-        return Color(red: blendedR, green: blendedG, blue: blendedB, opacity: blendedA)
-    }
     
     /// Darkens a color by the specified percentage (0.0 to 1.0)
     static func darkenColor(_ color: Color, by percentage: Double) -> Color {

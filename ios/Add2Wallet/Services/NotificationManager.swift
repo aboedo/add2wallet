@@ -33,53 +33,6 @@ class NotificationManager {
         print("📢 NotificationManager: Posted SharedPDFReceived - \(filename) (\(data.count) bytes)")
     }
     
-    static func postPassReadyToAdd(passViewController: UIViewController, tempURL: URL? = nil) {
-        var userInfo: [AnyHashable: Any] = ["passViewController": passViewController]
-        if let tempURL = tempURL {
-            userInfo["tempURL"] = tempURL
-        }
-        
-        NotificationCenter.default.post(
-            name: NotificationName.passReadyToAdd.notificationName,
-            object: nil,
-            userInfo: userInfo
-        )
-        print("📢 NotificationManager: Posted PassReadyToAdd")
-    }
-    
-    static func postPassGenerated(message: String) {
-        NotificationCenter.default.post(
-            name: NotificationName.passGenerated.notificationName,
-            object: nil,
-            userInfo: ["message": message]
-        )
-        print("📢 NotificationManager: Posted PassGenerated - \(message)")
-    }
-    
-    static func postResetPassUIState() {
-        NotificationCenter.default.post(
-            name: NotificationName.resetPassUIState.notificationName,
-            object: nil
-        )
-        print("📢 NotificationManager: Posted ResetPassUIState")
-    }
-    
-    static func postShowSupportEmail(subject: String, body: String, pdfData: Data, fileName: String) {
-        let userInfo: [AnyHashable: Any] = [
-            "subject": subject,
-            "body": body,
-            "pdfData": pdfData,
-            "fileName": fileName
-        ]
-        
-        NotificationCenter.default.post(
-            name: NotificationName.showSupportEmail.notificationName,
-            object: nil,
-            userInfo: userInfo
-        )
-        print("📢 NotificationManager: Posted ShowSupportEmail - \(subject)")
-    }
-    
     // MARK: - Observer Management
     
     static func addObserver(
