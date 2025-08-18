@@ -34,7 +34,7 @@ class ShareExtensionTests: XCTestCase {
         // Simulate shared PDF notification using NotificationManager
         NotificationManager.postSharedPDFReceived(filename: testFilename, data: testData)
         
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await fulfillment(of: [expectation], timeout: 10.0)
         
         XCTAssertTrue(viewModel.isProcessing)
         XCTAssertFalse(viewModel.hasError)

@@ -23,16 +23,20 @@ struct ContentView: View {
     @State private var createPassBounce = 0
     @Environment(\.modelContext) private var modelContext
     
+    // Cached color calculations to avoid repeated computation
+    @State private var cachedTitleHeaderColor: Color = .clear
+    @State private var cachedBackgroundGradientColor: Color = .clear
+    
     #if DEBUG
     @StateObject private var debugDetector = DebugShakeDetector.shared
     #endif
     
     private var titleHeaderColor: Color {
-        return PassColorUtils.getPassColor(metadata: viewModel.passMetadata)
+        return cachedTitleHeaderColor
     }
     
     private var backgroundGradientColor: Color {
-        return PassColorUtils.getDarkenedPassColor(metadata: viewModel.passMetadata)
+        return cachedBackgroundGradientColor
     }
     
     var body: some View {
@@ -57,17 +61,23 @@ struct ContentView: View {
     private var generatePassView: some View {
         NavigationView {
             ZStack {
-                // Background gradient when we have pass metadata
+                // Background gradient when we have pass metadata (simplified during processing)
                 if viewModel.passMetadata != nil {
-                    LinearGradient(
-                        colors: [
-                            backgroundGradientColor,
-                            backgroundGradientColor.opacity(0.6)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .ignoresSafeArea()
+                    if viewModel.isProcessing {
+                        // Use solid color during processing to reduce animation complexity
+                        backgroundGradientColor.opacity(0.3)
+                            .ignoresSafeArea()
+                    } else {
+                        LinearGradient(
+                            colors: [
+                                backgroundGradientColor,
+                                backgroundGradientColor.opacity(0.6)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .ignoresSafeArea()
+                    }
                 }
                 
                 VStack(spacing: 0) {
@@ -223,6 +233,9 @@ struct ContentView: View {
                 // Set up model context for view model
                 viewModel.setModelContext(modelContext)
                 
+                // Initialize cached colors
+                updateCachedColors()
+                
                 NotificationCenter.default.addObserver(
                     forName: NSNotification.Name("PassReadyToAdd"),
                     object: nil,
@@ -356,8 +369,19 @@ struct ContentView: View {
                 isPresented: $showingSuccessToast,
                 message: successToastMessage
             )
+            .onChange(of: viewModel.passMetadata?.title) { _, _ in
+                // Update cached colors when passMetadata changes
+                updateCachedColors()
+            }
             } // End of VStack
         } // End of ZStack
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func updateCachedColors() {
+        cachedTitleHeaderColor = PassColorUtils.getPassColor(metadata: viewModel.passMetadata)
+        cachedBackgroundGradientColor = PassColorUtils.getDarkenedPassColor(metadata: viewModel.passMetadata)
     }
     
 }

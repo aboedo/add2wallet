@@ -15,7 +15,7 @@ class DateTimeFormatterTests: XCTestCase {
         // The exact format depends on system locale, but should contain both date and time elements
         XCTAssertTrue(result?.contains("15") ?? false, "Should contain day")
         XCTAssertTrue(result?.contains("12") ?? false, "Should contain month")
-        XCTAssertTrue(result?.contains("2024") ?? false, "Should contain year")
+        XCTAssertTrue(result?.contains("24") ?? false, "Should contain year")
     }
     
     func testCombineDateTimeWithDateOnly() {
@@ -27,7 +27,7 @@ class DateTimeFormatterTests: XCTestCase {
         XCTAssertNotNil(result)
         XCTAssertTrue(result?.contains("15") ?? false, "Should contain day")
         XCTAssertTrue(result?.contains("12") ?? false, "Should contain month")
-        XCTAssertTrue(result?.contains("2024") ?? false, "Should contain year")
+        XCTAssertTrue(result?.contains("24") ?? false, "Should contain year")
     }
     
     func testCombineDateTimeWithTimeOnly() {

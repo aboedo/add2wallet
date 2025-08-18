@@ -92,6 +92,13 @@ class ContentViewModel: ObservableObject {
     }
     
     deinit {
+        // Clean up timers and cancellables to prevent memory leaks
+        progressTimer?.cancel()
+        progressTimer = nil
+        phraseTimer?.cancel()
+        phraseTimer = nil
+        cancellables.removeAll()
+        
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -211,6 +218,13 @@ class ContentViewModel: ObservableObject {
     }
 
     func clearSelection() {
+        // Stop any running animations/timers
+        if isProcessing {
+            stopProgressAnimation()
+            stopPhraseCycling()
+            isProcessing = false
+        }
+        
         if let url = selectedFileURL {
             try? FileManager.default.removeItem(at: url)
         }
@@ -534,13 +548,20 @@ class ContentViewModel: ObservableObject {
         // Immediately set a phrase
         funnyPhrase = phrases.randomElement() ?? "Getting things ready..."
         phraseTimer?.cancel()
-        phraseTimer = Timer.publish(every: 1.8, on: .main, in: .common)
+        
+        // Coordinate phrase timer with progress timer to avoid overlapping UI updates
+        // Use 2.0s interval (10x the progress timer) for better coordination
+        phraseTimer = Timer.publish(every: 2.0, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self else { return }
                 var next = phrases.randomElement() ?? "Almost there..."
                 if next == funnyPhrase { next = phrases.shuffled().first ?? next }
-                funnyPhrase = next
+                
+                // Use animation to coordinate with progress updates
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.funnyPhrase = next
+                }
             }
     }
 
@@ -565,44 +586,58 @@ class ContentViewModel: ObservableObject {
         
         var currentStep = 0
         var elapsedTime: Double = 0
+        let timerInterval: Double = 0.2 // Reduced from 0.1s to 0.2s for better performance
         
         progressTimer?.cancel()
-        progressTimer = Timer.publish(every: 0.1, on: .main, in: .common)
+        progressTimer = Timer.publish(every: timerInterval, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 
-                elapsedTime += 0.1
+                elapsedTime += timerInterval
+                
+                // Pre-calculate cumulative times to avoid repeated calculations
+                var cumulativeTime: Double = 0
+                for i in 0..<currentStep {
+                    cumulativeTime += steps[i].2
+                }
+                
+                var shouldUpdateMessage = false
+                var newMessage = ""
+                var newProgress = self.progress
                 
                 // Check if we should move to next step
                 if currentStep < steps.count {
-                    let (targetProgress, _, duration) = steps[currentStep]
-                    
-                    // Calculate cumulative time for this step
-                    var cumulativeTime: Double = 0
-                    for i in 0..<currentStep {
-                        cumulativeTime += steps[i].2
-                    }
+                    let (targetProgress, message, duration) = steps[currentStep]
                     
                     if elapsedTime >= cumulativeTime + duration {
                         // Move to next step
                         if currentStep < steps.count - 1 {
                             currentStep += 1
-                            self.progressMessage = steps[currentStep].1
+                            newMessage = steps[currentStep].1
+                            shouldUpdateMessage = true
                         }
                     }
                     
-                    // Animate progress smoothly towards target
+                    // Calculate progress smoothly towards target
                     let startProgress = currentStep > 0 ? steps[currentStep - 1].0 : 0.0
                     let progressRange = targetProgress - startProgress
                     let stepElapsed = elapsedTime - cumulativeTime
                     let stepProgress = min(stepElapsed / duration, 1.0)
                     
-                    self.progress = startProgress + (progressRange * stepProgress)
+                    newProgress = startProgress + (progressRange * stepProgress)
+                }
+                
+                // Batch UI updates with animation to reduce redraws
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    self.progress = newProgress
+                    if shouldUpdateMessage {
+                        self.progressMessage = newMessage
+                    }
                 }
                 
                 // Stop at 95% and wait for actual completion
-                if self.progress >= 0.95 {
+                if newProgress >= 0.95 {
                     self.progressTimer?.cancel()
                     self.progressTimer = nil
                 }

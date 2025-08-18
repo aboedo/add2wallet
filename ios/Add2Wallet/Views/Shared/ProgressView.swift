@@ -37,7 +37,7 @@ struct ProgressView: View {
                                 )
                             )
                             .frame(width: geometry.size.width * viewModel.progress, height: 8)
-                            .animation(.easeInOut(duration: 0.3), value: viewModel.progress)
+                            .animation(.easeInOut(duration: 0.15), value: viewModel.progress)
                     }
                 }
                 .frame(height: 8)
@@ -52,7 +52,7 @@ struct ProgressView: View {
                     .foregroundColor(.secondary)
                     .italic()
                     .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.funnyPhrase)
+                    .animation(.easeInOut(duration: 0.15), value: viewModel.funnyPhrase)
             }
         }
         .padding()
