@@ -115,16 +115,22 @@ class AIService:
         # Design a comprehensive prompt for metadata extraction  
         safe_pdf_text = pdf_text[:4000].replace('{', '{{').replace('}', '}}').replace('%', '%%')
         
-        prompt = """You are preparing content for an Apple Wallet pass. Analyze the following PDF content and extract structured information suitable for a user-facing Wallet pass. This appears to be from a file named "{}".
+        prompt = """You are preparing content for an Apple Wallet pass. Analyze the following PDF content and identify what the user actually purchased - the PRIMARY PURPOSE of this ticket/pass. This appears to be from a file named "{}".
 
 PDF Content:
 {}
 
+First, determine what type of document this is and what matters most to the user:
+- For performances/shows: The show or artist name is most important
+- For venues/attractions: The venue or attraction name is most important  
+- For transportation: The route, flight number, or destination is most important
+- For multi-venue access: The system/brand name plus scope is most important
+
 Extract the following information and return as JSON:
 {{
     "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|other",
-    "event_name": "Full name of event/service/attraction (e.g., 'Louvre Museum', 'Eiffel Tower', 'Disney World')",
-    "title": "SHORT title for Apple Wallet (max 25 chars). MUST be the actual venue/attraction/event name, NOT legal text like 'CONDITIONS GENERALES' or 'TERMS AND CONDITIONS'. Examples: 'Louvre Museum', 'Eiffel Tower', 'Disney World', 'Flight AA123'. Extract the MAIN attraction or venue name, not headers or legal sections.",
+    "event_name": "The PRIMARY SUBJECT of this ticket - what the user is actually going to see/do/experience",
+    "title": "SHORT title for Apple Wallet (max 30 chars). Focus on what matters most: for performances use show/artist name, for venues use venue name, for transport use route/flight. If multi-day or multi-location, include that with the main subject. Never return generic terms without the actual subject context.",
     "description": "Brief description",
     "date": "Event date (YYYY-MM-DD format if possible)",
     "time": "Event time (HH:MM format if possible)", 
@@ -156,9 +162,10 @@ Important:
 - Look carefully for any barcode, QR code, or reference numbers
 - Extract any long numerical strings that could be barcodes
 - Identify ticket numbers, confirmation codes, and reference IDs
-- For the "title", extract the ACTUAL venue/attraction/event name that users would recognize (e.g., 'Louvre Museum', 'Eiffel Tower', 'Concert: Taylor Swift'). NEVER use document headers like 'CONDITIONS GENERALES', 'TERMS', 'TICKET', etc. Look for the actual place/event name in the document body.
-- CRITICAL: If you see text like "Tour Eiffel" or "Eiffel Tower" anywhere, that's the title, NOT "CONDITIONS GENERALES"
-- If you recognize famous venues like Eiffel Tower, include approximate GPS coordinates
+- For the "title", identify the PRIMARY SUBJECT - what is the user actually going to see/do? For shows/concerts extract the performance name, for venues extract the venue name, for transport extract the route.
+- CRITICAL: The title should answer "What did I buy a ticket for?" - it should be the most specific and recognizable name from the document
+- Never use document headers like 'CONDITIONS GENERALES', 'TERMS', 'TICKET' - look for the actual subject in the document body
+- If this provides multi-day or multi-location access, include that descriptor with the main subject
 """.format(filename, safe_pdf_text)
 
         try:
@@ -225,17 +232,22 @@ Important:
             }
 
             prompt = (
-                "Create a concise, user-facing title for an Apple Wallet pass.\n"
-                "Rules:\n"
-                "- Max 30 characters.\n"
-                "- Prefer recognizable brand/event names (e.g., 'Disneyland Park Ticket').\n"
-                "- Avoid generic fare labels like 'ADULT', 'CHILD', 'SENIOR', 'ZONE 1', seat/class codes, or random alphanumeric strings.\n"
-                "- Avoid titles that are mostly numbers or SKUs.\n"
-                "- If it's a ticket, include the event or park name; if a boarding pass, include airline and 'Boarding Pass'.\n"
-                "- If multiple options, choose the most user-friendly and informative.\n\n"
-                f"Existing data (JSON): {json.dumps(context)[:1800]}\n\n"
-                f"Relevant PDF text excerpt (truncated):\n{pdf_text[:2000].replace('{', '{{').replace('}', '}}')}\n\n"
-                "Return JSON: {\n  \"title\": \"string\",\n  \"confidence\": 0-100\n}"
+                "Create a concise, meaningful title for an Apple Wallet pass.\n"
+                "CRITICAL: Identify the PRIMARY SUBJECT from the document - what did the user actually buy?\n\n"
+                "Context-aware rules:\n"
+                "- Max 30 characters\n"
+                "- For shows/concerts: Use the performance/artist name (e.g., 'Hamilton', 'Taylor Swift')\n"
+                "- For attractions: Use the venue/attraction name (e.g., 'Louvre Museum', 'Empire State')\n"
+                "- For transportation: Use route or flight info (e.g., 'NYC-LAX', 'Flight AA123')\n"
+                "- For multi-venue passes: Extract the brand/system name from the document and combine with scope\n"
+                "- Look for brand names, venue names, show titles in the actual document text\n"
+                "- If you see '2 parks' or '3 days', find the associated brand/venue name in the document\n"
+                "- Never return just descriptors like '2 parks' without the actual venue/brand\n"
+                "- Avoid generic labels like 'ADULT', 'CHILD', codes, or SKUs\n\n"
+                f"Existing data: {json.dumps(context)[:1500]}\n\n"
+                f"PDF excerpt:\n{pdf_text[:1500].replace('{', '{{').replace('}', '}}')}\n\n"
+                "Analyze the document to find the most specific name/brand/venue mentioned.\n"
+                "Return JSON: {\"title\": \"<specific meaningful title>\", \"confidence\": 0-100}"
             )
 
             response = self.client.chat.completions.create(
@@ -530,32 +542,6 @@ Important:
         """
         text = pdf_text or ""
         t = text.lower()
-        
-        # Museum/attraction patterns
-        if "louvre" in t or "musée du louvre" in t:
-            return "Louvre Museum"
-        if "tour eiffel" in t or "eiffel tower" in t or "torre ifel" in filename.lower():
-            return "Eiffel Tower"
-        if "musée" in t and "billet" in t:  # Generic museum ticket in French
-            return "Museum Ticket"
-        if "museo" in t and ("entrada" in t or "ticket" in t):  # Spanish
-            return "Museum Ticket"
-        if "museum" in t and "ticket" in t:
-            return "Museum Ticket"
-        
-        # Disneyland / Disney World
-        if "disneyland" in t or "disney california adventure" in t:
-            if re.search(r"\b(2|two)[ -]?day\b", t):
-                return "Disneyland 2-Day Ticket"
-            if re.search(r"\b(3|three)[ -]?day\b", t):
-                return "Disneyland 3-Day Ticket"
-            if re.search(r"hopper", t):
-                return "Disneyland Park Hopper"
-            return "Disneyland Park Ticket"
-        if "walt disney world" in t or "magic kingdom" in t or "epcot" in t:
-            return "Walt Disney World Ticket"
-        if "universal studios" in t or "islands of adventure" in t:
-            return "Universal Studios Ticket"
         
         # Transportation
         if "boarding" in t and ("airlines" in t or "airline" in t or re.search(r"\bflight\b", t)):

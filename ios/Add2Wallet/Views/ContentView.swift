@@ -326,10 +326,13 @@ struct ContentView: View {
             }
             .sheet(isPresented: $viewModel.showingPurchaseAlert) {
                 PaywallView { customerInfo in
-                    // Purchase successful, refresh balance
+                    // Purchase successful, refresh balance immediately
                     print("Purchase completed, refreshing balance...")
-                    Task {
+                    Task { @MainActor in
+                        // Force an immediate balance refresh
                         await usageManager.refreshBalance()
+                        // Small delay to ensure UI updates
+                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
                         // Retry the upload after successful purchase
                         viewModel.uploadSelected()
                     }
@@ -337,7 +340,7 @@ struct ContentView: View {
                 }
                 .onDisappear {
                     // Always refresh balance when paywall closes
-                    Task {
+                    Task { @MainActor in
                         await usageManager.refreshBalance()
                     }
                 }

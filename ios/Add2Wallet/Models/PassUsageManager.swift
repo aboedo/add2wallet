@@ -15,6 +15,16 @@ class PassUsageManager: NSObject, ObservableObject {
         // Listen for customer info updates
         Purchases.shared.delegate = self
         
+        // Subscribe to customer info updates async stream for real-time updates
+        Task {
+            for await customerInfo in Purchases.shared.customerInfoStream {
+                await MainActor.run {
+                    self.customerInfo = customerInfo
+                }
+                await refreshBalance()
+            }
+        }
+        
         // Fetch initial balance after a brief delay to ensure RevenueCat is ready
         Task {
             // Small delay to ensure RevenueCat SDK is fully initialized

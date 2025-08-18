@@ -25,8 +25,9 @@ class ProgressViewModel: ObservableObject {
     ]
     
     // Discrete progress values - maximum 15 updates total for performance
+    // Start at 3% for immediate feedback, then progress through remaining values
     private let discreteProgressValues: [Double] = [
-        0.0, 0.07, 0.15, 0.23, 0.30, 0.40, 0.50, 0.55, 0.65, 0.73, 0.80, 0.85, 0.90, 0.95, 1.0
+        0.03, 0.07, 0.15, 0.23, 0.30, 0.40, 0.50, 0.55, 0.65, 0.73, 0.80, 0.85, 0.90, 0.95, 1.0
     ]
     
     private let progressSteps: [(progress: Double, message: String, minDuration: TimeInterval)] = [
@@ -40,9 +41,13 @@ class ProgressViewModel: ObservableObject {
     func startProgress() {
         print("🎯 ProgressViewModel: Starting progress animation")
         startTime = Date()
-        progress = 0.0
         progressMessage = "Analyzing PDF..."
         funnyPhrase = phrases.randomElement() ?? "Getting things ready..."
+        
+        // Immediately show 3% progress for instant feedback
+        withAnimation(.easeInOut(duration: 0.3)) {
+            progress = 0.03
+        }
         
         // Use much less frequent updates - only every 1 second
         timer = Timer.publish(every: 1.0, on: .main, in: .common)
@@ -56,9 +61,13 @@ class ProgressViewModel: ObservableObject {
         timer?.cancel()
         timer = nil
         startTime = nil
-        progress = 0.0
-        progressMessage = ""
-        funnyPhrase = ""
+        
+        // Reset progress with animation
+        withAnimation(.easeInOut(duration: 0.3)) {
+            progress = 0.0
+            progressMessage = ""
+            funnyPhrase = ""
+        }
     }
     
     func completeProgress() {
@@ -81,8 +90,9 @@ class ProgressViewModel: ObservableObject {
         
         // Calculate discrete progress based on time elapsed
         let timeRatio = min(1.0, elapsedTime / totalDuration)
-        let discreteIndex = Int(timeRatio * Double(discreteProgressValues.count - 1))
-        let newProgress = discreteProgressValues[min(discreteIndex, discreteProgressValues.count - 1)]
+        // Skip the first value (0.03) since we set it immediately on start
+        let adjustedIndex = 1 + Int(timeRatio * Double(discreteProgressValues.count - 2))
+        let newProgress = discreteProgressValues[min(adjustedIndex, discreteProgressValues.count - 1)]
         
         // Only update if progress actually changed (discrete values)
         guard newProgress != progress else { return }

@@ -308,6 +308,9 @@ class ContentViewModel: ObservableObject {
                             userInfo: ["message": message]
                         )
                         
+                        // Update pass balance after successful generation
+                        self.usageManager.passGenerated()
+                        
                         if count > 1 {
                             self.downloadAndOpenMultiplePasses(passUrl: passUrl, count: count)
                         } else {

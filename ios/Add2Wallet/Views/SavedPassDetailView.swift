@@ -20,15 +20,19 @@ struct SavedPassDetailView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Use unified pass detail presentation
-                    if let metadata = savedPass.metadata {
-                        PassDetailPresentation(
-                            metadata: metadata,
-                            ticketCount: savedPass.passCount > 1 ? savedPass.passCount : nil,
-                            isEmbedded: false
-                        )
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Add top padding to account for the overlay
+                        Color.clear.frame(height: 60)
+                        
+                        // Use unified pass detail presentation
+                        if let metadata = savedPass.metadata {
+                            PassDetailPresentation(
+                                metadata: metadata,
+                                ticketCount: savedPass.passCount > 1 ? savedPass.passCount : nil,
+                                isEmbedded: false
+                            )
                     } else {
                         // Fallback for passes without metadata
                         VStack(spacing: 16) {
@@ -85,6 +89,26 @@ struct SavedPassDetailView: View {
                 }
                 
                 
+                }
+                
+                // Semi-transparent overlay at the top for better contrast
+                VStack {
+                    ZStack {
+                        // Dark gradient overlay for contrast
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.black.opacity(0.6),
+                                Color.black.opacity(0.3),
+                                Color.clear
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 100)
+                        .ignoresSafeArea()
+                    }
+                    Spacer()
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -93,6 +117,8 @@ struct SavedPassDetailView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
                 }
             }
             .safeAreaInset(edge: .bottom) {

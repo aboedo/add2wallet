@@ -1251,9 +1251,10 @@ class PassGenerator:
         bg_luminance = calculate_luminance(bg_r, bg_g, bg_b)
         
         # Determine if background is light or dark
-        # Using 0.08 as threshold (twice as aggressive as previous 0.16)
-        # This ensures much better contrast by being very likely to use dark text on medium backgrounds
-        is_light_background = bg_luminance > 0.08
+        # Using 0.25 as threshold to be more aggressive in detecting light backgrounds
+        # This ensures better contrast by treating medium-light backgrounds as light
+        # and using dark text for improved readability
+        is_light_background = bg_luminance > 0.25
         
         # Set text colors based on background luminance
         if is_light_background:
