@@ -22,16 +22,17 @@ struct ThemeManager {
         static let contentMargins = md
     }
     
-    // MARK: - Corner Radius System
+    // MARK: - Corner Radius System (iOS 26 Liquid Glass)
     enum CornerRadius {
-        static let small: CGFloat = 8
-        static let medium: CGFloat = 16
-        static let large: CGFloat = 24
+        static let small: CGFloat = 12      // Increased from 8
+        static let medium: CGFloat = 16     // Standard Liquid Glass radius
+        static let large: CGFloat = 20      // Reduced from 24 for better harmony
         
-        // Semantic corner radii
-        static let button = small
-        static let card = medium
-        static let sheet = large
+        // Semantic corner radii (iOS 26 aligned)
+        static let button = medium          // 16pt standard
+        static let card = medium            // 16pt standard
+        static let sheet = large            // 20pt for sheets
+        static let circular = 999           // For fully circular elements
     }
     
     // MARK: - Typography System
@@ -99,31 +100,48 @@ struct ThemeManager {
         // Flat surfaces
         static let flat: some View = EmptyView()
         
-        // Card elevation
+        // Card elevation (iOS 26 Glass)
         static func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
             content()
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.card))
         }
         
-        // Sheet elevation
+        // Sheet elevation (iOS 26 Glass)
         static func sheet<Content: View>(@ViewBuilder content: () -> Content) -> some View {
             content()
-                .background(.ultraThinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sheet))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.sheet))
         }
         
-        // Button elevation
+        // Button elevation (iOS 26 Glass)
         static func button<Content: View>(@ViewBuilder content: () -> Content) -> some View {
             content()
-                .background(Colors.brandPrimary)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.button))
+                .background(Colors.brandPrimary, in: RoundedRectangle(cornerRadius: CornerRadius.button))
+        }
+    }
+    
+    // MARK: - Glass Effects (iOS 26 Liquid Glass)
+    enum GlassEffect {
+        // Glass effect view modifier helper
+        static func regular<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+            content()
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        }
+        
+        static func interactive<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+            content()
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        }
+        
+        static func floating<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+            content()
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         }
     }
     
     // MARK: - Component Styles
     enum ComponentStyle {
-        // Primary CTA Button
+        // Primary CTA Button (iOS 26 Glass)
         static func primaryButton<Content: View>(@ViewBuilder label: () -> Content) -> some View {
             label()
                 .font(Typography.bodySemibold)
@@ -131,12 +149,11 @@ struct ThemeManager {
                 .padding(.vertical, Spacing.md)
                 .padding(.horizontal, Spacing.lg)
                 .frame(maxWidth: .infinity)
-                .background(Colors.brandPrimary)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.button))
-                .contentShape(Rectangle())
+                .background(Colors.brandPrimary, in: RoundedRectangle(cornerRadius: CornerRadius.button))
+                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.button))
         }
         
-        // Secondary Button
+        // Secondary Button (iOS 26 Glass)
         static func secondaryButton<Content: View>(@ViewBuilder label: () -> Content) -> some View {
             label()
                 .font(Typography.body)
@@ -144,31 +161,29 @@ struct ThemeManager {
                 .padding(.vertical, Spacing.sm)
                 .padding(.horizontal, Spacing.md)
                 .frame(maxWidth: .infinity)
-                .background(Colors.surfaceCard)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.button))
                 .overlay(
                     RoundedRectangle(cornerRadius: CornerRadius.button)
                         .stroke(Colors.brandPrimary, lineWidth: 1)
                 )
-                .contentShape(Rectangle())
+                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.button))
         }
         
-        // Usage Pill
+        // Usage Pill (iOS 26 Circular)
         static func usagePill<Content: View>(@ViewBuilder content: () -> Content) -> some View {
             content()
                 .font(Typography.footnoteMonospaced)
                 .foregroundColor(Colors.textSecondary)
                 .padding(.horizontal, Spacing.sm)
                 .padding(.vertical, Spacing.xs)
-                .background(Colors.surfaceCard)
-                .clipShape(Capsule())
+                .background(.ultraThinMaterial, in: Capsule())
         }
         
-        // Section Card
+        // Section Card (iOS 26 Glass)
         static func sectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
             content()
                 .padding(Spacing.cardPadding)
-                .background(Colors.surfaceCard)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.card))
         }
         
         // List Row with Color Stripe
@@ -252,7 +267,7 @@ extension View {
     }
 }
 
-// MARK: - Button Styles
+// MARK: - Button Styles (iOS 26 Liquid Glass)
 struct ThemedPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -264,11 +279,11 @@ struct ThemedPrimaryButtonStyle: ButtonStyle {
             .background(
                 configuration.isPressed 
                     ? ThemeManager.Colors.brandSecondary 
-                    : ThemeManager.Colors.brandPrimary
+                    : ThemeManager.Colors.brandPrimary,
+                in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button)
             )
-            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button))
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .animation(ThemeManager.Animations.quick, value: configuration.isPressed)
     }
 }
 
@@ -282,15 +297,15 @@ struct ThemedSecondaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .background(
                 configuration.isPressed 
-                    ? ThemeManager.Colors.surfaceCardElevated 
-                    : ThemeManager.Colors.surfaceCard
+                    ? .regularMaterial 
+                    : .thinMaterial,
+                in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button)
                     .stroke(ThemeManager.Colors.brandPrimary, lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button))
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .animation(ThemeManager.Animations.quick, value: configuration.isPressed)
     }
 }

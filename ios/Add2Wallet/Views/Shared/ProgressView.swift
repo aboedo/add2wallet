@@ -17,25 +17,25 @@ struct ProgressView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(progressViewModel.progressMessage)
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                        .font(ThemeManager.Typography.bodySemibold)
+                        .foregroundColor(ThemeManager.Colors.textPrimary)
                     
                     Spacer()
                     
                     Text("\(Int(progressViewModel.progress * 100))%")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(ThemeManager.Typography.footnoteMonospaced)
+                        .foregroundColor(ThemeManager.Colors.textSecondary)
                 }
                 
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         // Background
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.2))
+                        RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.small)
+                            .fill(ThemeManager.Colors.surfaceCard)
                             .frame(height: 8)
                         
                         // Progress
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.small)
                             .fill(
                                 LinearGradient(
                                     gradient: Gradient(colors: [ThemeManager.Colors.brandPrimary, ThemeManager.Colors.brandSecondary]),
@@ -44,7 +44,7 @@ struct ProgressView: View {
                                 )
                             )
                             .frame(width: geometry.size.width * progressViewModel.progress, height: 8)
-                            .animation(.easeInOut(duration: 0.5), value: progressViewModel.progress)
+                            .animation(ThemeManager.Animations.gentle, value: progressViewModel.progress)
                     }
                 }
                 .frame(height: 8)
@@ -54,20 +54,20 @@ struct ProgressView: View {
             // Funny phrase below progress
             if !progressViewModel.funnyPhrase.isEmpty {
                 Text(progressViewModel.funnyPhrase)
-                    .font(.callout)
+                    .font(ThemeManager.Typography.footnote)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(ThemeManager.Colors.textSecondary)
                     .italic()
                     .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.3), value: progressViewModel.funnyPhrase)
+                    .animation(ThemeManager.Animations.standard, value: progressViewModel.funnyPhrase)
             }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
+            .regularMaterial,
+            in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
         )
+        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
         .padding(.horizontal)
     }
 }

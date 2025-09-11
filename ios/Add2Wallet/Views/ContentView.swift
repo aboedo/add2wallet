@@ -220,8 +220,8 @@ struct ContentView: View {
                     .padding(.horizontal, ThemeManager.Spacing.md)
                     .padding(.top, ThemeManager.Spacing.sm)
                     .padding(.bottom, ThemeManager.Spacing.md)
-                    .background(.thinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
+                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: -4)
                     .animation(ThemeManager.Animations.standard, value: viewModel.selectedFileURL)
                 }
             }

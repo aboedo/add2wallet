@@ -35,12 +35,12 @@ struct HeroCardStack: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, ThemeManager.Spacing.md)
                     .background(
+                        .white.opacity(0.2),
+                        in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
+                    )
+                    .overlay(
                         RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
-                            .fill(.white.opacity(0.2))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
-                                    .stroke(.white.opacity(0.3), lineWidth: 1)
-                            )
+                            .stroke(.white.opacity(0.3), lineWidth: 1)
                     )
                     .symbolEffect(.bounce, value: buttonBounce)
             }
@@ -65,12 +65,12 @@ struct HeroCardStack: View {
                     .padding(.vertical, ThemeManager.Spacing.xs)
                     .padding(.horizontal, ThemeManager.Spacing.sm)
                     .background(
+                        .white.opacity(0.1),
+                        in: Capsule()
+                    )
+                    .overlay(
                         Capsule()
-                            .fill(.white.opacity(0.1))
-                            .overlay(
-                                Capsule()
-                                    .stroke(.white.opacity(0.2), lineWidth: 1)
-                            )
+                            .stroke(.white.opacity(0.2), lineWidth: 1)
                     )
                 }
                 .buttonStyle(.plain)
@@ -89,12 +89,12 @@ struct HeroCardStack: View {
                         .padding(.horizontal, ThemeManager.Spacing.sm)
                         .padding(.vertical, ThemeManager.Spacing.xs)
                         .background(
+                            .white.opacity(0.15),
+                            in: Capsule()
+                        )
+                        .overlay(
                             Capsule()
-                                .fill(.white.opacity(0.15))
-                                .overlay(
-                                    Capsule()
-                                        .stroke(.white.opacity(0.2), lineWidth: 1)
-                                )
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
                         )
                 }
             }
