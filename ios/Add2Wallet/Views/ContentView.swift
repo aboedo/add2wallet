@@ -439,7 +439,14 @@ struct ContentView: View {
                 enrichmentCompleted: true,
                 backgroundColor: "rgb(139,69,19)",  // Saddle brown for The Weeknd aesthetic
                 foregroundColor: "rgb(255,255,255)",
-                labelColor: "rgb(255,223,186)"
+                labelColor: "rgb(255,223,186)",
+                multipleEvents: nil,
+                upcomingEvents: nil,
+                venuePlaceId: nil,
+                performerNames: nil,
+                exhibitName: nil,
+                hasAssignedSeating: nil,
+                eventUrls: nil
             )
             
             // Set up the preview state

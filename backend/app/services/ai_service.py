@@ -73,6 +73,9 @@ class AIService:
             # Step 2: Enrich with web search if we have enough information
             enriched_info = await self._enrich_event_data(basic_info)
             logger.info(f"🌐 Enrichment completed with {len(enriched_info)} fields")
+            
+            # Step 2.5: Detect multiple events for iOS 26 upcoming events feature
+            enriched_info = await self._detect_multiple_events(pdf_text, enriched_info)
 
             # Step 3: Refine the user-facing title to avoid codes like "ADULT 12 UY"
             try:
@@ -130,7 +133,7 @@ INSTRUCTIONS:
 
 Return JSON with extracted information:
 {{
-    "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|other",
+    "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|theater|festival|other",
     "event_name": "The PRIMARY SUBJECT of this ticket - what the user is actually going to see/do/experience",
     "title": "Concise title (max 30 chars) combining the MAIN SUBJECT with any relevant descriptors. Extract the primary proper noun/brand from the document and combine with scope/duration if present. Never return generic terms like 'ticket' or '2 parks' without the actual venue/brand name.",
     "description": "Brief description",
@@ -151,7 +154,16 @@ Return JSON with extracted information:
     "latitude": "GPS latitude if location known",
     "longitude": "GPS longitude if location known",
     "additional_info": "Any other relevant details",
-    "confidence_score": "0-100 indicating extraction confidence"
+    "confidence_score": "0-100 indicating extraction confidence",
+    "multiple_events": "true if this ticket covers multiple dates/events (season pass, multi-day pass, etc.)",
+    "performer_names": ["List of performers/artists if concert or show"],
+    "exhibit_name": "Name of exhibit if museum ticket",
+    "has_assigned_seating": "true if specific seats are assigned",
+    "parking_info": "Any parking instructions or details",
+    "venue_type": "Type of venue (theater, stadium, museum, park, etc.)",
+    "nearby_landmarks": ["List of nearby landmarks mentioned"],
+    "public_transport": "Public transport access info",
+    "accessibility": "Accessibility information if mentioned"
 }}
 
 Important: 
@@ -564,6 +576,77 @@ Important:
             return "Digital Ticket"
         # Trim to sensible length
         return base[:30]
+    
+    async def _detect_multiple_events(self, pdf_text: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Detect if this is a multi-event ticket and extract upcoming events for iOS 26.
+        
+        Args:
+            pdf_text: Raw PDF text
+            metadata: Already extracted metadata
+            
+        Returns:
+            Updated metadata with upcoming_events if applicable
+        """
+        if not self.ai_enabled:
+            return metadata
+            
+        # Check if this might be a multi-event ticket
+        indicators = ["season pass", "multi-day", "multiple dates", "valid for", "all shows", 
+                     "series", "festival pass", "3-day", "2-day", "weekend pass"]
+        
+        pdf_lower = pdf_text.lower()
+        is_multi = any(ind in pdf_lower for ind in indicators) or metadata.get("multiple_events") == "true"
+        
+        if not is_multi:
+            return metadata
+            
+        try:
+            prompt = f"""Analyze this ticket to identify if it covers multiple events/dates.
+If it does, extract details for each upcoming event.
+
+DOCUMENT CONTENT:
+{pdf_text[:3000]}
+
+Return JSON with upcoming events:
+{{
+    "is_multi_event": true/false,
+    "upcoming_events": [
+        {{
+            "id": "unique identifier",
+            "name": "Event name",
+            "date": "YYYY-MM-DD",
+            "time": "HH:MM",
+            "venue_name": "Venue name",
+            "performer_artist": "Performer/artist if applicable",
+            "seat_info": "Seat info if different from main ticket"
+        }}
+    ]
+}}
+
+If this is a single event ticket, return {{"is_multi_event": false, "upcoming_events": []}}
+"""
+            
+            response = self.client.chat.completions.create(
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                messages=[
+                    {"role": "system", "content": "Extract multiple event information from tickets."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1,
+                max_tokens=800
+            )
+            
+            result = json.loads(response.choices[0].message.content.strip())
+            
+            if result.get("is_multi_event") and result.get("upcoming_events"):
+                metadata["multiple_events"] = True
+                metadata["upcoming_events"] = result["upcoming_events"]
+                logger.info(f"🎫 Detected {len(result['upcoming_events'])} upcoming events")
+                
+        except Exception as e:
+            logger.warning(f"Could not detect multiple events: {e}")
+            
+        return metadata
     
     def _create_fallback_metadata(self, pdf_text: str, filename: str) -> Dict[str, Any]:
         """Create fallback metadata using basic pattern matching.

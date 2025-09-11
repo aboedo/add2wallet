@@ -122,7 +122,14 @@ struct PassHeaderView: View {
                 enrichmentCompleted: nil,
                 backgroundColor: "rgb(138,43,226)",
                 foregroundColor: nil,
-                labelColor: nil
+                labelColor: nil,
+                multipleEvents: nil,
+                upcomingEvents: nil,
+                venuePlaceId: nil,
+                performerNames: nil,
+                exhibitName: nil,
+                hasAssignedSeating: nil,
+                eventUrls: nil
             ),
             passType: "Concert",
             showDateTime: true

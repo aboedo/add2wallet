@@ -10,6 +10,58 @@ struct PassDetailsView: View {
             // Show async map if we have location data
             AsyncMapView(metadata: metadata)
             
+            // iOS 26: Show upcoming events for multi-event tickets
+            if let upcomingEvents = metadata.upcomingEvents, !upcomingEvents.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Upcoming Events")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .padding(.top, 4)
+                    
+                    ForEach(upcomingEvents, id: \.id) { event in
+                        HStack(alignment: .top, spacing: 12) {
+                            // Event indicator
+                            Circle()
+                                .fill(event.isActive ?? true ? Color.accentColor : Color.secondary.opacity(0.5))
+                                .frame(width: 8, height: 8)
+                                .padding(.top, 6)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(event.name)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                                
+                                if let venueName = event.venueName {
+                                    Text(venueName)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                if let date = event.date {
+                                    Text(PassDateTimeFormatter.formatEventDate(date))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                if let seatInfo = event.seatInfo {
+                                    Text(seatInfo)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .opacity(event.isActive ?? true ? 1.0 : 0.6)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .padding(.vertical, 8)
+                
+                Divider()
+            }
+            
             // Other information below the map
             Group {
                 keyValueRow("Seat", metadata.seatInfo)
@@ -18,6 +70,16 @@ struct PassDetailsView: View {
                 keyValueRow("Gate", metadata.gateInfo)
                 if let ticketCount, ticketCount > 1 {
                     keyValueRow("Number of passes", String(ticketCount))
+                }
+                
+                // iOS 26: Show performer names if available
+                if let performerNames = metadata.performerNames, !performerNames.isEmpty {
+                    keyValueRow("Artists", performerNames.joined(separator: ", "))
+                }
+                
+                // iOS 26: Show exhibit name for museums
+                if let exhibitName = metadata.exhibitName {
+                    keyValueRow("Exhibit", exhibitName)
                 }
             }
             .font(.subheadline)
@@ -86,7 +148,14 @@ struct PassDetailsView: View {
         enrichmentCompleted: true,
         backgroundColor: "rgb(138,43,226)",
         foregroundColor: "rgb(255,255,255)",
-        labelColor: "rgb(255,255,255)"
+        labelColor: "rgb(255,255,255)",
+        multipleEvents: nil,
+        upcomingEvents: nil,
+        venuePlaceId: nil,
+        performerNames: nil,
+        exhibitName: nil,
+        hasAssignedSeating: nil,
+        eventUrls: nil
     )
     
     PassDetailsView(metadata: sampleMetadata, ticketCount: 2)

@@ -59,6 +59,15 @@ struct EnhancedPassMetadata: Codable {
     let backgroundColor: String?
     let foregroundColor: String?
     let labelColor: String?
+    
+    // iOS 26 Features
+    let multipleEvents: Bool?
+    let upcomingEvents: [UpcomingEvent]?
+    let venuePlaceId: String?
+    let performerNames: [String]?
+    let exhibitName: String?
+    let hasAssignedSeating: Bool?
+    let eventUrls: EventURLs?
 
     enum CodingKeys: String, CodingKey {
         case eventType = "event_type"
@@ -102,6 +111,65 @@ struct EnhancedPassMetadata: Codable {
         case backgroundColor = "background_color"
         case foregroundColor = "foreground_color"
         case labelColor = "label_color"
+        case multipleEvents = "multiple_events"
+        case upcomingEvents = "upcoming_events"
+        case venuePlaceId = "venue_place_id"
+        case performerNames = "performer_names"
+        case exhibitName = "exhibit_name"
+        case hasAssignedSeating = "has_assigned_seating"
+        case eventUrls = "event_urls"
+    }
+}
+
+// iOS 26 Upcoming Event structure
+struct UpcomingEvent: Codable {
+    let id: String
+    let name: String
+    let date: String?
+    let venueName: String?
+    let latitude: Double?
+    let longitude: Double?
+    let appleMapsId: String?
+    let seatInfo: String?
+    let performerArtist: String?
+    let eventType: String?
+    let urls: EventURLs?
+    let isActive: Bool?
+    let headerImageUrl: String?
+    let venueMapUrl: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case date
+        case venueName = "venue_name"
+        case latitude
+        case longitude
+        case appleMapsId = "apple_maps_id"
+        case seatInfo = "seat_info"
+        case performerArtist = "performer_artist"
+        case eventType = "event_type"
+        case urls
+        case isActive = "is_active"
+        case headerImageUrl = "header_image_url"
+        case venueMapUrl = "venue_map_url"
+    }
+}
+
+// iOS 26 Event URLs structure
+struct EventURLs: Codable {
+    let parkingInfoUrl: String?
+    let merchandiseUrl: String?
+    let venueInfoUrl: String?
+    let ticketTransferUrl: String?
+    let foodOrderingUrl: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case parkingInfoUrl = "parking_info_url"
+        case merchandiseUrl = "merchandise_url"
+        case venueInfoUrl = "venue_info_url"
+        case ticketTransferUrl = "ticket_transfer_url"
+        case foodOrderingUrl = "food_ordering_url"
     }
 }
 

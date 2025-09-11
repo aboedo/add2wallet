@@ -241,7 +241,14 @@ struct AsyncMapView: View {
         enrichmentCompleted: true,
         backgroundColor: "rgb(138,43,226)",
         foregroundColor: "rgb(255,255,255)",
-        labelColor: "rgb(255,255,255)"
+        labelColor: "rgb(255,255,255)",
+        multipleEvents: nil,
+        upcomingEvents: nil,
+        venuePlaceId: nil,
+        performerNames: nil,
+        exhibitName: nil,
+        hasAssignedSeating: nil,
+        eventUrls: nil
     )
     
     AsyncMapView(metadata: sampleMetadata)

@@ -76,7 +76,14 @@ class TestHelpers {
             enrichmentCompleted: true,
             backgroundColor: "rgb(255,45,85)",
             foregroundColor: "rgb(255,255,255)",
-            labelColor: "rgb(0,0,0)"
+            labelColor: "rgb(0,0,0)",
+            multipleEvents: nil,
+            upcomingEvents: nil,
+            venuePlaceId: nil,
+            performerNames: nil,
+            exhibitName: nil,
+            hasAssignedSeating: nil,
+            eventUrls: nil
         )
     }
     

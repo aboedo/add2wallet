@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
+from datetime import datetime
 
 class UploadResponse(BaseModel):
     job_id: str
@@ -86,3 +87,40 @@ class EnhancedPassMetadata(BaseModel):
     background_color: Optional[str] = None
     foreground_color: Optional[str] = None
     label_color: Optional[str] = None
+    
+    # iOS 26 Features
+    multiple_events: bool = False
+    upcoming_events: Optional[List['UpcomingEvent']] = None
+    venue_place_id: Optional[str] = None
+    performer_names: Optional[List[str]] = None
+    exhibit_name: Optional[str] = None
+    has_assigned_seating: bool = False
+    event_urls: Optional['EventURLs'] = None
+
+class UpcomingEvent(BaseModel):
+    """iOS 26 upcoming event structure for multi-event tickets"""
+    id: str
+    name: str
+    date: Optional[str] = None  # ISO format string
+    venue_name: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    apple_maps_id: Optional[str] = None
+    seat_info: Optional[str] = None
+    performer_artist: Optional[str] = None
+    event_type: Optional[str] = None
+    urls: Optional['EventURLs'] = None
+    is_active: bool = True
+    header_image_url: Optional[str] = None
+    venue_map_url: Optional[str] = None
+
+class EventURLs(BaseModel):
+    """URLs for event-specific actions in iOS 26"""
+    parking_info_url: Optional[str] = None
+    merchandise_url: Optional[str] = None
+    venue_info_url: Optional[str] = None
+    ticket_transfer_url: Optional[str] = None
+    food_ordering_url: Optional[str] = None
+    
+# Update forward references
+EnhancedPassMetadata.model_rebuild()
