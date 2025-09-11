@@ -2,25 +2,24 @@ import Foundation
 import RevenueCat
 
 @MainActor
-class PassUsageManager: NSObject, ObservableObject {
+class PassUsageManager: ObservableObject {
     static let shared = PassUsageManager()
     
     @Published var remainingPasses: Int = 0
     @Published var isLoadingBalance = false
     @Published var customerInfo: CustomerInfo?
     
-    private override init() {
-        super.init()
+    private init() {
+        // Only use async streams for real-time updates
         
-        // Listen for customer info updates
-        Purchases.shared.delegate = self
-        
-        // Subscribe to customer info updates async stream for real-time updates
+        // Subscribe to customer info updates which will trigger balance updates
         Task {
             for await customerInfo in Purchases.shared.customerInfoStream {
                 await MainActor.run {
                     self.customerInfo = customerInfo
+                    print("✅ Customer info updated via stream, refreshing balance...")
                 }
+                // Refresh virtual currency balance when customer info changes
                 await refreshBalance()
             }
         }
@@ -85,14 +84,35 @@ class PassUsageManager: NSObject, ObservableObject {
             await refreshBalance()
         }
     }
-}
-
-// MARK: - PurchasesDelegate
-extension PassUsageManager: PurchasesDelegate {
-    nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
-        Task { @MainActor in
-            self.customerInfo = customerInfo
-            await refreshBalance()
+    
+    /// Force an immediate balance refresh from RevenueCat
+    func forceRefreshBalance() async {
+        print("🔄 Force refreshing balance...")
+        isLoadingBalance = true
+        defer { isLoadingBalance = false }
+        
+        do {
+            // Force fetch fresh data from RevenueCat
+            Purchases.shared.invalidateCustomerInfoCache()
+            
+            // Fetch virtual currencies from RevenueCat
+            let virtualCurrencies = try await Purchases.shared.virtualCurrencies()
+            
+            // Get PASS balance
+            if let passBalance = virtualCurrencies.all["PASS"]?.balance {
+                self.remainingPasses = passBalance
+                print("✅ Force refresh complete: \(passBalance) passes")
+            } else {
+                self.remainingPasses = 0
+                print("⚠️ Force refresh: No passes found")
+            }
+            
+            // Also update customer info
+            self.customerInfo = try await Purchases.shared.customerInfo()
+        } catch {
+            print("❌ Error force fetching virtual currencies: \(error)")
+            self.remainingPasses = 0
         }
     }
 }
+

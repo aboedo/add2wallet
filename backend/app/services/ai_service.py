@@ -115,22 +115,24 @@ class AIService:
         # Design a comprehensive prompt for metadata extraction  
         safe_pdf_text = pdf_text[:4000].replace('{', '{{').replace('}', '}}').replace('%', '%%')
         
-        prompt = """You are preparing content for an Apple Wallet pass. Analyze the following PDF content and identify what the user actually purchased - the PRIMARY PURPOSE of this ticket/pass. This appears to be from a file named "{}".
+        prompt = """You are preparing content for an Apple Wallet pass. Your job is to extract the PRIMARY SUBJECT from this document - what did the user actually buy access to?
 
-PDF Content:
+FILE: {}
+DOCUMENT CONTENT:
 {}
 
-First, determine what type of document this is and what matters most to the user:
-- For performances/shows: The show or artist name is most important
-- For venues/attractions: The venue or attraction name is most important  
-- For transportation: The route, flight number, or destination is most important
-- For multi-venue access: The system/brand name plus scope is most important
+INSTRUCTIONS:
+1. SCAN the document for PROMINENT proper nouns, brand names, venue names, or show titles
+2. IGNORE fine print, legal text, terms and conditions
+3. LOOK for what is displayed most prominently (usually at the top)
+4. IF you find descriptors like "2 parks", "3 days", "multi-venue", combine them with the main subject
+5. The title should answer: "What did I buy a ticket for?"
 
-Extract the following information and return as JSON:
+Return JSON with extracted information:
 {{
     "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|other",
     "event_name": "The PRIMARY SUBJECT of this ticket - what the user is actually going to see/do/experience",
-    "title": "SHORT title for Apple Wallet (max 30 chars). Focus on what matters most: for performances use show/artist name, for venues use venue name, for transport use route/flight. If multi-day or multi-location, include that with the main subject. Never return generic terms without the actual subject context.",
+    "title": "Concise title (max 30 chars) combining the MAIN SUBJECT with any relevant descriptors. Extract the primary proper noun/brand from the document and combine with scope/duration if present. Never return generic terms like 'ticket' or '2 parks' without the actual venue/brand name.",
     "description": "Brief description",
     "date": "Event date (YYYY-MM-DD format if possible)",
     "time": "Event time (HH:MM format if possible)", 
@@ -162,10 +164,10 @@ Important:
 - Look carefully for any barcode, QR code, or reference numbers
 - Extract any long numerical strings that could be barcodes
 - Identify ticket numbers, confirmation codes, and reference IDs
-- For the "title", identify the PRIMARY SUBJECT - what is the user actually going to see/do? For shows/concerts extract the performance name, for venues extract the venue name, for transport extract the route.
-- CRITICAL: The title should answer "What did I buy a ticket for?" - it should be the most specific and recognizable name from the document
-- Never use document headers like 'CONDITIONS GENERALES', 'TERMS', 'TICKET' - look for the actual subject in the document body
-- If this provides multi-day or multi-location access, include that descriptor with the main subject
+- For the "title", find the most PROMINENT proper noun, brand name, or venue name in the document
+- COMBINE that main subject with any descriptors (2 parks, 3 days, etc.) found in the document
+- IGNORE legal headers, terms, conditions - focus on what's prominently displayed
+- The title should be specific enough that someone would recognize what they bought
 """.format(filename, safe_pdf_text)
 
         try:

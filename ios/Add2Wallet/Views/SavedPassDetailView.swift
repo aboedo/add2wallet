@@ -98,13 +98,13 @@ struct SavedPassDetailView: View {
                         LinearGradient(
                             gradient: Gradient(colors: [
                                 Color.black.opacity(0.6),
-                                Color.black.opacity(0.3),
-                                Color.clear
+                                Color.black.opacity(0.6),
+//                                Color.clear
                             ]),
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .frame(height: 100)
+                        .frame(height: 50)
                         .ignoresSafeArea()
                     }
                     Spacer()
