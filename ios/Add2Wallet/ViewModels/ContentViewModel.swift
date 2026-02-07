@@ -24,6 +24,7 @@ class ContentViewModel: ObservableObject {
     @Published var retryCount = 0
     @Published var showingRetryAlert = false
     @Published var isDemo = false
+    @Published var purchaseCompletedPendingUpload = false
     
     // Store PDF data for error reporting
     private var currentPDFData: Data?
@@ -307,9 +308,6 @@ class ContentViewModel: ObservableObject {
                             object: nil,
                             userInfo: ["message": message]
                         )
-                        
-                        // Update pass balance after successful generation
-                        self.usageManager.passGenerated()
                         
                         if count > 1 {
                             self.downloadAndOpenMultiplePasses(passUrl: passUrl, count: count)

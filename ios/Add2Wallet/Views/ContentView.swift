@@ -326,22 +326,18 @@ struct ContentView: View {
             }
             .sheet(isPresented: $viewModel.showingPurchaseAlert) {
                 PaywallView { customerInfo in
-                    // Purchase successful, force refresh balance immediately
-                    print("✅ Purchase completed, force refreshing balance...")
-                    Task { @MainActor in
-                        // Use force refresh to invalidate cache and get fresh data
-                        await usageManager.forceRefreshBalance()
-                        
-                        // Retry the upload after successful purchase
-                        viewModel.uploadSelected()
-                    }
+                    print("✅ Purchase completed, will refresh balance on dismiss...")
+                    viewModel.purchaseCompletedPendingUpload = true
                     return (userCancelled: false, error: nil)
                 }
                 .onDisappear {
-                    // Force refresh balance when paywall closes (in case purchase was made)
                     Task { @MainActor in
                         print("📱 Paywall dismissed, force refreshing balance...")
                         await usageManager.forceRefreshBalance()
+                        if viewModel.purchaseCompletedPendingUpload {
+                            viewModel.purchaseCompletedPendingUpload = false
+                            viewModel.uploadSelected()
+                        }
                     }
                 }
             }

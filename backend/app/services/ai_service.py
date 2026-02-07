@@ -637,11 +637,19 @@ If this is a single event ticket, return {{"is_multi_event": false, "upcoming_ev
             )
             
             result = json.loads(response.choices[0].message.content.strip())
-            
-            if result.get("is_multi_event") and result.get("upcoming_events"):
-                metadata["multiple_events"] = True
-                metadata["upcoming_events"] = result["upcoming_events"]
-                logger.info(f"🎫 Detected {len(result['upcoming_events'])} upcoming events")
+
+            if isinstance(result, dict) and result.get("is_multi_event") and result.get("upcoming_events"):
+                events = result["upcoming_events"]
+                if isinstance(events, list):
+                    valid_events = [e for e in events if isinstance(e, dict)]
+                    if valid_events:
+                        metadata["multiple_events"] = True
+                        metadata["upcoming_events"] = valid_events
+                        logger.info(f"🎫 Detected {len(valid_events)} upcoming events")
+                    else:
+                        logger.warning("AI returned non-dict items in upcoming_events, skipping")
+                else:
+                    logger.warning("AI returned non-list for upcoming_events, skipping")
                 
         except Exception as e:
             logger.warning(f"Could not detect multiple events: {e}")

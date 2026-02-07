@@ -7,7 +7,7 @@ import zipfile
 import shutil
 # subprocess removed for Vercel compatibility
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List, Tuple
 import hashlib
 from collections import Counter
@@ -607,112 +607,132 @@ class PassGenerator:
             print(f"✅ Added associatedStoreIdentifiers: {associated_store_ids}")
         
         # iOS 26: Add semantic tags for event tickets
-        if pass_info.get('event_type') in ['concert', 'museum', 'theater', 'sports', 'festival', 'attraction']:
-            semantics = {}
-            
-            # Event information
-            if pass_info.get('event_name'):
-                semantics['eventName'] = pass_info['event_name']
-            if pass_info.get('venue_name'):
-                semantics['venueName'] = pass_info['venue_name']
-            if pass_info.get('venue_place_id'):
-                semantics['venuePlaceID'] = pass_info['venue_place_id']
-            
-            # Location semantics
-            if pass_info.get('latitude') and pass_info.get('longitude'):
-                semantics['venueLocation'] = {
-                    'latitude': pass_info['latitude'],
-                    'longitude': pass_info['longitude']
-                }
-            
-            # Performer/artist semantics
-            if pass_info.get('performer_names'):
-                semantics['artistNames'] = pass_info['performer_names']
-            elif pass_info.get('performer_artist'):
-                semantics['artistNames'] = [pass_info['performer_artist']]
-            
-            # Date/time semantics
-            if pass_info.get('date'):
-                try:
-                    # Parse and format date as ISO
-                    parsed_date = date_parser.parse(pass_info['date'])
-                    semantics['eventStartDate'] = parsed_date.isoformat()
-                except:
-                    semantics['eventStartDate'] = pass_info['date']
-            
-            # Seat semantics
-            if pass_info.get('seat_info'):
-                semantics['seatNumber'] = pass_info['seat_info']
-            if pass_info.get('gate_info'):
-                semantics['gateNumber'] = pass_info['gate_info']
-            
-            # Add semantics to pass
-            if semantics:
-                pass_json['semantics'] = semantics
-                print(f"📍 Added iOS 26 semantics: {list(semantics.keys())}")
+        ios26_enabled = os.getenv("ENABLE_IOS26_FEATURES", "false").lower() == "true"
+        if ios26_enabled:
+            try:
+                if pass_info.get('event_type') in ['concert', 'museum', 'theater', 'sports', 'festival', 'attraction']:
+                    semantics = {}
+
+                    # Event information
+                    if pass_info.get('event_name'):
+                        semantics['eventName'] = pass_info['event_name']
+                    if pass_info.get('venue_name'):
+                        semantics['venueName'] = pass_info['venue_name']
+                    if pass_info.get('venue_place_id'):
+                        semantics['venuePlaceID'] = pass_info['venue_place_id']
+
+                    # Location semantics
+                    if pass_info.get('latitude') and pass_info.get('longitude'):
+                        semantics['venueLocation'] = {
+                            'latitude': pass_info['latitude'],
+                            'longitude': pass_info['longitude']
+                        }
+
+                    # Performer/artist semantics
+                    if pass_info.get('performer_names'):
+                        semantics['artistNames'] = pass_info['performer_names']
+                    elif pass_info.get('performer_artist'):
+                        semantics['artistNames'] = [pass_info['performer_artist']]
+
+                    # Date/time semantics
+                    if pass_info.get('date'):
+                        try:
+                            # Parse and format date as ISO
+                            parsed_date = date_parser.parse(pass_info['date'])
+                            semantics['eventStartDate'] = parsed_date.isoformat()
+                        except:
+                            semantics['eventStartDate'] = pass_info['date']
+
+                    # Seat semantics
+                    if pass_info.get('seat_info'):
+                        semantics['seatNumber'] = pass_info['seat_info']
+                    if pass_info.get('gate_info'):
+                        semantics['gateNumber'] = pass_info['gate_info']
+
+                    # Add semantics to pass
+                    if semantics:
+                        pass_json['semantics'] = semantics
+                        print(f"📍 Added iOS 26 semantics: {list(semantics.keys())}")
+            except Exception as e:
+                print(f"⚠️ iOS 26 semantics skipped: {e}")
         
         # iOS 26: Add upcoming events for multi-event tickets
-        if pass_info.get('multiple_events') and pass_info.get('upcoming_events'):
-            upcoming_pass_info = []
-            
-            for idx, event in enumerate(pass_info['upcoming_events'][:10]):  # Limit to 10 events
-                upcoming_event = {
-                    'type': 'event',
-                    'identifier': event.get('id', f'event_{idx}'),
-                    'displayName': event.get('name', f'Event {idx + 1}'),
-                }
-                
-                # Add date if available
-                if event.get('date'):
-                    try:
-                        parsed_date = date_parser.parse(event['date'])
-                        upcoming_event['date'] = parsed_date.isoformat()
-                    except:
-                        upcoming_event['date'] = event['date']
-                
-                # Event semantics
-                event_semantics = {}
-                if event.get('name'):
-                    event_semantics['eventName'] = event['name']
-                if event.get('venue_name'):
-                    event_semantics['venueName'] = event['venue_name']
-                if event.get('performer_artist'):
-                    event_semantics['artistNames'] = [event['performer_artist']]
-                if event.get('seat_info'):
-                    event_semantics['seatNumber'] = event['seat_info']
-                
-                if event_semantics:
-                    upcoming_event['semantics'] = event_semantics
-                
-                # Event URLs
-                event_urls = {}
-                if pass_info.get('event_urls'):
-                    urls = pass_info['event_urls']
-                    if hasattr(urls, 'parking_info_url') and urls.parking_info_url:
-                        event_urls['parkingInfoURL'] = urls.parking_info_url
-                    if hasattr(urls, 'merchandise_url') and urls.merchandise_url:
-                        event_urls['merchandiseURL'] = urls.merchandise_url
-                    if hasattr(urls, 'venue_info_url') and urls.venue_info_url:
-                        event_urls['venueInfoURL'] = urls.venue_info_url
-                
-                if event_urls:
-                    upcoming_event['URLs'] = event_urls
-                
-                # Mark as active if date is in future
-                if event.get('date'):
-                    try:
-                        event_date = date_parser.parse(event['date'])
-                        upcoming_event['isActive'] = event_date > datetime.now()
-                    except:
-                        upcoming_event['isActive'] = True
-                else:
-                    upcoming_event['isActive'] = True
-                
-                upcoming_pass_info.append(upcoming_event)
-            
-            if upcoming_pass_info:
-                pass_json['upcomingPassInformation'] = upcoming_pass_info
-                print(f"🎫 Added {len(upcoming_pass_info)} upcoming events for iOS 26")
+        if ios26_enabled:
+            try:
+                if pass_info.get('multiple_events') and pass_info.get('upcoming_events'):
+                    upcoming_pass_info = []
+
+                    for idx, event in enumerate(pass_info['upcoming_events'][:10]):  # Limit to 10 events
+                        upcoming_event = {
+                            'type': 'event',
+                            'identifier': event.get('id', f'event_{idx}'),
+                            'displayName': event.get('name', f'Event {idx + 1}'),
+                        }
+
+                        # Add date if available
+                        if event.get('date'):
+                            try:
+                                parsed_date = date_parser.parse(event['date'])
+                                upcoming_event['date'] = parsed_date.isoformat()
+                            except:
+                                upcoming_event['date'] = event['date']
+
+                        # Event semantics
+                        event_semantics = {}
+                        if event.get('name'):
+                            event_semantics['eventName'] = event['name']
+                        if event.get('venue_name'):
+                            event_semantics['venueName'] = event['venue_name']
+                        if event.get('performer_artist'):
+                            event_semantics['artistNames'] = [event['performer_artist']]
+                        if event.get('seat_info'):
+                            event_semantics['seatNumber'] = event['seat_info']
+
+                        if event_semantics:
+                            upcoming_event['semantics'] = event_semantics
+
+                        # Event URLs
+                        event_urls = {}
+                        if pass_info.get('event_urls'):
+                            urls = pass_info['event_urls']
+                            if isinstance(urls, dict):
+                                if urls.get('parking_info_url'):
+                                    event_urls['parkingInfoURL'] = urls['parking_info_url']
+                                if urls.get('merchandise_url'):
+                                    event_urls['merchandiseURL'] = urls['merchandise_url']
+                                if urls.get('venue_info_url'):
+                                    event_urls['venueInfoURL'] = urls['venue_info_url']
+                            else:
+                                if getattr(urls, 'parking_info_url', None):
+                                    event_urls['parkingInfoURL'] = urls.parking_info_url
+                                if getattr(urls, 'merchandise_url', None):
+                                    event_urls['merchandiseURL'] = urls.merchandise_url
+                                if getattr(urls, 'venue_info_url', None):
+                                    event_urls['venueInfoURL'] = urls.venue_info_url
+
+                        if event_urls:
+                            upcoming_event['URLs'] = event_urls
+
+                        # Mark as active if date is in future
+                        if event.get('date'):
+                            try:
+                                event_date = date_parser.parse(event['date'])
+                                now = datetime.now(timezone.utc)
+                                if event_date.tzinfo is None:
+                                    event_date = event_date.replace(tzinfo=timezone.utc)
+                                upcoming_event['isActive'] = event_date > now
+                            except:
+                                upcoming_event['isActive'] = True
+                        else:
+                            upcoming_event['isActive'] = True
+
+                        upcoming_pass_info.append(upcoming_event)
+
+                    if upcoming_pass_info:
+                        pass_json['upcomingPassInformation'] = upcoming_pass_info
+                        print(f"🎫 Added {len(upcoming_pass_info)} upcoming events for iOS 26")
+            except Exception as e:
+                print(f"⚠️ iOS 26 upcoming events skipped: {e}")
         
         # Add barcode to the pass if available
         primary_barcode = pass_info.get('primary_barcode')
