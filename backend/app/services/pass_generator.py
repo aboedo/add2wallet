@@ -63,9 +63,9 @@ class PassGenerator:
             "organizationName": organization,
             "description": description,
             "logoText": title,
-            "foregroundColor": "rgb(255,255,255)",
-            "backgroundColor": "rgb(60,60,67)",
-            "labelColor": "rgb(255,255,255)",
+            "foregroundColor": "rgb(255, 255, 255)",
+            "backgroundColor": "rgb(60, 60, 67)",
+            "labelColor": "rgb(255, 255, 255)",
             "generic": {
                 "headerFields": [
                     {
@@ -124,9 +124,12 @@ class PassGenerator:
             # Sign the manifest if certificates are available
             if self.signing_enabled:
                 signature = self._sign_manifest_file(manifest_path)
-                signature_path = os.path.join(temp_dir, "signature")
-                with open(signature_path, 'wb') as f:
-                    f.write(signature)
+                if signature:  # Only write if signing actually produced data
+                    signature_path = os.path.join(temp_dir, "signature")
+                    with open(signature_path, 'wb') as f:
+                        f.write(signature)
+                else:
+                    print("⚠️ Signing failed or returned empty signature, pass will be unsigned")
             
             # Create .pkpass zip file
             pkpass_data = self._create_pkpass_zip(temp_dir)
@@ -591,15 +594,6 @@ class PassGenerator:
             }
         }
 
-        # If AI provided brand colors, keep them for downstream tools (non-standard key ignored by PassKit)
-        brand_colors = None
-        if isinstance(pass_info, dict):
-            palette = pass_info.get('color_palette') or {}
-            if isinstance(palette, dict) and palette.get('brand_colors'):
-                brand_colors = palette.get('brand_colors')
-        if brand_colors:
-            pass_json['a2w_brandColors'] = brand_colors
-        
         # Add associatedStoreIdentifiers if available
         associated_store_ids = self._get_associated_store_identifiers()
         if associated_store_ids:
@@ -831,9 +825,12 @@ class PassGenerator:
             # Sign the manifest if certificates are available
             if self.signing_enabled:
                 signature = self._sign_manifest_file(manifest_path)
-                signature_path = os.path.join(temp_dir, "signature")
-                with open(signature_path, 'wb') as f:
-                    f.write(signature)
+                if signature:  # Only write if signing actually produced data
+                    signature_path = os.path.join(temp_dir, "signature")
+                    with open(signature_path, 'wb') as f:
+                        f.write(signature)
+                else:
+                    print("⚠️ Signing failed or returned empty signature, pass will be unsigned")
             
             # Create .pkpass zip file
             pkpass_data = self._create_pkpass_zip(temp_dir)
@@ -918,8 +915,8 @@ class PassGenerator:
             if not valid_colors:
                 # No valid colors found, use a safe default
                 print("No dominant colors found, using defaults")
-                return "rgb(0,122,255)", "rgb(255,255,255)", "rgb(255,255,255)"
-            
+                return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"
+
             # Use the most common valid color as background
             bg_rgb = valid_colors[0][0]
             
@@ -944,11 +941,10 @@ class PassGenerator:
             
             print(f"🎨 Extracted colors - Background: rgb{bg_rgb}, Luminance: {bg_l:.2f}")
             
-            # Apple Wallet expects rgb format WITHOUT spaces after commas
             return (
-                f"rgb({bg_rgb[0]},{bg_rgb[1]},{bg_rgb[2]})",
-                f"rgb({fg_rgb[0]},{fg_rgb[1]},{fg_rgb[2]})",
-                f"rgb({label_rgb[0]},{label_rgb[1]},{label_rgb[2]})",
+                f"rgb({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]})",
+                f"rgb({fg_rgb[0]}, {fg_rgb[1]}, {fg_rgb[2]})",
+                f"rgb({label_rgb[0]}, {label_rgb[1]}, {label_rgb[2]})",
             )
         except Exception as e:
             print(f"⚠️ Color extraction failed: {e}")
@@ -1208,8 +1204,6 @@ class PassGenerator:
             ).add_signer(
                 pass_cert, private_key, digest_algo
             ).add_certificate(
-                pass_cert  # Add the pass certificate to the chain
-            ).add_certificate(
                 wwdr_cert  # Add WWDR certificate to complete the chain
             ).sign(
                 serialization.Encoding.DER, options
@@ -1283,19 +1277,19 @@ class PassGenerator:
         
         # Enhanced color theming based on event type and context
         if event_type == 'flight' or 'airline' in event_name or 'airport' in venue_type:
-            return "rgb(0,122,255)", "rgb(255,255,255)", "rgb(255,255,255)"  # Aviation blue
+            return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Aviation blue
         elif event_type == 'concert' or 'music' in event_name or 'concert' in venue_type:
-            return "rgb(255,45,85)", "rgb(255,255,255)", "rgb(255,255,255)"  # Concert red
+            return "rgb(255, 45, 85)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Concert red
         elif event_type == 'sports' or 'stadium' in venue_type:
-            return "rgb(52,199,89)", "rgb(255,255,255)", "rgb(255,255,255)"  # Sports green
+            return "rgb(52, 199, 89)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Sports green
         elif event_type == 'train' or 'railway' in event_name:
-            return "rgb(48,176,199)", "rgb(255,255,255)", "rgb(255,255,255)"  # Rail teal
+            return "rgb(48, 176, 199)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Rail teal
         elif event_type == 'hotel' or 'reservation' in event_name:
-            return "rgb(142,142,147)", "rgb(255,255,255)", "rgb(255,255,255)"  # Hotel gray
+            return "rgb(142, 142, 147)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Hotel gray
         elif event_type == 'movie' or 'theater' in venue_type:
-            return "rgb(94,92,230)", "rgb(255,255,255)", "rgb(255,255,255)"  # Theater purple
+            return "rgb(94, 92, 230)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Theater purple
         elif event_type == 'conference' or 'business' in event_name:
-            return "rgb(50,173,230)", "rgb(255,255,255)", "rgb(255,255,255)"  # Business blue
+            return "rgb(50, 173, 230)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Business blue
         else:
             # Fall back to original color analysis
             return self._analyze_pdf_colors(pdf_data)
@@ -1317,28 +1311,28 @@ class PassGenerator:
             
             # Simple color inference based on content type
             if any(word in text for word in ['airline', 'flight', 'boarding']):
-                return "rgb(0,122,255)", "rgb(255,255,255)", "rgb(255,255,255)"  # Blue theme
+                return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Blue theme
             elif any(word in text for word in ['concert', 'music', 'show', 'festival']):
-                return "rgb(255,45,85)", "rgb(255,255,255)", "rgb(255,255,255)"   # Red theme
+                return "rgb(255, 45, 85)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"   # Red theme
             elif any(word in text for word in ['train', 'railway', 'rail']):
-                return "rgb(48,176,199)", "rgb(255,255,255)", "rgb(255,255,255)"  # Teal theme
+                return "rgb(48, 176, 199)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Teal theme
             elif any(word in text for word in ['hotel', 'reservation', 'check']):
-                return "rgb(142,142,147)", "rgb(255,255,255)", "rgb(255,255,255)" # Gray theme
+                return "rgb(142, 142, 147)", "rgb(255, 255, 255)", "rgb(255, 255, 255)" # Gray theme
             else:
                 # Default professional blue
-                return "rgb(0,122,255)", "rgb(255,255,255)", "rgb(255,255,255)"
-                
+                return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"
+
         except Exception as e:
             print(f"⚠️  Error analyzing PDF colors: {e}")
-            return "rgb(0,122,255)", "rgb(255,255,255)", "rgb(255,255,255)"
+            return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"
 
     def _ensure_color_contrast(self, bg_color: str, fg_color: str, label_color: str) -> Tuple[str, str, str]:
         """Ensure sufficient contrast between background and text colors.
         
         Args:
-            bg_color: Background color in rgb(r,g,b) format
-            fg_color: Foreground color in rgb(r,g,b) format
-            label_color: Label color in rgb(r,g,b) format
+            bg_color: Background color in rgb(r, g, b) format
+            fg_color: Foreground color in rgb(r, g, b) format
+            label_color: Label color in rgb(r, g, b) format
             
         Returns:
             Tuple of (bg_color, fg_color, label_color) with adjusted colors for contrast
@@ -1387,13 +1381,13 @@ class PassGenerator:
         # Set text colors based on background luminance
         if is_light_background:
             # Light background - use dark text
-            new_fg_color = "rgb(0,0,0)"  # Black text
-            new_label_color = "rgb(60,60,67)"  # Dark gray for labels
+            new_fg_color = "rgb(0, 0, 0)"  # Black text
+            new_label_color = "rgb(60, 60, 67)"  # Dark gray for labels
             print(f"🔲 Light background detected (luminance: {bg_luminance:.3f}) - using dark text")
         else:
             # Dark background - use light text
-            new_fg_color = "rgb(255,255,255)"  # White text
-            new_label_color = "rgb(255,255,255)"  # White labels
+            new_fg_color = "rgb(255, 255, 255)"  # White text
+            new_label_color = "rgb(255, 255, 255)"  # White labels
             print(f"⬜ Dark background detected (luminance: {bg_luminance:.3f}) - using light text")
         
         # Calculate and log contrast ratios for verification
