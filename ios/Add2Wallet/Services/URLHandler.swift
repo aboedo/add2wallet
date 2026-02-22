@@ -69,7 +69,7 @@ class URLHandler {
         }
     }
     
-    private static func handleSharedPDFWithToken(token: String) {
+    static func handleSharedPDFWithToken(token: String) {
         guard let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet") else {
             print("🔴 URLHandler: Failed to access app group container")
             return
@@ -105,6 +105,21 @@ class URLHandler {
         } else {
             print("🔴 URLHandler: Token directory or files not found for token: \(token)")
         }
+    }
+    
+    static func checkForPendingShareToken() {
+        let appGroupID = "group.com.andresboedo.add2wallet"
+        guard let defaults = UserDefaults(suiteName: appGroupID),
+              let token = defaults.string(forKey: "pendingShareToken") else {
+            return
+        }
+        
+        // Clear immediately to avoid double-processing
+        defaults.removeObject(forKey: "pendingShareToken")
+        defaults.synchronize()
+        
+        print("🟢 URLHandler: Found pending share token: \(token)")
+        handleSharedPDFWithToken(token: token)
     }
     
     static func checkForSharedPDF() {

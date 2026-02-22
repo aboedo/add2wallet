@@ -95,6 +95,8 @@ struct Add2WalletApp: App {
         }
     }
     
+    @Environment(\.scenePhase) private var scenePhase
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -110,7 +112,14 @@ struct Add2WalletApp: App {
                     }
                     
                     URLHandler.checkForSharedPDF()
+                    URLHandler.checkForPendingShareToken()
                 }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                // Check if the share extension left a pending PDF
+                URLHandler.checkForPendingShareToken()
+            }
         }
     }
     
