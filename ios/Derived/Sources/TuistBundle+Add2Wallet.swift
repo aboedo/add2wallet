@@ -16,7 +16,7 @@ extension Foundation.Bundle {
 }
 // MARK: - Objective-C Bundle Accessor
 @objc
-public class Add2WalletResources: NSObject {
+public final class Add2WalletResources: NSObject {
 @objc public class var bundle: Bundle {
     return .module
 }
