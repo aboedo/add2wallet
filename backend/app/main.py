@@ -14,6 +14,7 @@ from app.services.pdf_validator import PDFValidator
 from app.services.pass_generator import pass_generator
 from app.services.ai_service import ai_service
 from app.services.revenuecat_service import revenuecat_service
+from app.services.v2.orchestrator import create_passes_v2
 
 # Load environment variables
 load_dotenv()
@@ -303,6 +304,112 @@ async def upload_pdf(
         print(f"❌ Pass generation failed: {e}")
         
         return UploadResponse(job_id=job_id, status="failed")
+
+@app.post("/upload/v2", response_model=UploadResponse)
+async def upload_pdf_v2(
+    file: UploadFile = File(...),
+    user_id: str = Form(...),
+    session_token: str = Form(...),
+    is_retry: bool = Form(False),
+    is_demo: bool = Form(False),
+    x_api_key: Optional[str] = Header(None)
+):
+    """Upload a PDF for processing using the v2 pipeline.
+
+    Same contract as /upload but uses the rewritten pass generation pipeline:
+    single LLM call, Pydantic-validated pass.json, cleaner barcode handling.
+    """
+    # Auth
+    expected_api_key = os.getenv("API_KEY", "development-api-key")
+    if x_api_key != expected_api_key:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    # Validate file
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+
+    validator = PDFValidator()
+    is_valid, error_message = validator.validate(contents)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=f"Invalid PDF: {error_message}")
+
+    job_id = str(uuid.uuid4())
+    file_path = UPLOAD_DIR / f"{job_id}.pdf"
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    jobs[job_id] = {
+        "user_id": user_id,
+        "status": "processing",
+        "progress": 10,
+        "file_path": str(file_path),
+        "filename": file.filename,
+        "pipeline": "v2",
+    }
+
+    try:
+        print(f"🔄 [v2] Starting processing for {file.filename}")
+        jobs[job_id]["progress"] = 30
+
+        pkpass_files, detected_barcodes, ticket_info, warnings = create_passes_v2(
+            contents, file.filename
+        )
+        print(f"🎫 [v2] Generated {len(pkpass_files)} pass file(s)")
+
+        pass_paths = []
+        for i, pkpass_data in enumerate(pkpass_files):
+            if len(pkpass_files) > 1:
+                pass_path = UPLOAD_DIR / f"{job_id}_ticket_{i + 1}.pkpass"
+            else:
+                pass_path = UPLOAD_DIR / f"{job_id}.pkpass"
+            with open(pass_path, "wb") as f:
+                f.write(pkpass_data)
+            pass_paths.append(str(pass_path))
+
+        # Deduct pass credit
+        if is_demo:
+            print(f"🎮 Demo mode: skipping PASS deduction for {user_id}")
+        else:
+            deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
+            if not deduction_success:
+                print(f"⚠️ PASS deduction failed for {user_id}, continuing anyway")
+
+        jobs[job_id].update({
+            "status": "completed",
+            "progress": 100,
+            "pass_paths": pass_paths,
+            "pass_path": pass_paths[0] if pass_paths else None,
+            "detected_barcodes": detected_barcodes,
+            "barcode_count": len(detected_barcodes),
+            "ticket_count": len(pkpass_files),
+            "ticket_info": ticket_info,
+            "warnings": warnings,
+        })
+
+        # Build ai_metadata from ticket_info for response (backwards compat)
+        enhanced_metadata = None
+        if ticket_info:
+            enhanced_metadata = ticket_info[0].get("metadata")
+
+        return UploadResponse(
+            job_id=job_id,
+            status="completed",
+            pass_url=f"/pass/{job_id}",
+            ai_metadata=enhanced_metadata,
+            ticket_count=len(pkpass_files),
+            warnings=warnings if warnings else None,
+        )
+
+    except Exception as exc:
+        jobs[job_id].update({"status": "failed", "progress": 0, "error": str(exc)})
+        print(f"❌ [v2] Pass generation failed: {exc}")
+        import traceback; traceback.print_exc()
+        return UploadResponse(job_id=job_id, status="failed")
+
 
 @app.get("/status/{job_id}", response_model=StatusResponse)
 async def get_status(
