@@ -303,17 +303,25 @@ class PassGenerator:
                         pass_info['barcode_data'] = ticket_barcode['data']
                     print(f"🎫 Ticket {ticket_num}: Using barcode {ticket_barcode['type']} - {ticket_barcode['data'][:50]}...")
             
-            # Extract colors directly from PDF - this is more accurate than AI guessing
-            print(f"🎨 Extracting colors from PDF...")
-            pdf_bg, pdf_fg, pdf_label = self._extract_color_palette_from_pdf_images(pdf_data)
+            # Use AI-suggested colors first (brand-aware), fall back to PDF extraction
+            ai_bg = pass_info.get('suggested_bg_color')
+            ai_fg = pass_info.get('suggested_fg_color')
+            ai_label = pass_info.get('suggested_label_color')
             
-            if pdf_bg and pdf_fg and pdf_label:
-                bg_color, fg_color, label_color = pdf_bg, pdf_fg, pdf_label
-                print(f"✅ Using PDF-extracted colors: bg={bg_color}")
+            if ai_bg and ai_fg and ai_label and ai_bg.startswith('rgb('):
+                bg_color, fg_color, label_color = ai_bg, ai_fg, ai_label
+                print(f"🎨 Using AI-suggested brand colors: bg={bg_color}")
             else:
-                # Fall back to smart defaults based on content type
-                bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
-                print(f"🔄 Using fallback color analysis")
+                # Fall back to PDF image extraction
+                print(f"🎨 AI colors not available, extracting from PDF...")
+                pdf_bg, pdf_fg, pdf_label = self._extract_color_palette_from_pdf_images(pdf_data)
+                
+                if pdf_bg and pdf_fg and pdf_label:
+                    bg_color, fg_color, label_color = pdf_bg, pdf_fg, pdf_label
+                    print(f"✅ Using PDF-extracted colors: bg={bg_color}")
+                else:
+                    bg_color, fg_color, label_color = self._analyze_pdf_colors_enhanced(pdf_data, pass_info)
+                    print(f"🔄 Using fallback color analysis")
             
             # Use AI-extracted title or fallback, then sanitize to avoid code-like titles
             base_title = (pass_info.get('title') or 

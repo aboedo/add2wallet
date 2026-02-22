@@ -26,7 +26,6 @@ let project = Project(
             ],
             entitlements: "Add2Wallet/Add2Wallet.entitlements",
             dependencies: [
-                .target(name: "Add2WalletShareExtension"),
                 .package(product: "RevenueCat"),
                 .package(product: "RevenueCatUI")
             ],
@@ -41,28 +40,7 @@ let project = Project(
                 ]
             )
         ),
-        .target(
-            name: "Add2WalletShareExtension",
-            destinations: .iOS,
-            product: .appExtension,
-            bundleId: "com.andresboedo.add2wallet.shareextension",
-            deploymentTargets: .iOS("17.0"),
-            infoPlist: .file(path: "Add2WalletShareExtension/Info.plist"),
-            sources: [
-                "Add2WalletShareExtension/**/*.swift"
-            ],
-            entitlements: "Add2WalletShareExtension/Add2WalletShareExtension.entitlements",
-            settings: .settings(
-                base: [
-                    "DEVELOPMENT_TEAM": "H9DPH4DQG7",
-                    "CODE_SIGN_STYLE": "Automatic",
-                    "MARKETING_VERSION": "1.0",
-                    "CURRENT_PROJECT_VERSION": "1",
-                    "SWIFT_VERSION": "5.0",
-                    "SKIP_INSTALL": "YES"
-                ]
-            )
-        ),
+        // Share Extension removed — using "Copy to App" (document types) only
         .target(
             name: "Add2WalletTests",
             destinations: .iOS,
