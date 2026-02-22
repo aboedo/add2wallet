@@ -56,6 +56,12 @@ class ContentViewModel: ObservableObject {
             }
         }
         
+        // Pick up any PDF that arrived before we were ready (cold start race condition)
+        if let pending = URLHandler.dequeuePendingPDF() {
+            print("🟢 ContentViewModel: Found pending PDF from before init: \(pending.filename)")
+            handleSharedPDF(data: pending.data, filename: pending.filename)
+        }
+        
         #if DEBUG
         // Listen for preview mock data notifications
         NotificationCenter.default.addObserver(

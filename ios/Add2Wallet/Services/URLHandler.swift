@@ -5,6 +5,31 @@ import UIKit
 
 class URLHandler {
     
+    // MARK: - Pending PDF Queue (survives race conditions)
+    
+    struct PendingPDF {
+        let filename: String
+        let data: Data
+    }
+    
+    /// Pending PDF that hasn't been consumed by ContentViewModel yet
+    static var pendingPDF: PendingPDF?
+    
+    /// Store a PDF for pickup by ContentViewModel, AND post the notification as fallback
+    static func enqueuePDF(filename: String, data: Data) {
+        print("🟢 URLHandler: Enqueuing PDF: \(filename) (\(data.count) bytes)")
+        pendingPDF = PendingPDF(filename: filename, data: data)
+        NotificationManager.postSharedPDFReceived(filename: filename, data: data)
+    }
+    
+    /// Called by ContentViewModel on init to pick up any PDF that arrived before it was ready
+    static func dequeuePendingPDF() -> PendingPDF? {
+        guard let pdf = pendingPDF else { return nil }
+        pendingPDF = nil
+        print("🟢 URLHandler: Dequeued pending PDF: \(pdf.filename)")
+        return pdf
+    }
+    
     // MARK: - URL Handling
     
     static func handleURL(_ url: URL) {
@@ -48,14 +73,14 @@ class URLHandler {
     
     private static func handleFileURL(_ url: URL) {
         // Request access to security-scoped resource
-        guard url.startAccessingSecurityScopedResource() else {
-            print("🔴 URLHandler: Failed to start accessing security scoped resource")
-            return
-        }
+        let hasAccess = url.startAccessingSecurityScopedResource()
+        print("🟢 URLHandler: Security scoped resource access: \(hasAccess)")
         
         defer {
-            url.stopAccessingSecurityScopedResource()
-            print("🟢 URLHandler: Stopped accessing security scoped resource")
+            if hasAccess {
+                url.stopAccessingSecurityScopedResource()
+                print("🟢 URLHandler: Stopped accessing security scoped resource")
+            }
         }
         
         do {
@@ -63,7 +88,7 @@ class URLHandler {
             let filename = url.lastPathComponent
             print("🟢 URLHandler: Successfully loaded file data (\(data.count) bytes) for: \(filename)")
             
-            NotificationManager.postSharedPDFReceived(filename: filename, data: data)
+            enqueuePDF(filename: filename, data: data)
         } catch {
             print("🔴 URLHandler: Error loading file: \(error)")
         }
@@ -94,7 +119,7 @@ class URLHandler {
                 print("🟢 URLHandler: Successfully processed shared PDF with token: \(token)")
                 
                 // Process the shared PDF
-                NotificationManager.postSharedPDFReceived(filename: filename, data: pdfData)
+                enqueuePDF(filename: filename, data: pdfData)
                 
                 // Clean up the token directory
                 try? FileManager.default.removeItem(at: tokenDir)
@@ -143,7 +168,7 @@ class URLHandler {
                     print("🟢 URLHandler: Successfully processed legacy shared PDF")
                     
                     // Process the shared PDF
-                    NotificationManager.postSharedPDFReceived(filename: filename, data: pdfData)
+                    enqueuePDF(filename: filename, data: pdfData)
                     
                     // Clean up the shared file
                     try? FileManager.default.removeItem(at: sharedFile)
