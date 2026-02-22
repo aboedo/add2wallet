@@ -12,7 +12,7 @@
 			<key>CFBundleTypeName</key>
 			<string>PDF Document</string>
 			<key>LSHandlerRank</key>
-			<string>Owner</string>
+			<string>Alternate</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>com.adobe.pdf</string>
@@ -105,29 +105,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UTImportedTypeDeclarations</key>
-	<array>
-		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.data</string>
-				<string>public.composite-content</string>
-			</array>
-			<key>UTTypeDescription</key>
-			<string>Adobe PDF document</string>
-			<key>UTTypeIdentifier</key>
-			<string>com.adobe.pdf</string>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>pdf</string>
-				</array>
-				<key>public.mime-type</key>
-				<string>application/pdf</string>
-			</dict>
-		</dict>
 	</array>
 </dict>
 </plist>

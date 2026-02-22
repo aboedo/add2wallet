@@ -29,21 +29,10 @@
         <key>NSExtensionAttributes</key>
         <dict>
             <key>NSExtensionActivationRule</key>
-            <dict>
-                <key>NSExtensionActivationSupportsFileWithMaxCount</key>
-                <integer>10</integer>
-                <key>NSExtensionActivationSupportsText</key>
-                <false/>
-                <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
-                <integer>0</integer>
-                <key>NSExtensionActivationSupportsWebPageWithMaxCount</key>
-                <integer>0</integer>
-                <key>NSExtensionActivationSupportsImageWithMaxCount</key>
-                <integer>0</integer>
-            </dict>
+            <string>SUBQUERY(extensionItems, $item, SUBQUERY($item.attachments, $att, ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "com.adobe.pdf").@count > 0).@count > 0</string>
         </dict>
         <key>NSExtensionPointIdentifier</key>
-        <string>com.apple.ui-services</string>
+        <string>com.apple.share-services</string>
         <key>NSExtensionPrincipalClass</key>
         <string>ActionViewController</string>
     </dict>
