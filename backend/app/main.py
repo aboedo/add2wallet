@@ -21,6 +21,52 @@ load_dotenv()
 
 app = FastAPI(title="Add2Wallet API", version="1.0.0")
 
+
+def sanitize_metadata(raw: dict | None) -> dict | None:
+    """Strip fields that don't match the iOS EnhancedPassMetadata Codable model.
+
+    The AI enrichment pipeline adds arbitrary keys with unpredictable types
+    (e.g. ``upcoming_events`` as a string instead of an array).  This causes
+    ``JSONDecoder`` in the iOS app to fail with "data couldn't be read".
+
+    We whitelist only the fields the Swift model declares and coerce known
+    list-typed fields so a stray string doesn't blow up decoding.
+    """
+    if raw is None:
+        return None
+
+    ALLOWED = {
+        "event_type", "event_name", "title", "description",
+        "date", "time", "duration",
+        "venue_name", "venue_address", "city", "state_country",
+        "latitude", "longitude",
+        "organizer", "performer_artist", "seat_info", "barcode_data",
+        "price", "confirmation_number", "gate_info",
+        "event_description", "venue_type", "capacity", "website", "phone",
+        "nearby_landmarks", "public_transport", "parking_info",
+        "age_restriction", "dress_code", "weather_considerations",
+        "amenities", "accessibility",
+        "ai_processed", "confidence_score", "processing_timestamp",
+        "model_used", "enrichment_completed",
+        "background_color", "foreground_color", "label_color",
+        "multiple_events", "upcoming_events", "venue_place_id",
+        "performer_names", "exhibit_name", "has_assigned_seating",
+        "event_urls",
+    }
+
+    LIST_FIELDS = {"nearby_landmarks", "amenities", "upcoming_events", "performer_names"}
+
+    clean: dict = {}
+    for key, value in raw.items():
+        if key not in ALLOWED:
+            continue
+        # Coerce list-typed fields: if it's not a list, drop it
+        if key in LIST_FIELDS and not isinstance(value, list):
+            clean[key] = None
+            continue
+        clean[key] = value
+    return clean
+
 # Configure CORS for iOS app
 app.add_middleware(
     CORSMiddleware,
@@ -289,7 +335,7 @@ async def upload_pdf(
             job_id=job_id, 
             status="completed", 
             pass_url=f"/pass/{job_id}",
-            ai_metadata=enhanced_metadata,
+            ai_metadata=sanitize_metadata(enhanced_metadata),
             ticket_count=len(pkpass_files),
             warnings=warnings if warnings else None
         )
@@ -399,7 +445,7 @@ async def upload_pdf_v2(
             job_id=job_id,
             status="completed",
             pass_url=f"/pass/{job_id}",
-            ai_metadata=enhanced_metadata,
+            ai_metadata=sanitize_metadata(enhanced_metadata),
             ticket_count=len(pkpass_files),
             warnings=warnings if warnings else None,
         )
@@ -443,7 +489,7 @@ async def get_status(
         status=job["status"],
         progress=job["progress"],
         result_url=f"/pass/{job_id}" if job["status"] == "completed" else None,
-        ai_metadata=metadata_to_return,
+        ai_metadata=sanitize_metadata(metadata_to_return),
         warnings=job.get("warnings")
     )
 
