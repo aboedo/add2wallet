@@ -7,7 +7,7 @@ class ActionViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .clear
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.3)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -38,7 +38,10 @@ class ActionViewController: UIViewController {
     }
     
     private func handleLoadedItem(data: Any?, error: Error?) {
-        guard error == nil else { done(); return }
+        guard error == nil else {
+            showError("Could not read the PDF.")
+            return
+        }
         
         var pdfData: Data?
         var filename = "shared.pdf"
@@ -50,11 +53,13 @@ class ActionViewController: UIViewController {
             pdfData = d
         }
         
-        guard let validData = pdfData else { done(); return }
+        guard let validData = pdfData else {
+            showError("Invalid PDF data.")
+            return
+        }
         
-        // Save to App Group shared container
         guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) else {
-            done()
+            showError("Storage error.")
             return
         }
         
@@ -73,29 +78,53 @@ class ActionViewController: UIViewController {
             let metadataJSON = try JSONSerialization.data(withJSONObject: metadata)
             try metadataJSON.write(to: tokenDir.appendingPathComponent("metadata.json"))
             
-            // Write pending token to shared UserDefaults so the app picks it up
+            // Write pending token so the app picks it up on foreground
             let defaults = UserDefaults(suiteName: appGroupID)
             defaults?.set(token, forKey: "pendingShareToken")
             defaults?.synchronize()
             
-            // Open the main app via URL scheme
+            // Try to open the app directly
             if let url = URL(string: "add2wallet://share/\(token)") {
-                // extensionContext?.open() works for action extensions on iOS 16+
-                extensionContext?.open(url, completionHandler: { [weak self] success in
-                    if !success {
-                        // URL scheme failed — that's OK, the app will pick up the
-                        // pending token from UserDefaults when it comes to foreground
-                        print("URL scheme open failed, relying on foreground detection")
+                extensionContext?.open(url) { [weak self] success in
+                    DispatchQueue.main.async {
+                        if success {
+                            self?.done()
+                        } else {
+                            // Can't open app — tell user to do it manually
+                            self?.showSuccess(filename: filename)
+                        }
                     }
-                    self?.done()
-                })
-                return
+                }
+            } else {
+                showSuccess(filename: filename)
             }
         } catch {
-            print("Share extension error: \(error)")
+            showError("Could not save PDF.")
         }
-        
-        done()
+    }
+    
+    private func showSuccess(filename: String) {
+        let alert = UIAlertController(
+            title: "PDF Ready! 🎫",
+            message: "\(filename) has been imported. Open Add2Wallet to create your pass.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            self?.done()
+        })
+        present(alert, animated: true)
+    }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            self?.done()
+        })
+        present(alert, animated: true)
     }
     
     private func done() {
