@@ -52,3 +52,8 @@ certificates/*.cer
 # OS
 .DS_Store
 Thumbs.db
+# Local pip packages
+annotated_types*/
+pydantic*/
+typing_extensions*/
+typing_inspection*/
