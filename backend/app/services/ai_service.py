@@ -220,7 +220,7 @@ Important:
             # Add processing metadata
             extracted_data["ai_processed"] = True
             extracted_data["processing_timestamp"] = datetime.now().isoformat()
-            extracted_data["model_used"] = "gpt-4"
+            extracted_data["model_used"] = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
             
             return extracted_data
             
@@ -452,7 +452,7 @@ Important:
             """
 
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                 messages=[
                     {
                         "role": "system",
@@ -521,7 +521,7 @@ Important:
             """
 
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                 messages=[
                     {
                         "role": "system",
