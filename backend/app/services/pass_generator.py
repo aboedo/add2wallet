@@ -253,9 +253,35 @@ class PassGenerator:
             base_pass_info = self._extract_pass_info(pdf_text)
             print(f"🎯 Extracted info: {base_pass_info}")
         
-        # Step 3: Create tickets based on detected barcodes
+        # Step 3: Create tickets based on passengers and/or barcodes
         tickets = []
-        if barcodes:
+        passengers = base_pass_info.get('passengers') if base_pass_info else None
+        
+        if passengers and isinstance(passengers, list) and len(passengers) > 1:
+            # Multiple passengers — one pass per person
+            print(f"👥 Multiple passengers detected: {passengers}")
+            
+            # Distribute barcodes across passengers if we have enough
+            consolidated_barcodes = []
+            if barcodes:
+                consolidated_barcodes = self._consolidate_barcodes_for_single_pass(barcodes, filename)
+            
+            for i, passenger_name in enumerate(passengers):
+                passenger_info = dict(base_pass_info)
+                passenger_info['passenger_name'] = passenger_name
+                
+                # Assign barcode if available (round-robin if fewer barcodes than passengers)
+                barcode = None
+                if consolidated_barcodes:
+                    barcode = consolidated_barcodes[i % len(consolidated_barcodes)]
+                
+                tickets.append({
+                    'barcode': barcode,
+                    'metadata': passenger_info,
+                    'ticket_number': i + 1,
+                    'total_tickets': len(passengers)
+                })
+        elif barcodes:
             # Apply intelligent barcode consolidation for single-pass documents
             consolidated_barcodes = self._consolidate_barcodes_for_single_pass(barcodes, filename)
             
@@ -268,7 +294,7 @@ class PassGenerator:
                     'total_tickets': len(consolidated_barcodes)
                 })
         else:
-            # No barcodes, create single pass
+            # No barcodes, no multiple passengers — single pass
             tickets.append({
                 'barcode': None,
                 'metadata': base_pass_info,
@@ -330,8 +356,11 @@ class PassGenerator:
                          filename.replace('.pdf', '').replace('_', ' ').title())
             base_title = self._sanitize_title(base_title, fallback_name=pass_info.get('event_name') or filename)
             
-            # Customize title for multiple tickets
-            if total_tickets > 1:
+            # Customize title for multiple tickets / passengers
+            passenger_name = pass_info.get('passenger_name')
+            if passenger_name:
+                title = base_title  # Keep title clean, passenger goes in fields
+            elif total_tickets > 1:
                 title = f"{base_title} (#{ticket_num})"
             else:
                 title = base_title
@@ -465,6 +494,15 @@ class PassGenerator:
         })
         
         # Secondary fields - prioritize most relevant information
+        # Passenger name (for multi-passenger tickets)
+        if pass_info.get('passenger_name'):
+            secondary_fields.append({
+                "key": "passenger",
+                "label": "Passenger",
+                "value": pass_info['passenger_name']
+            })
+            print(f"   Added passenger: {pass_info['passenger_name']}")
+        
         # Date and time
         if pass_info.get('date'):
             secondary_fields.append({

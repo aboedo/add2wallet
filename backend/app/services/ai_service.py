@@ -164,6 +164,7 @@ Return JSON with extracted information:
     "nearby_landmarks": ["List of nearby landmarks mentioned"],
     "public_transport": "Public transport access info",
     "accessibility": "Accessibility information if mentioned",
+    "passengers": ["List of individual passenger/attendee names if the document is for multiple people. Each name gets its own pass. Return null if only one person or unclear."],
     "suggested_bg_color": "A background color for the Apple Wallet pass as rgb(R, G, B). Choose a color that represents the brand, venue, or event. Use the brand's primary color if known (e.g., Louvre = rgb(30, 30, 30), Ryanair = rgb(0, 51, 161), FC Barcelona = rgb(164, 0, 63)). For unknown brands, pick a rich, distinctive color based on the event type. NEVER use grey or beige.",
     "suggested_fg_color": "A foreground (text) color for the Apple Wallet pass as rgb(R, G, B). Must have at least 4.5:1 contrast ratio with the background. Use rgb(255, 255, 255) for dark backgrounds or rgb(0, 0, 0) for light backgrounds.",
     "suggested_label_color": "A label color for the Apple Wallet pass as rgb(R, G, B). Slightly dimmer than the foreground color. Must be readable on the background."
