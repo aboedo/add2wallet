@@ -152,6 +152,11 @@ async def apple_app_site_association():
         headers={"Content-Type": "application/json"}
     )
 
+@app.get("/healthz")
+async def healthz():
+    """Lightweight health check for Railway / load balancer probes."""
+    return {"status": "ok"}
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint to test basic functionality"""

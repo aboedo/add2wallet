@@ -22,4 +22,4 @@ python3 -c "import numpy; print('✅ numpy imported successfully')" || exit 1
 echo "✅ All critical imports successful"
 
 # Start the FastAPI server with uvicorn
-exec uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+exec uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1 --timeout-keep-alive 65

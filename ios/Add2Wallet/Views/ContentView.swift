@@ -268,7 +268,10 @@ struct ContentView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingAddPassVC, onDismiss: {
+            .sheet(isPresented: Binding(
+                get: { showingAddPassVC && passViewController != nil },
+                set: { showingAddPassVC = $0 }
+            ), onDismiss: {
                 // Reset state after dismissal
                 passAddedSuccessfully = false
             }) {
@@ -331,6 +334,8 @@ struct ContentView: View {
                                 // Balance should already be updated from onPurchaseCompleted
                                 // but force one more refresh just in case
                                 await usageManager.forceRefreshBalance()
+                                // Bypass balance check — user just purchased
+                                viewModel.isRetry = true
                                 viewModel.uploadSelected()
                             }
                         }
