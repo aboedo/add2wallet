@@ -262,19 +262,14 @@ class PassGenerator:
             # Multiple passengers — one pass per person
             print(f"👥 Multiple passengers detected: {passengers}")
             
-            # Distribute barcodes across passengers if we have enough
-            consolidated_barcodes = []
-            if barcodes:
-                consolidated_barcodes = self._consolidate_barcodes_for_single_pass(barcodes, filename)
+            # Smart barcode distribution for multi-passenger
+            per_passenger_barcodes = self._distribute_barcodes_for_passengers(barcodes, len(passengers))
             
             for i, passenger_name in enumerate(passengers):
                 passenger_info = dict(base_pass_info)
                 passenger_info['passenger_name'] = passenger_name
                 
-                # Assign barcode if available (round-robin if fewer barcodes than passengers)
-                barcode = None
-                if consolidated_barcodes:
-                    barcode = consolidated_barcodes[i % len(consolidated_barcodes)]
+                barcode = per_passenger_barcodes[i] if i < len(per_passenger_barcodes) else None
                 
                 tickets.append({
                     'barcode': barcode,
@@ -1710,6 +1705,62 @@ class PassGenerator:
             return desc[:80]
         except Exception:
             return f"Digital pass from {filename}"[:80]
+
+    def _distribute_barcodes_for_passengers(self, barcodes: List[Dict[str, Any]], passenger_count: int) -> List[Optional[Dict[str, Any]]]:
+        """Smart barcode distribution for multi-passenger documents.
+        
+        Barcodes that appear multiple times (identical data) are likely shared/booking-level.
+        Barcodes that appear exactly once are likely individual per-passenger.
+        
+        Priority: assign unique (individual) barcodes first, fall back to shared ones.
+        """
+        if not barcodes or passenger_count == 0:
+            return [None] * passenger_count
+        
+        # Count occurrences of each barcode by data content
+        from collections import Counter
+        data_counts = Counter(bc.get('data', '') for bc in barcodes)
+        
+        # Separate into individual (appear once) vs shared (appear multiple times)
+        seen_data = set()
+        individual = []
+        shared = []
+        for bc in barcodes:
+            data = bc.get('data', '')
+            if data in seen_data:
+                continue  # skip duplicate entries
+            seen_data.add(data)
+            
+            if data_counts[data] == 1:
+                individual.append(bc)
+            else:
+                shared.append(bc)
+        
+        print(f"🎫 Barcode distribution: {len(individual)} individual, {len(shared)} shared (from {len(barcodes)} total)")
+        for bc in individual:
+            print(f"   Individual: {bc.get('type','?')} - {bc.get('data','')[:40]}...")
+        for bc in shared:
+            print(f"   Shared (x{data_counts[bc.get('data','')]}): {bc.get('type','?')} - {bc.get('data','')[:40]}...")
+        
+        # If we have exactly N individual barcodes for N passengers → perfect match
+        if len(individual) == passenger_count:
+            print(f"   ✅ Perfect match: {len(individual)} individual barcodes for {passenger_count} passengers")
+            return individual
+        
+        # If we have more individual than passengers, take the first N
+        if len(individual) > passenger_count:
+            print(f"   ✅ More individual than passengers, using first {passenger_count}")
+            return individual[:passenger_count]
+        
+        # If we have fewer individual than passengers, supplement with shared
+        result = list(individual)
+        for i in range(len(result), passenger_count):
+            if shared:
+                result.append(shared[i % len(shared)])
+            else:
+                result.append(None)
+        print(f"   ⚠️ Supplemented with shared barcodes: {len(result)} total")
+        return result
 
     def _consolidate_barcodes_for_single_pass(self, barcodes: List[Dict[str, Any]], filename: str) -> List[Dict[str, Any]]:
         """Consolidate barcodes for single-pass documents to avoid creating multiple passes.

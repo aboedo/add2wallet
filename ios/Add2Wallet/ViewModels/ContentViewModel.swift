@@ -326,6 +326,9 @@ class ContentViewModel: ObservableObject {
                     self.ticketCount = response.ticketCount
                     self.warnings = response.warnings ?? []
                     if response.status == "completed", let passUrl = response.passUrl {
+                        // Server done — snap progress to 100%
+                        self.progressViewModel.completeProgress()
+                        
                         // Refresh balance after successful pass generation
                         Task { @MainActor in
                             self.usageManager.passGenerated()
