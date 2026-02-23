@@ -28,7 +28,7 @@ struct AsyncMapView: View {
     }
     
     private var finalCoordinate: CLLocationCoordinate2D? {
-        // Prefer geocoded address coordinate, fallback to GPS coordinates
+        // Prefer on-device geocoded coordinate (more accurate), fallback to server GPS
         if let coord = coordinateFromAddress {
             return coord
         } else if let lat = metadata.latitude, let lon = metadata.longitude {
@@ -126,15 +126,18 @@ struct AsyncMapView: View {
     }
     
     private func geocodeAddressIfNeeded() {
-        // Only geocode if we have an address and don't already have coordinates
+        // Always geocode if we have an address — on-device geocoding is more accurate
+        // than server-provided lat/long (which can be wrong for the venue)
         guard coordinateFromAddress == nil,
-              !hasCoordinates,
               let address = metadata.venueAddress,
               !address.isEmpty else {
             return
         }
         
-        isLoadingCoordinate = true
+        // Only show loading spinner if we don't have server coords to show meanwhile
+        if !hasCoordinates {
+            isLoadingCoordinate = true
+        }
         
         Task {
             await performGeocoding(for: address)

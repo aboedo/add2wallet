@@ -226,6 +226,8 @@ struct ContentView: View {
                 ) { notification in
                     if let userInfo = notification.userInfo,
                        let passVC = userInfo["passViewController"] as? PKAddPassesViewController {
+                        // Reset showingAddPassVC first to ensure clean state for new pass
+                        self.showingAddPassVC = false
                         self.passViewController = passVC
                     }
                 }
@@ -272,7 +274,8 @@ struct ContentView: View {
                 get: { showingAddPassVC && passViewController != nil },
                 set: { showingAddPassVC = $0 }
             ), onDismiss: {
-                // Reset state after dismissal
+                // Reset all state after dismissal to prevent stale sheet on next pass
+                showingAddPassVC = false
                 passAddedSuccessfully = false
             }) {
                 if let passVC = passViewController {

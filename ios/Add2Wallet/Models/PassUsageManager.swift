@@ -62,9 +62,10 @@ class PassUsageManager: ObservableObject {
     // This will be called from server-side after successful pass generation
     func passGenerated() {
         // The server will handle the deduction via RevenueCat API
-        // We just refresh the balance to show updated count
+        // Use retry since server may not have deducted yet when we check
+        let currentBalance = remainingPasses
         Task {
-            await refreshBalance()
+            await forceRefreshBalanceWithRetry(previousBalance: currentBalance)
         }
     }
     
