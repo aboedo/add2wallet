@@ -55,16 +55,16 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     ScrollView {
                     VStack(spacing: ThemeManager.Spacing.md) {
-                    // Hero card — hide while processing
-                    if !viewModel.isProcessing {
-                        HeroCardStack(
-                            remainingPasses: usageManager.remainingPasses,
-                            isLoadingBalance: usageManager.isLoadingBalance,
-                            passColor: nil,
-                            onSelectPDF: { viewModel.selectPDF() },
-                            onSamplePDF: { viewModel.loadDemoFile() }
-                        )
-                    }
+                    // Hero card — always visible
+                    HeroCardStack(
+                        remainingPasses: usageManager.remainingPasses,
+                        isLoadingBalance: usageManager.isLoadingBalance,
+                        passColor: nil,
+                        onSelectPDF: { viewModel.selectPDF() },
+                        onSamplePDF: { viewModel.loadDemoFile() }
+                    )
+                    .opacity(viewModel.isProcessing ? 0.7 : 1.0)
+                    .allowsHitTesting(!viewModel.isProcessing)
                     
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: ThemeManager.Spacing.md) {
@@ -90,7 +90,6 @@ struct ContentView: View {
                         .padding(.top, ThemeManager.Spacing.sm)
                     } else if viewModel.isProcessing {
                         ProgressView(contentViewModel: viewModel)
-                            .padding(.top, 40)
                     } else {
                         // Empty state
                         VStack(spacing: ThemeManager.Spacing.md) {
@@ -312,13 +311,15 @@ struct ContentView: View {
                 PaywallView { customerInfo in
                     print("✅ Purchase completed with customerInfo, refreshing balance...")
                     viewModel.purchaseCompletedPendingUpload = true
-                    // customerInfo stream will trigger forceRefreshBalance automatically
                     return (userCancelled: false, error: nil)
                 }
                 .onDisappear {
                     Task { @MainActor in
                         if viewModel.purchaseCompletedPendingUpload {
                             viewModel.purchaseCompletedPendingUpload = false
+                            // Wait for balance to actually update before proceeding
+                            let previousBalance = usageManager.remainingPasses
+                            await usageManager.forceRefreshBalanceWithRetry(previousBalance: previousBalance)
                             viewModel.uploadSelected()
                         }
                     }

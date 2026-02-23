@@ -95,7 +95,10 @@ class PassUsageManager: ObservableObject {
             // Force fetch fresh data from RevenueCat
             Purchases.shared.invalidateCustomerInfoCache()
             
-            // Fetch virtual currencies from RevenueCat
+            // Fetch fresh customer info first (triggers server sync)
+            self.customerInfo = try await Purchases.shared.customerInfo()
+            
+            // Then fetch virtual currencies
             let virtualCurrencies = try await Purchases.shared.virtualCurrencies()
             
             // Get PASS balance
@@ -107,12 +110,30 @@ class PassUsageManager: ObservableObject {
                 print("⚠️ Force refresh: No passes found")
             }
             
-            // Also update customer info
-            self.customerInfo = try await Purchases.shared.customerInfo()
         } catch {
             print("❌ Error force fetching virtual currencies: \(error)")
             self.remainingPasses = 0
         }
+    }
+    
+    /// Force refresh with retry — use after purchases where server may need time to process
+    func forceRefreshBalanceWithRetry(previousBalance: Int, maxRetries: Int = 3) async {
+        print("🔄 Force refresh with retry (previous balance: \(previousBalance))...")
+        
+        for attempt in 1...maxRetries {
+            // Exponential backoff: 1s, 2s, 4s
+            let delayNanos = UInt64(pow(2.0, Double(attempt - 1))) * 1_000_000_000
+            try? await Task.sleep(nanoseconds: delayNanos)
+            
+            await forceRefreshBalance()
+            
+            if remainingPasses != previousBalance {
+                print("✅ Balance updated after attempt \(attempt): \(previousBalance) → \(remainingPasses)")
+                return
+            }
+            print("⏳ Attempt \(attempt): balance still \(remainingPasses), retrying...")
+        }
+        print("⚠️ Balance didn't change after \(maxRetries) retries")
     }
 }
 

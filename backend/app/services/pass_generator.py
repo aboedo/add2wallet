@@ -624,7 +624,7 @@ class PassGenerator:
         pass_json = {
             "formatVersion": 1,
             "passTypeIdentifier": pass_type_id,
-            "serialNumber": f"enhanced-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "serialNumber": f"enhanced-{datetime.now().strftime('%Y%m%d%H%M%S')}-t{ticket_num}",
             "teamIdentifier": team_id,
             "organizationName": organization,
             "description": description,
