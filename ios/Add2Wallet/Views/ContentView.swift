@@ -123,7 +123,7 @@ struct ContentView: View {
             .navigationBarHidden(true)
             .safeAreaInset(edge: .bottom) {
                 // Sticky bottom CTA using ThemeManager design system
-                if viewModel.selectedFileURL != nil || viewModel.isProcessing || (viewModel.errorMessage != nil && !viewModel.errorMessage!.isEmpty) {
+                if (viewModel.selectedFileURL != nil && !viewModel.isProcessing) || (viewModel.errorMessage != nil && !viewModel.errorMessage!.isEmpty) {
                     VStack(spacing: ThemeManager.Spacing.sm) {
                         // Status message
                         if let message = viewModel.errorMessage, !message.isEmpty {
