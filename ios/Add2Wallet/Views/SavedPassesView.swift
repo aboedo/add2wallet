@@ -10,24 +10,28 @@ struct SavedPassesView: View {
     @State private var selectedPass: SavedPass?
     @State private var selectedTab = 0
     @State private var showingCustomerCenter = false
+    @State private var showExpiredPasses = false
     
-    // Group passes by month based on event date (fallback to creation date)
-    private var groupedPasses: [(String, [SavedPass])] {
+    // Active (non-expired) passes grouped by month
+    private var activePasses: [SavedPass] {
+        savedPasses.filter { !$0.isExpired }
+    }
+    
+    private var expiredPasses: [SavedPass] {
+        savedPasses.filter { $0.isExpired }
+    }
+    
+    // Group passes by month based on event date
+    private func groupByMonth(_ passes: [SavedPass]) -> [(String, [SavedPass])] {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         
-        let grouped = Dictionary(grouping: savedPasses) { pass in
-            let dateToUse = eventDateOrFallback(for: pass)
-            return formatter.string(from: dateToUse)
+        let grouped = Dictionary(grouping: passes) { pass in
+            formatter.string(from: pass.eventDateOrFallback)
         }
         
         return grouped.sorted { $0.value.first!.eventDateOrFallback > $1.value.first!.eventDateOrFallback }
             .map { ($0.key, $0.value.sorted { $0.eventDateOrFallback > $1.eventDateOrFallback }) }
-    }
-    
-    // Helper to get event date or fallback to creation date
-    private func eventDateOrFallback(for pass: SavedPass) -> Date {
-        return pass.eventDateOrFallback
     }
     
     var body: some View {
@@ -93,7 +97,8 @@ struct SavedPassesView: View {
     
     private var passListView: some View {
         List {
-            ForEach(groupedPasses, id: \.0) { month, passes in
+            // Active passes grouped by month
+            ForEach(groupByMonth(activePasses), id: \.0) { month, passes in
                 Section(header: 
                     Text(month.uppercased())
                         .font(ThemeManager.Typography.sectionHeader)
@@ -108,6 +113,48 @@ struct SavedPassesView: View {
                     .onDelete { offsets in
                         deletePassesInSection(passes: passes, offsets: offsets)
                     }
+                }
+            }
+            
+            // Expired passes — collapsible, collapsed by default
+            if !expiredPasses.isEmpty {
+                Section {
+                    DisclosureGroup(isExpanded: $showExpiredPasses) {
+                        ForEach(groupByMonth(expiredPasses), id: \.0) { month, passes in
+                            Section(header:
+                                Text(month.uppercased())
+                                    .font(ThemeManager.Typography.caption)
+                                    .foregroundColor(ThemeManager.Colors.textTertiary)
+                            ) {
+                                ForEach(passes) { pass in
+                                    PassRowView(pass: pass) {
+                                        selectedPass = pass
+                                    }
+                                    .opacity(0.6)
+                                }
+                                .onDelete { offsets in
+                                    deletePassesInSection(passes: passes, offsets: offsets)
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: ThemeManager.Spacing.sm) {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .foregroundColor(ThemeManager.Colors.textTertiary)
+                            Text("Expired Passes")
+                                .font(ThemeManager.Typography.bodySemibold)
+                                .foregroundColor(ThemeManager.Colors.textSecondary)
+                            Spacer()
+                            Text("\(expiredPasses.count)")
+                                .font(ThemeManager.Typography.footnote)
+                                .foregroundColor(ThemeManager.Colors.textTertiary)
+                                .padding(.horizontal, ThemeManager.Spacing.sm)
+                                .padding(.vertical, ThemeManager.Spacing.xs)
+                                .background(ThemeManager.Colors.textTertiary.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .tint(ThemeManager.Colors.textTertiary)
                 }
             }
         }

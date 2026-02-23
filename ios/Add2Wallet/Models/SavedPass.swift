@@ -108,6 +108,20 @@ class SavedPass {
         return passDatas.count
     }
     
+    /// Whether the event date has passed (expired)
+    var isExpired: Bool {
+        guard let eventDateString = eventDate, !eventDateString.isEmpty else {
+            // No date → never expires
+            return false
+        }
+        // eventDateOrFallback already parses multiple formats
+        let eventDay = eventDateOrFallback
+        // If it fell back to createdAt and there's no real event date, don't expire
+        if eventDay == createdAt { return false }
+        // Expired = event date is before start of today
+        return Calendar.current.startOfDay(for: eventDay) < Calendar.current.startOfDay(for: Date())
+    }
+    
     // Parse event date string or fallback to creation date for sorting/grouping
     var eventDateOrFallback: Date {
         if let eventDateString = eventDate, !eventDateString.isEmpty {

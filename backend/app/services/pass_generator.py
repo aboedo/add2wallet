@@ -636,6 +636,19 @@ class PassGenerator:
             }
         }
 
+        # Add expirationDate so Apple Wallet greys out expired passes
+        # Event is over the next day
+        event_date_str = pass_info.get('date')
+        if event_date_str:
+            try:
+                from datetime import timedelta
+                event_date = datetime.strptime(event_date_str, '%Y-%m-%d')
+                expiration = event_date + timedelta(days=1)
+                pass_json["expirationDate"] = expiration.strftime('%Y-%m-%dT00:00Z')
+                print(f"📅 Set expirationDate: {pass_json['expirationDate']}")
+            except (ValueError, TypeError):
+                print(f"⚠️ Could not parse event date for expiration: {event_date_str}")
+
         # Add associatedStoreIdentifiers if available
         associated_store_ids = self._get_associated_store_identifiers()
         if associated_store_ids:
