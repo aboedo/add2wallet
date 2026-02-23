@@ -209,10 +209,14 @@ struct ContentView: View {
                 }
             }
             .task {
-                // Refresh balance when view appears
-                await usageManager.refreshBalance()
+                await usageManager.forceRefreshBalance()
             }
             .onAppear {
+                // Refresh balance every time tab appears
+                Task {
+                    await usageManager.forceRefreshBalance()
+                }
+                
                 // Set up model context for view model
                 viewModel.setModelContext(modelContext)
                 

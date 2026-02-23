@@ -117,8 +117,11 @@ struct Add2WalletApp: App {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                // Check if the share extension left a pending PDF
                 URLHandler.checkForPendingShareToken()
+                // Refresh balance when app comes to foreground
+                Task {
+                    await PassUsageManager.shared.forceRefreshBalance()
+                }
             }
         }
     }
