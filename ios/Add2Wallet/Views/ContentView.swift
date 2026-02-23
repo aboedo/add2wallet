@@ -55,14 +55,16 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     ScrollView {
                     VStack(spacing: ThemeManager.Spacing.md) {
-                    // Hero card stack for home screen - matches pass color when available
-                    HeroCardStack(
-                        remainingPasses: usageManager.remainingPasses,
-                        isLoadingBalance: usageManager.isLoadingBalance,
-                        passColor: nil,
-                        onSelectPDF: { viewModel.selectPDF() },
-                        onSamplePDF: { viewModel.loadDemoFile() }
-                    )
+                    // Hero card — hide while processing
+                    if !viewModel.isProcessing {
+                        HeroCardStack(
+                            remainingPasses: usageManager.remainingPasses,
+                            isLoadingBalance: usageManager.isLoadingBalance,
+                            passColor: nil,
+                            onSelectPDF: { viewModel.selectPDF() },
+                            onSamplePDF: { viewModel.loadDemoFile() }
+                        )
+                    }
                     
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: ThemeManager.Spacing.md) {
