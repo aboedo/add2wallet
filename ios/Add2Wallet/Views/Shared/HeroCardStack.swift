@@ -4,6 +4,7 @@ struct HeroCardStack: View {
     let remainingPasses: Int
     let isLoadingBalance: Bool
     let passColor: Color?
+    var isProcessing: Bool = false
     let onSelectPDF: () -> Void
     let onSamplePDF: () -> Void
     @State private var buttonBounce = 0
@@ -23,13 +24,16 @@ struct HeroCardStack: View {
                     .multilineTextAlignment(.center)
             }
             
-            // Middle: Primary "Select PDF" button
+            // Middle: Primary button — changes copy when processing
             Button(action: {
                 ThemeManager.Haptics.light()
                 buttonBounce += 1
                 onSelectPDF()
             }) {
-                Label("Select PDF", systemImage: "doc.text.fill")
+                Label(
+                    isProcessing ? "PDF uploaded, processing…" : "Select PDF",
+                    systemImage: isProcessing ? "arrow.trianglehead.2.clockwise" : "doc.text.fill"
+                )
                     .font(ThemeManager.Typography.bodySemibold)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -45,6 +49,7 @@ struct HeroCardStack: View {
                     .symbolEffect(.bounce, value: buttonBounce)
             }
             .buttonStyle(.plain)
+            .disabled(isProcessing)
             
             // Usage counter
             HStack {

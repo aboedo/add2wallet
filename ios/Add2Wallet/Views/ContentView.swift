@@ -60,11 +60,10 @@ struct ContentView: View {
                         remainingPasses: usageManager.remainingPasses,
                         isLoadingBalance: usageManager.isLoadingBalance,
                         passColor: nil,
+                        isProcessing: viewModel.isProcessing,
                         onSelectPDF: { viewModel.selectPDF() },
                         onSamplePDF: { viewModel.loadDemoFile() }
                     )
-                    .opacity(viewModel.isProcessing ? 0.7 : 1.0)
-                    .allowsHitTesting(!viewModel.isProcessing)
                     
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: ThemeManager.Spacing.md) {
