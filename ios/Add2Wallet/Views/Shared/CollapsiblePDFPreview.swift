@@ -55,7 +55,6 @@ struct CollapsiblePDFPreview: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
                 .themedCard()
-                .padding(.horizontal, ThemeManager.Spacing.md)
             } else {
                 // Collapsed view - compact thumbnail row
                 Button {
@@ -97,7 +96,6 @@ struct CollapsiblePDFPreview: View {
                     .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, ThemeManager.Spacing.md)
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
         }

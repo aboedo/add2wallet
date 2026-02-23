@@ -198,11 +198,12 @@ struct ContentView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, ThemeManager.Spacing.md)
+                    .padding(.horizontal, ThemeManager.Spacing.lg)
                     .padding(.top, ThemeManager.Spacing.sm)
                     .padding(.bottom, ThemeManager.Spacing.md)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
                     .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: -4)
+                    .padding(.horizontal, ThemeManager.Spacing.xs)
                     .animation(ThemeManager.Animations.standard, value: viewModel.selectedFileURL)
                 }
             }

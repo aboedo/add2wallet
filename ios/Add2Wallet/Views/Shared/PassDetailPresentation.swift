@@ -55,7 +55,6 @@ struct PassDetailPresentation: View {
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: ThemeManager.CornerRadius.large, bottomTrailingRadius: ThemeManager.CornerRadius.large))
         }
-        .padding(.horizontal)
     }
     
     @ViewBuilder
