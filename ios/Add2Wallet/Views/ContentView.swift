@@ -311,7 +311,16 @@ struct ContentView: View {
                 .onDisappear {
                     Task { @MainActor in
                         print("📱 Paywall dismissed, force refreshing balance...")
+                        let previousBalance = usageManager.remainingPasses
                         await usageManager.forceRefreshBalance()
+                        
+                        // If balance didn't change and we expected a purchase, retry after delay
+                        if viewModel.purchaseCompletedPendingUpload && usageManager.remainingPasses <= previousBalance {
+                            print("🔄 Balance unchanged, retrying after delay...")
+                            try? await Task.sleep(for: .seconds(1.5))
+                            await usageManager.forceRefreshBalance()
+                        }
+                        
                         if viewModel.purchaseCompletedPendingUpload {
                             viewModel.purchaseCompletedPendingUpload = false
                             viewModel.uploadSelected()

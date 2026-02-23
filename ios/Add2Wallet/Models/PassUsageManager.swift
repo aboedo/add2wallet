@@ -19,8 +19,8 @@ class PassUsageManager: ObservableObject {
                     self.customerInfo = customerInfo
                     print("✅ Customer info updated via stream, refreshing balance...")
                 }
-                // Refresh virtual currency balance when customer info changes
-                await refreshBalance()
+                // Force refresh (with cache invalidation) to pick up virtual currency changes
+                await forceRefreshBalance()
             }
         }
         
