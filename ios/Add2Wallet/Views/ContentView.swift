@@ -308,22 +308,33 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $viewModel.showingPurchaseAlert) {
-                PaywallView { customerInfo in
-                    print("✅ Purchase completed with customerInfo, refreshing balance...")
-                    viewModel.purchaseCompletedPendingUpload = true
-                    return (userCancelled: false, error: nil)
-                }
-                .onDisappear {
-                    Task { @MainActor in
-                        if viewModel.purchaseCompletedPendingUpload {
-                            viewModel.purchaseCompletedPendingUpload = false
-                            // Wait for balance to actually update before proceeding
-                            let previousBalance = usageManager.remainingPasses
+                PaywallView(displayCloseButton: true)
+                    .onPurchaseCompleted { customerInfo in
+                        print("✅ Purchase completed, starting balance refresh...")
+                        viewModel.purchaseCompletedPendingUpload = true
+                        // Start refresh immediately — don't wait for dismiss
+                        let previousBalance = usageManager.remainingPasses
+                        Task {
                             await usageManager.forceRefreshBalanceWithRetry(previousBalance: previousBalance)
-                            viewModel.uploadSelected()
                         }
                     }
-                }
+                    .onRestoreCompleted { customerInfo in
+                        print("✅ Restore completed, refreshing balance...")
+                        Task {
+                            await usageManager.forceRefreshBalance()
+                        }
+                    }
+                    .onDisappear {
+                        Task { @MainActor in
+                            if viewModel.purchaseCompletedPendingUpload {
+                                viewModel.purchaseCompletedPendingUpload = false
+                                // Balance should already be updated from onPurchaseCompleted
+                                // but force one more refresh just in case
+                                await usageManager.forceRefreshBalance()
+                                viewModel.uploadSelected()
+                            }
+                        }
+                    }
             }
             .sheet(isPresented: $showingMailComposer) {
                 if let data = mailComposerData {
