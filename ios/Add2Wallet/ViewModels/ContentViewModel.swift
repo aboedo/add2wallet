@@ -8,7 +8,11 @@ import UIKit
 
 @MainActor
 class ContentViewModel: ObservableObject {
-    @Published var isProcessing = false
+    @Published var isProcessing = false {
+        didSet {
+            if !isProcessing { endBackgroundTaskIfNeeded() }
+        }
+    }
     @Published var errorMessage: String?
     @Published var funnyPhrase: String = ""
     @Published var hasError = false
@@ -29,6 +33,9 @@ class ContentViewModel: ObservableObject {
     // Store PDF data for error reporting
     private var currentPDFData: Data?
     private var currentPDFFileName: String?
+    
+    // Background task to keep processing when app is backgrounded
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
@@ -258,12 +265,30 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    private func endBackgroundTaskIfNeeded() {
+        if backgroundTaskID != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+            print("🔄 Background task ended")
+        }
+    }
+    
     func processPDF(data: Data, filename: String) {
         isProcessing = true
         errorMessage = nil
         hasError = false
         errorCode = nil
         showingContactSupport = false
+        
+        // Request background execution time (~30s) so processing
+        // survives the user switching to another app
+        endBackgroundTaskIfNeeded()
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "PDFProcessing") { [weak self] in
+            // Expiration handler — iOS is about to kill us
+            print("⚠️ Background task expiring")
+            self?.endBackgroundTaskIfNeeded()
+        }
+        print("🔄 Background task started (id: \(backgroundTaskID.rawValue))")
         
         // Start progress animation
         progressViewModel.startProgress()
