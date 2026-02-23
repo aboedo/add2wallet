@@ -23,8 +23,6 @@ struct SavedPassDetailView: View {
             ZStack {
                 ScrollView {
                     VStack(spacing: 16) {
-                        // Add top padding to account for the overlay
-                        Color.clear.frame(height: 60)
                         
                         // Use unified pass detail presentation
                         if let metadata = savedPass.metadata {
@@ -85,29 +83,9 @@ struct SavedPassDetailView: View {
                     CollapsiblePDFPreview(url: tempPDFURL)
                         .padding(.bottom, ThemeManager.Spacing.md)
                     
-                    Spacer(minLength: 80)
                 }
                 
                 
-                }
-                
-                // Semi-transparent overlay at the top for better contrast
-                VStack {
-                    ZStack {
-                        // Dark gradient overlay for contrast
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.black.opacity(0.6),
-                                Color.black.opacity(0.6),
-//                                Color.clear
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 50)
-                        .ignoresSafeArea()
-                    }
-                    Spacer()
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -118,7 +96,6 @@ struct SavedPassDetailView: View {
                         dismiss()
                     }
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -148,18 +125,16 @@ struct SavedPassDetailView: View {
                             }
                             .themedPrimaryButton()
                             
-                            // Secondary actions row
-                            HStack(spacing: ThemeManager.Spacing.sm) {
-                                // Report issue button
-                                Button {
-                                    ThemeManager.Haptics.selection()
-                                    reportIssue()
-                                } label: {
-                                    Label("Report Issue", systemImage: "exclamationmark.bubble")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .themedSecondaryButton()
+                            // Report issue — subtle text link
+                            Button {
+                                ThemeManager.Haptics.selection()
+                                reportIssue()
+                            } label: {
+                                Text("Report an issue")
+                                    .font(ThemeManager.Typography.footnote)
+                                    .foregroundColor(ThemeManager.Colors.textTertiary)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -169,13 +144,7 @@ struct SavedPassDetailView: View {
                 .frame(maxWidth: .infinity)
                 .background(.thinMaterial)
             }
-            .background(
-                LinearGradient(
-                    colors: [passHeaderColor, passHeaderColor.opacity(0.6)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            .background(Color(.systemGroupedBackground))
             
         }
         .sheet(isPresented: $showingAddPassVC, onDismiss: {
