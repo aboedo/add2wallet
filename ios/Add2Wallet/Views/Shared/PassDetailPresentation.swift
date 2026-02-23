@@ -16,27 +16,35 @@ struct PassDetailPresentation: View {
     }
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Header section with pass color theming - matches SavedPassDetailView
-            VStack(spacing: 8) {
+        VStack(spacing: ThemeManager.Spacing.md) {
+            // Pass card — self-contained with pass colors
+            VStack(spacing: ThemeManager.Spacing.sm) {
                 // Title
                 Text(metadata.title ?? metadata.eventName ?? "Untitled Pass")
-                    .font(.largeTitle)
+                    .font(.title2)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white)
                 
-                // Use shared PassMetadataView for subtitle info
+                // Subtitle metadata
                 PassMetadataView(
                     metadata: metadata,
                     style: .detailView,
                     ticketCount: ticketCount
                 )
             }
-            .padding()
+            .padding(ThemeManager.Spacing.lg)
             .frame(maxWidth: .infinity)
+            .background(
+                LinearGradient(
+                    colors: [passColor, darkenedPassColor],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.large))
             
-            // Pass details section
+            // Details section — neutral background
             PassDetailsView(metadata: metadata, ticketCount: isEmbedded ? ticketCount : nil)
                 .transition(.opacity)
         }
