@@ -3,6 +3,7 @@
 import json
 import os
 import tempfile
+import uuid
 import zipfile
 import shutil
 # subprocess removed for Vercel compatibility
@@ -58,7 +59,7 @@ class PassGenerator:
         pass_json = {
             "formatVersion": 1,
             "passTypeIdentifier": pass_type_id,
-            "serialNumber": f"generic-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "serialNumber": f"generic-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}",
             "teamIdentifier": team_id,
             "organizationName": organization,
             "description": description,
@@ -624,7 +625,7 @@ class PassGenerator:
         pass_json = {
             "formatVersion": 1,
             "passTypeIdentifier": pass_type_id,
-            "serialNumber": f"enhanced-{datetime.now().strftime('%Y%m%d%H%M%S')}-t{ticket_num}",
+            "serialNumber": f"enhanced-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}",
             "teamIdentifier": team_id,
             "organizationName": organization,
             "description": description,
