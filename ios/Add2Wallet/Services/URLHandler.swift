@@ -20,6 +20,8 @@ class URLHandler {
         print("🟢 URLHandler: Enqueuing PDF: \(filename) (\(data.count) bytes)")
         pendingPDF = PendingPDF(filename: filename, data: data)
         NotificationManager.postSharedPDFReceived(filename: filename, data: data)
+        // Switch to Generate Pass tab if user is on another tab
+        NotificationCenter.default.post(name: NSNotification.Name("SwitchToGeneratePassTab"), object: nil)
     }
     
     /// Called by ContentViewModel on init to pick up any PDF that arrived before it was ready
