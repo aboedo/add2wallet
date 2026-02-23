@@ -118,22 +118,31 @@ struct ContentView: View {
                         ProgressView(contentViewModel: viewModel)
                             .padding(.top, 40)
                     } else {
-                        // Empty state instructions
-                        VStack(spacing: ThemeManager.Spacing.sm) {
-                            Text("Or use the Share Extension from any app")
-                                .font(ThemeManager.Typography.caption)
-                                .foregroundColor(ThemeManager.Colors.textSecondary)
+                        // Empty state
+                        VStack(spacing: ThemeManager.Spacing.md) {
+                            Image(systemName: "wallet.pass")
+                                .font(.system(size: 64, weight: .thin))
+                                .foregroundColor(ThemeManager.Colors.textTertiary)
+                                .padding(.top, ThemeManager.Spacing.xl)
                             
-                            Text("Open a PDF in Files, Safari, or any app and tap Share → Add to Wallet")
-                                .font(ThemeManager.Typography.caption)
+                            Text("Open a PDF from Files to get started")
+                                .font(ThemeManager.Typography.body)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
-                                .padding(.horizontal, ThemeManager.Spacing.md)
+                            
+                            Button(action: {
+                                ThemeManager.Haptics.selection()
+                                viewModel.loadDemoFile()
+                            }) {
+                                Text("or try a demo")
+                                    .font(ThemeManager.Typography.footnote)
+                                    .foregroundColor(ThemeManager.Colors.brandPrimary)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .padding(.top, ThemeManager.Spacing.sm)
                     }
                     
-                    Spacer(minLength: 80)
+                    Spacer()
                     }
                     .padding()
                 }

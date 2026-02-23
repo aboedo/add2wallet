@@ -3,7 +3,6 @@ import SwiftUI
 struct PassDetailsView: View {
     let metadata: EnhancedPassMetadata
     let ticketCount: Int?
-    private let keyWidth: CGFloat = 120
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -86,22 +85,22 @@ struct PassDetailsView: View {
             .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color(.secondarySystemBackground).opacity(0.8))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
     }
     
     @ViewBuilder
     private func keyValueRow(_ key: String, _ value: String?) -> some View {
         if let value = value, !value.isEmpty {
-            HStack(alignment: .top, spacing: 8) {
-                Text("\(key):")
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary)
-                    .frame(width: keyWidth, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(key.uppercased())
+                    .font(ThemeManager.Typography.caption)
+                    .foregroundColor(ThemeManager.Colors.textTertiary)
                 Text(value)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(ThemeManager.Typography.body)
+                    .foregroundColor(ThemeManager.Colors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.vertical, 2)
         }
     }
 }

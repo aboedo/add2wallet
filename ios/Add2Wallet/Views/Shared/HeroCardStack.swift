@@ -46,38 +46,10 @@ struct HeroCardStack: View {
             }
             .buttonStyle(.plain)
             
-            // Bottom row: Demo button (left) and Usage counter (right)
+            // Usage counter
             HStack {
-                // Demo button on the left
-                Button(action: {
-                    ThemeManager.Haptics.selection()
-                    onSamplePDF()
-                }) {
-                    HStack(spacing: ThemeManager.Spacing.xs) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.9))
-                        
-                        Text("Try a Demo")
-                            .font(ThemeManager.Typography.footnote)
-                            .foregroundColor(.white.opacity(0.9))
-                    }
-                    .padding(.vertical, ThemeManager.Spacing.xs)
-                    .padding(.horizontal, ThemeManager.Spacing.sm)
-                    .background(
-                        .white.opacity(0.1),
-                        in: Capsule()
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(.white.opacity(0.2), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                
                 Spacer()
                 
-                // Usage counter on the right
                 if isLoadingBalance {
                     SwiftUI.ProgressView()
                         .scaleEffect(0.8)

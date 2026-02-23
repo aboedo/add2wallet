@@ -188,10 +188,6 @@ struct PassRowView: View {
                     }
                 }
                 
-                // Chevron indicator
-                Image(systemName: "chevron.right")
-                    .font(ThemeManager.Typography.caption)
-                    .foregroundColor(ThemeManager.Colors.textTertiary)
             }
             .padding(.vertical, ThemeManager.Spacing.sm)
             .padding(.trailing, ThemeManager.Spacing.xs)
@@ -207,12 +203,12 @@ struct PassRowView: View {
     @ViewBuilder
     private var passIcon: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.small)
+            RoundedRectangle(cornerRadius: 10)
                 .fill(passColor)
-                .frame(width: 28, height: 28) // Consistent icon size as specified
+                .frame(width: 36, height: 36)
             
             Image(systemName: passIconName)
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(size: 18, weight: .medium))
                 .foregroundColor(.white)
         }
     }
