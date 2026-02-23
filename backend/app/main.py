@@ -598,20 +598,32 @@ async def list_passes(
         ]
     }
 
+async def _cleanup_old_files():
+    """Periodically remove uploaded PDFs and generated passes older than 30 minutes."""
+    import time
+    while True:
+        await asyncio.sleep(300)  # Run every 5 minutes
+        cutoff = time.time() - 1800  # 30 minutes ago
+        try:
+            for f in UPLOAD_DIR.iterdir():
+                if f.stat().st_mtime < cutoff:
+                    f.unlink(missing_ok=True)
+        except Exception as e:
+            print(f"⚠️ Cleanup error: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    """Start background cleanup task."""
+    asyncio.create_task(_cleanup_old_files())
+
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Clean up temporary files on shutdown."""
-    for job in jobs.values():
-        # Clean up PDF file
-        file_path = Path(job["file_path"])
-        if file_path.exists():
-            file_path.unlink()
-        
-        # Clean up pass file
-        if "pass_path" in job:
-            pass_path = Path(job["pass_path"])
-            if pass_path.exists():
-                pass_path.unlink()
+    """Clean up all temporary files on shutdown."""
+    for f in UPLOAD_DIR.iterdir():
+        try:
+            f.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,0 +1,412 @@
+2026-02-23 10:07:31 +0000 [MT] Initial pipeline context: <IDEDistributionProcessingPipelineContext: 0x771ba5200; archive(resolved)="<IDEArchive: 0x771b23480>", distributionTask(resolved)="2", distributionDestination(resolved)="1", distributionMethod(resolved)="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team(resolved)="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	Chain (15, self inclusive):
+	<IDEDistributionProcessingPipelineContext: 0x771ba5200; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionProcessingPipelineContext: 0x771ba4f00; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770481b80; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770481900; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770481680; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770481400; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770481180; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770480f00; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770480c80; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770480a00; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770480780; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770480500; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="<IDEProvisioningBasicTeam: 0x77242b880; teamID='H9DPH4DQG7', teamName='(null)'>">
+	<IDEDistributionContext: 0x770480280; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="(null)">
+	<IDEDistributionContext: 0x770480000; archive = "<IDEArchive: 0x771b23480>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7724446f0>", team="(null)">
+	<IDEDistributionContext: 0x1057d6710; archive = "<IDEArchive: 0x771b23480>", distributionMethod="(null)", team="(null)">
+</IDEDistributionProcessingPipelineContext: 0x771ba5200>
+2026-02-23 10:07:31 +0000 [MT] Processing step: IDEDistributionCreateDestRootStep
+2026-02-23 10:07:31 +0000 [MT] Processing step: IDEDistributionCopyItemStep
+2026-02-23 10:07:31 +0000 [MT] Running /usr/bin/ditto '-V' '/Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app' '/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root/Payload/Add2Wallet.app'
+2026-02-23 10:07:31 +0000  >>> Copying /Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app 
+2026-02-23 10:07:31 +0000  copying file ./_CodeSignature/CodeResources ... 
+2026-02-23 10:07:31 +0000  22192 bytes for ./_CodeSignature/CodeResources
+2026-02-23 10:07:31 +0000  copying file ./AppIcon60x60@2x.png ... 
+2026-02-23 10:07:31 +0000  28349 bytes for ./AppIcon60x60@2x.png
+2026-02-23 10:07:31 +0000  copying file ./Add2Wallet ... 
+2026-02-23 10:07:31 +0000  8718976 bytes for ./Add2Wallet
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/de.lproj/Localizable.strings ... 
+947 bytes for ./RevenueCat_RevenueCatUI.bundle/de.lproj/Localizable.strings
+copying file ./RevenueCat_RevenueCatUI.bundle/zh_Hans.lproj/Localizable.strings ... 
+826 bytes for ./RevenueCat_RevenueCatUI.bundle/zh_Hans.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/he.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1034 bytes for ./RevenueCat_RevenueCatUI.bundle/he.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/en_AU.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  889 bytes for ./RevenueCat_RevenueCatUI.bundle/en_AU.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/ar.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1016 bytes for ./RevenueCat_RevenueCatUI.bundle/ar.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/el.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1174 bytes for ./RevenueCat_RevenueCatUI.bundle/el.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/ja.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  991 bytes for ./RevenueCat_RevenueCatUI.bundle/ja.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/en.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  889 bytes for ./RevenueCat_RevenueCatUI.bundle/en.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/uk.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1169 bytes for ./RevenueCat_RevenueCatUI.bundle/uk.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/es_419.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  938 bytes for ./RevenueCat_RevenueCatUI.bundle/es_419.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/en_US.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  889 bytes for ./RevenueCat_RevenueCatUI.bundle/en_US.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/pt_BR.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  900 bytes for ./RevenueCat_RevenueCatUI.bundle/pt_BR.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/da.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  903 bytes for ./RevenueCat_RevenueCatUI.bundle/da.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/it.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  928 bytes for ./RevenueCat_RevenueCatUI.bundle/it.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/bg.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1204 bytes for ./RevenueCat_RevenueCatUI.bundle/bg.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/sk.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  911 bytes for ./RevenueCat_RevenueCatUI.bundle/sk.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/kk.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1214 bytes for ./RevenueCat_RevenueCatUI.bundle/kk.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/pt_PT.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  900 bytes for ./RevenueCat_RevenueCatUI.bundle/pt_PT.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/ms.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  893 bytes for ./RevenueCat_RevenueCatUI.bundle/ms.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/sv.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  905 bytes for ./RevenueCat_RevenueCatUI.bundle/sv.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/cs.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  916 bytes for ./RevenueCat_RevenueCatUI.bundle/cs.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/ko.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  942 bytes for ./RevenueCat_RevenueCatUI.bundle/ko.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/zh_Hant.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  829 bytes for ./RevenueCat_RevenueCatUI.bundle/zh_Hant.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/background.jpg ... 
+2026-02-23 10:07:31 +0000  106394 bytes for ./RevenueCat_RevenueCatUI.bundle/background.jpg
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/en_CA.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  889 bytes for ./RevenueCat_RevenueCatUI.bundle/en_CA.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/no.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  908 bytes for ./RevenueCat_RevenueCatUI.bundle/no.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/hu.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  962 bytes for ./RevenueCat_RevenueCatUI.bundle/hu.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/Assets.car ... 
+2026-02-23 10:07:31 +0000  146104 bytes for ./RevenueCat_RevenueCatUI.bundle/Assets.car
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/tr.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  921 bytes for ./RevenueCat_RevenueCatUI.bundle/tr.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/pl.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  913 bytes for ./RevenueCat_RevenueCatUI.bundle/pl.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/en_GB.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  889 bytes for ./RevenueCat_RevenueCatUI.bundle/en_GB.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/vi.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  990 bytes for ./RevenueCat_RevenueCatUI.bundle/vi.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/ru.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1229 bytes for ./RevenueCat_RevenueCatUI.bundle/ru.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/fr_CA.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  939 bytes for ./RevenueCat_RevenueCatUI.bundle/fr_CA.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/es_ES.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  938 bytes for ./RevenueCat_RevenueCatUI.bundle/es_ES.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/fi.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  900 bytes for ./RevenueCat_RevenueCatUI.bundle/fi.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/id.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  887 bytes for ./RevenueCat_RevenueCatUI.bundle/id.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/nl.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  886 bytes for ./RevenueCat_RevenueCatUI.bundle/nl.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/th.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1422 bytes for ./RevenueCat_RevenueCatUI.bundle/th.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/az.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  945 bytes for ./RevenueCat_RevenueCatUI.bundle/az.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/ro.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  952 bytes for ./RevenueCat_RevenueCatUI.bundle/ro.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/Info.plist ... 
+2026-02-23 10:07:31 +0000  698 bytes for ./RevenueCat_RevenueCatUI.bundle/Info.plist
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/fr_FR.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  939 bytes for ./RevenueCat_RevenueCatUI.bundle/fr_FR.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/hr.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  901 bytes for ./RevenueCat_RevenueCatUI.bundle/hr.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/hi.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  1315 bytes for ./RevenueCat_RevenueCatUI.bundle/hi.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./RevenueCat_RevenueCatUI.bundle/ca.lproj/Localizable.strings ... 
+2026-02-23 10:07:31 +0000  930 bytes for ./RevenueCat_RevenueCatUI.bundle/ca.lproj/Localizable.strings
+2026-02-23 10:07:31 +0000  copying file ./torre_ifel.pdf ... 
+2026-02-23 10:07:31 +0000  389511 bytes for ./torre_ifel.pdf
+2026-02-23 10:07:31 +0000  copying file ./Assets.car ... 
+2026-02-23 10:07:31 +0000  5096072 bytes for ./Assets.car
+2026-02-23 10:07:31 +0000  copying file ./AppIcon76x76@2x~ipad.png ... 
+43745 bytes for ./AppIcon76x76@2x~ipad.png
+copying file ./RevenueCat_RevenueCat.bundle/PrivacyInfo.xcprivacy ... 
+2026-02-23 10:07:31 +0000  945 bytes for ./RevenueCat_RevenueCat.bundle/PrivacyInfo.xcprivacy
+copying file ./RevenueCat_RevenueCat.bundle/Info.plist ... 
+2026-02-23 10:07:31 +0000  694 bytes for ./RevenueCat_RevenueCat.bundle/Info.plist
+2026-02-23 10:07:31 +0000  copying file ./embedded.mobileprovision ... 
+2026-02-23 10:07:31 +0000  20672 bytes for ./embedded.mobileprovision
+2026-02-23 10:07:31 +0000  copying file ./Info.plist ... 
+2026-02-23 10:07:31 +0000  2123 bytes for ./Info.plist
+2026-02-23 10:07:31 +0000  copying file ./PkgInfo ... 
+2026-02-23 10:07:31 +0000  8 bytes for ./PkgInfo
+2026-02-23 10:07:31 +0000 [MT] /usr/bin/ditto exited with 0
+2026-02-23 10:07:31 +0000 [MT] Processing step: IDEDistributionEmbedProfileStep
+2026-02-23 10:07:31 +0000 [MT] Processing step: IDEDistributionInfoPlistStep
+2026-02-23 10:07:31 +0000 [MT] Skipping setting DTXcodeBuildDistribution because toolsBuildVersionName was nil.
+2026-02-23 10:07:31 +0000 [MT] Processing step: IDEDistributionItemRemovalStep
+2026-02-23 10:07:31 +0000 [MT] Processing step: IDEDistributionAppThinningPlistStep
+2026-02-23 10:07:31 +0000 [MT] Skipping step: IDEDistributionAppThinningPlistStep because it said so
+2026-02-23 10:07:31 +0000 [MT] Processing step: IDEDistributionSymbolsStep
+2026-02-23 10:07:32 +0000 [MT] Writing /var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Symbols/DA4BCEE4-99CD-368D-A43A-548E3568C3D7.symbols
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionCopyAppleProvidedContentStep
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionAppThinningStep
+2026-02-23 10:07:32 +0000 [MT] Skipping step: IDEDistributionAppThinningStep because it said so
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionArchThinningStep
+2026-02-23 10:07:32 +0000 [MT] Archs to thin for item /Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app are []
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionODRStep
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionStripXattrsStep
+2026-02-23 10:07:32 +0000 [MT] Skipping stripping extended attributes because the codesign step will strip them.
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionCodesignStep
+2026-02-23 10:07:32 +0000 [MT] Entitlements for <IDEDistributionItem: 0x76fc82400; bundleID='com.andresboedo.add2wallet', path='<DVTFilePath:0x7702f8120:'/Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x76fc81fe0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7701b2580; name='Apple Development: Andrés Boedo Nossar (44C4BF2KV5)', hash='296F4B78503791780E0D77E3845119CB3F3DD773', serialNumber='1B06458A7801D35D07A1AD66C59874D0', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-02-14 11:25:52 +0000''>', entitlements='{
+    "application-identifier" = "H9DPH4DQG7.com.andresboedo.add2wallet";
+    "com.apple.developer.associated-domains" =     (
+        "applinks:links.add2wallet.app"
+    );
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.com.andresboedo.add2wallet"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudKit
+    );
+    "com.apple.developer.pass-type-identifiers" =     (
+        "H9DPH4DQG7.*"
+    );
+    "com.apple.developer.team-identifier" = H9DPH4DQG7;
+    "com.apple.security.application-groups" =     (
+        "group.com.andresboedo.add2wallet"
+    );
+    "get-task-allow" = 1;
+}', teamID='H9DPH4DQG7', identifier='com.andresboedo.add2wallet', executablePath='<DVTFilePath:0x7702f9680:'/Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app/Add2Wallet'>', hardenedRuntime='0'>'>: {
+    "application-identifier" = "H9DPH4DQG7.com.andresboedo.add2wallet";
+    "beta-reports-active" = 1;
+    "com.apple.developer.associated-domains" =     (
+        "applinks:links.add2wallet.app"
+    );
+    "com.apple.developer.icloud-container-environment" = Production;
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.com.andresboedo.add2wallet"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudKit
+    );
+    "com.apple.developer.pass-type-identifiers" =     (
+        "H9DPH4DQG7.*"
+    );
+    "com.apple.developer.team-identifier" = H9DPH4DQG7;
+    "com.apple.security.application-groups" =     (
+        "group.com.andresboedo.add2wallet"
+    );
+    "get-task-allow" = 0;
+}
+2026-02-23 10:07:32 +0000 [MT] Associated App Clip Identifiers Filter: Skipping because "com.apple.developer.associated-appclip-app-identifiers" is not present
+2026-02-23 10:07:32 +0000 [MT] Entitlements for <IDEDistributionItem: 0x76fc82400; bundleID='com.andresboedo.add2wallet', path='<DVTFilePath:0x7702f8120:'/Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x76fc81fe0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7701b3c00; name='Apple Development: Andrés Boedo Nossar (44C4BF2KV5)', hash='296F4B78503791780E0D77E3845119CB3F3DD773', serialNumber='1B06458A7801D35D07A1AD66C59874D0', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-02-14 11:25:52 +0000''>', entitlements='{
+    "application-identifier" = "H9DPH4DQG7.com.andresboedo.add2wallet";
+    "com.apple.developer.associated-domains" =     (
+        "applinks:links.add2wallet.app"
+    );
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.com.andresboedo.add2wallet"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudKit
+    );
+    "com.apple.developer.pass-type-identifiers" =     (
+        "H9DPH4DQG7.*"
+    );
+    "com.apple.developer.team-identifier" = H9DPH4DQG7;
+    "com.apple.security.application-groups" =     (
+        "group.com.andresboedo.add2wallet"
+    );
+    "get-task-allow" = 1;
+}', teamID='H9DPH4DQG7', identifier='com.andresboedo.add2wallet', executablePath='<DVTFilePath:0x7702f9680:'/Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app/Add2Wallet'>', hardenedRuntime='0'>'> are: {
+    "application-identifier" = "H9DPH4DQG7.com.andresboedo.add2wallet";
+    "beta-reports-active" = 1;
+    "com.apple.developer.associated-domains" =     (
+        "applinks:links.add2wallet.app"
+    );
+    "com.apple.developer.icloud-container-environment" = Production;
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.com.andresboedo.add2wallet"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudKit
+    );
+    "com.apple.developer.pass-type-identifiers" =     (
+        "H9DPH4DQG7.*"
+    );
+    "com.apple.developer.team-identifier" = H9DPH4DQG7;
+    "com.apple.security.application-groups" =     (
+        "group.com.andresboedo.add2wallet"
+    );
+    "get-task-allow" = 0;
+}
+2026-02-23 10:07:32 +0000 [MT] Writing entitlements for <IDEDistributionItem: 0x76fc82400; bundleID='com.andresboedo.add2wallet', path='<DVTFilePath:0x7702f8120:'/Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x76fc81fe0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7701b3c00; name='Apple Development: Andrés Boedo Nossar (44C4BF2KV5)', hash='296F4B78503791780E0D77E3845119CB3F3DD773', serialNumber='1B06458A7801D35D07A1AD66C59874D0', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-02-14 11:25:52 +0000''>', entitlements='{
+    "application-identifier" = "H9DPH4DQG7.com.andresboedo.add2wallet";
+    "com.apple.developer.associated-domains" =     (
+        "applinks:links.add2wallet.app"
+    );
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.com.andresboedo.add2wallet"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudKit
+    );
+    "com.apple.developer.pass-type-identifiers" =     (
+        "H9DPH4DQG7.*"
+    );
+    "com.apple.developer.team-identifier" = H9DPH4DQG7;
+    "com.apple.security.application-groups" =     (
+        "group.com.andresboedo.add2wallet"
+    );
+    "get-task-allow" = 1;
+}', teamID='H9DPH4DQG7', identifier='com.andresboedo.add2wallet', executablePath='<DVTFilePath:0x7702f9680:'/Users/mannyoneek/repos/add2wallet/ios/Add2Wallet.xcarchive/Products/Applications/Add2Wallet.app/Add2Wallet'>', hardenedRuntime='0'>'> to: /var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/entitlements~~~Jd2z3K
+2026-02-23 10:07:32 +0000 [MT] invoking codesign: <NSConcreteTask: 0x76fd84500; launchPath='/usr/bin/codesign', arguments='(
+    "-f",
+    "-s",
+    BBE7663AC3C0FBB6336B6298DC0D03FFDEBA3D8C,
+    "--entitlements",
+    "/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/entitlements~~~Jd2z3K",
+    "--preserve-metadata=identifier,flags,runtime,launch-constraints,library-constraints",
+    "--generate-entitlement-der",
+    "--strip-disallowed-xattrs",
+    "-vvv",
+    "/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root/Payload/Add2Wallet.app"
+)'>
+2026-02-23 10:07:32 +0000 [MT] codesign output: /var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root/Payload/Add2Wallet.app: replacing existing signature
+/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root/Payload/Add2Wallet.app: signed app bundle with Mach-O thin (arm64) [com.andresboedo.add2wallet]
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionZipODRItemStep
+2026-02-23 10:07:32 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionCreateIPAStep
+2026-02-23 10:07:32 +0000 [MT] Running /usr/bin/rsync '-8aPhhE' '/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Symbols' '--link-dest' '/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT' '/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root'
+2026-02-23 10:07:32 +0000  Symbols/
+Symbols/DA4BCEE4-99CD-368D-A43A-548E3568C3D7.symbols
+2026-02-23 10:07:32 +0000 [MT] /usr/bin/rsync exited with 0
+2026-02-23 10:07:32 +0000 [MT] Running /usr/bin/ditto '-V' '-c' '-k' '--norsrc' '/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root' '/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Packages/Add2Wallet.ipa'
+2026-02-23 10:07:32 +0000  >>> Copying /var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root 
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/_CodeSignature/CodeResources ... 
+2026-02-23 10:07:32 +0000  22192 bytes for ./Payload/Add2Wallet.app/_CodeSignature/CodeResources
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/AppIcon60x60@2x.png ... 
+2026-02-23 10:07:32 +0000  28349 bytes for ./Payload/Add2Wallet.app/AppIcon60x60@2x.png
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/Add2Wallet ... 
+2026-02-23 10:07:32 +0000  8719200 bytes for ./Payload/Add2Wallet.app/Add2Wallet
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/de.lproj/Localizable.strings ... 
+947 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/de.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/zh_Hans.lproj/Localizable.strings ... 
+826 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/zh_Hans.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/he.lproj/Localizable.strings ... 
+1034 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/he.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_AU.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  889 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_AU.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ar.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1016 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ar.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/el.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1174 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/el.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ja.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  991 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ja.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  889 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/uk.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1169 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/uk.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/es_419.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  938 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/es_419.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_US.lproj/Localizable.strings ... 
+889 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_US.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/pt_BR.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  900 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/pt_BR.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/da.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  903 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/da.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/it.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  928 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/it.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/bg.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1204 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/bg.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/sk.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  911 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/sk.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/kk.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1214 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/kk.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/pt_PT.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  900 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/pt_PT.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ms.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  893 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ms.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/sv.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  905 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/sv.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/cs.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  916 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/cs.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ko.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  942 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ko.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/zh_Hant.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  829 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/zh_Hant.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/background.jpg ... 
+2026-02-23 10:07:32 +0000  106394 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/background.jpg
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_CA.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  889 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_CA.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/no.lproj/Localizable.strings ... 
+908 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/no.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/hu.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  962 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/hu.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/Assets.car ... 
+2026-02-23 10:07:32 +0000  146104 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/Assets.car
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/tr.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  921 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/tr.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/pl.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  913 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/pl.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_GB.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  889 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/en_GB.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/vi.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  990 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/vi.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ru.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1229 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ru.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/fr_CA.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  939 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/fr_CA.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/es_ES.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  938 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/es_ES.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/fi.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  900 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/fi.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/id.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  887 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/id.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/nl.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  886 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/nl.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/th.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1422 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/th.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/az.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  945 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/az.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ro.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  952 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ro.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/Info.plist ... 
+2026-02-23 10:07:32 +0000  698 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/Info.plist
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/fr_FR.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  939 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/fr_FR.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/hr.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  901 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/hr.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/hi.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  1315 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/hi.lproj/Localizable.strings
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ca.lproj/Localizable.strings ... 
+2026-02-23 10:07:32 +0000  930 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCatUI.bundle/ca.lproj/Localizable.strings
+copying file ./Payload/Add2Wallet.app/torre_ifel.pdf ... 
+2026-02-23 10:07:32 +0000  389511 bytes for ./Payload/Add2Wallet.app/torre_ifel.pdf
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/Assets.car ... 
+2026-02-23 10:07:32 +0000  5096072 bytes for ./Payload/Add2Wallet.app/Assets.car
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/AppIcon76x76@2x~ipad.png ... 
+2026-02-23 10:07:32 +0000  43745 bytes for ./Payload/Add2Wallet.app/AppIcon76x76@2x~ipad.png
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCat.bundle/PrivacyInfo.xcprivacy ... 
+2026-02-23 10:07:32 +0000  945 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCat.bundle/PrivacyInfo.xcprivacy
+copying file ./Payload/Add2Wallet.app/RevenueCat_RevenueCat.bundle/Info.plist ... 
+2026-02-23 10:07:32 +0000  694 bytes for ./Payload/Add2Wallet.app/RevenueCat_RevenueCat.bundle/Info.plist
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/embedded.mobileprovision ... 
+2026-02-23 10:07:32 +0000  16333 bytes for ./Payload/Add2Wallet.app/embedded.mobileprovision
+2026-02-23 10:07:32 +0000  copying file ./Payload/Add2Wallet.app/Info.plist ... 
+2026-02-23 10:07:32 +0000  2123 bytes for ./Payload/Add2Wallet.app/Info.plist
+copying file ./Payload/Add2Wallet.app/PkgInfo ... 
+2026-02-23 10:07:32 +0000  8 bytes for ./Payload/Add2Wallet.app/PkgInfo
+2026-02-23 10:07:32 +0000  copying file ./Symbols/DA4BCEE4-99CD-368D-A43A-548E3568C3D7.symbols ... 
+2026-02-23 10:07:32 +0000  24187484 bytes for ./Symbols/DA4BCEE4-99CD-368D-A43A-548E3568C3D7.symbols
+2026-02-23 10:07:32 +0000 [MT] /usr/bin/ditto exited with 0
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionAppStoreInformationStep
+2026-02-23 10:07:32 +0000 [MT] Skipping step: IDEDistributionAppStoreInformationStep because it said so
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionGenerateProcessedDistributionItems
+2026-02-23 10:07:32 +0000 [MT] IDEDistributionItem init <DVTFilePath:0x76fd749c0:'/var/folders/j2/k__np38939b04g5r98f50_780000gn/T/XcodeDistPipeline.~~~b2ohHT/Root/Payload/Add2Wallet.app'>
+2026-02-23 10:07:32 +0000 [MT] Processing step: IDEDistributionCreateManifestStep
+2026-02-23 10:07:32 +0000 [MT] Skipping step: IDEDistributionCreateManifestStep because it said so
