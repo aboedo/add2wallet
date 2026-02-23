@@ -56,4 +56,6 @@ backend/certificates/*.p12
 backend/certificates/*.cerbackend/.env.railway
 backend/set_railway_env.sh
 
-.PLAN.md
+.PLAN.mdios/release/*.ipa
+ios/release/Packaging.log
+ios/release/DistributionSummary.plist
