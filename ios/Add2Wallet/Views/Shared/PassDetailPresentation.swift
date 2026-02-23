@@ -1,99 +1,161 @@
 import SwiftUI
 
-// This component replicates the SavedPassDetailView presentation style
-// for use in both ContentView and SavedPassDetailView
 struct PassDetailPresentation: View {
     let metadata: EnhancedPassMetadata
     let ticketCount: Int?
-    let isEmbedded: Bool // true when used in ContentView, false in SavedPassDetailView
+    let isEmbedded: Bool
     
     private var passColor: Color {
         PassColorUtils.getPassColor(metadata: metadata)
     }
     
-    private var darkenedPassColor: Color {
-        PassColorUtils.getDarkenedPassColor(metadata: metadata)
-    }
-    
     var body: some View {
-        VStack(spacing: ThemeManager.Spacing.md) {
-            // Pass card — self-contained with pass colors
-            VStack(spacing: ThemeManager.Spacing.sm) {
-                // Title
-                Text(metadata.title ?? metadata.eventName ?? "Untitled Pass")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.white)
+        VStack(spacing: 0) {
+            // Accent strip — pass brand color
+            passColor
+                .frame(height: 6)
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: ThemeManager.CornerRadius.large, topTrailingRadius: ThemeManager.CornerRadius.large))
+            
+            // Unified card
+            VStack(alignment: .leading, spacing: ThemeManager.Spacing.lg) {
+                // Header: title + key info
+                VStack(alignment: .leading, spacing: ThemeManager.Spacing.sm) {
+                    Text(metadata.title ?? metadata.eventName ?? "Untitled Pass")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(ThemeManager.Colors.textPrimary)
+                    
+                    PassMetadataView(
+                        metadata: metadata,
+                        style: .detailView,
+                        ticketCount: ticketCount
+                    )
+                }
                 
-                // Subtitle metadata
-                PassMetadataView(
-                    metadata: metadata,
-                    style: .detailView,
-                    ticketCount: ticketCount
-                )
+                Divider()
+                
+                // Map
+                AsyncMapView(metadata: metadata)
+                
+                // Detail fields in a 2-column grid
+                detailFields
+                
+                // Ticket count if multiple
+                if let count = ticketCount, count > 1 {
+                    HStack(spacing: ThemeManager.Spacing.xs) {
+                        Image(systemName: "ticket")
+                            .foregroundColor(passColor)
+                        Text("\(count) passes included")
+                            .font(ThemeManager.Typography.footnote)
+                            .foregroundColor(ThemeManager.Colors.textSecondary)
+                    }
+                }
             }
             .padding(ThemeManager.Spacing.lg)
-            .frame(maxWidth: .infinity)
-            .background(
-                LinearGradient(
-                    colors: [passColor, darkenedPassColor],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.large))
-            
-            // Details section — neutral background
-            PassDetailsView(metadata: metadata, ticketCount: isEmbedded ? ticketCount : nil)
-                .transition(.opacity)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: ThemeManager.CornerRadius.large, bottomTrailingRadius: ThemeManager.CornerRadius.large))
         }
+        .padding(.horizontal)
+    }
+    
+    @ViewBuilder
+    private var detailFields: some View {
+        let fields = buildFields()
+        
+        if !fields.isEmpty {
+            LazyVGrid(columns: [
+                GridItem(.flexible(), alignment: .leading),
+                GridItem(.flexible(), alignment: .leading)
+            ], alignment: .leading, spacing: ThemeManager.Spacing.md) {
+                ForEach(fields, id: \.label) { field in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(field.label.uppercased())
+                            .font(ThemeManager.Typography.caption)
+                            .foregroundColor(ThemeManager.Colors.textTertiary)
+                        Text(field.value)
+                            .font(ThemeManager.Typography.body)
+                            .foregroundColor(ThemeManager.Colors.textPrimary)
+                            .lineLimit(2)
+                    }
+                }
+            }
+        }
+    }
+    
+    private struct FieldItem: Hashable {
+        let label: String
+        let value: String
+    }
+    
+    private func buildFields() -> [FieldItem] {
+        var fields: [FieldItem] = []
+        
+        if let passenger = metadata.seatInfo, !passenger.isEmpty {
+            fields.append(FieldItem(label: "Seat", value: passenger))
+        }
+        if let price = metadata.price, !price.isEmpty {
+            fields.append(FieldItem(label: "Price", value: price))
+        }
+        if let conf = metadata.confirmationNumber, !conf.isEmpty {
+            fields.append(FieldItem(label: "Confirmation", value: conf))
+        }
+        if let gate = metadata.gateInfo, !gate.isEmpty {
+            fields.append(FieldItem(label: "Gate", value: gate))
+        }
+        if let performers = metadata.performerNames, !performers.isEmpty {
+            fields.append(FieldItem(label: "Artists", value: performers.joined(separator: ", ")))
+        }
+        if let exhibit = metadata.exhibitName, !exhibit.isEmpty {
+            fields.append(FieldItem(label: "Exhibit", value: exhibit))
+        }
+        
+        return fields
     }
 }
 
 #Preview {
     let sampleMetadata = EnhancedPassMetadata(
-        eventType: "Concert",
-        eventName: "Taylor Swift Concert",
-        title: "Taylor Swift Eras Tour",
-        description: "The most spectacular concert of the year",
-        date: "2024-12-15",
-        time: "20:00",
-        duration: "3 hours",
-        venueName: "Madison Square Garden",
-        venueAddress: "4 Pennsylvania Plaza",
-        city: "New York",
-        stateCountry: "NY, USA",
-        latitude: 40.7505,
-        longitude: -73.9934,
-        organizer: "Live Nation",
-        performerArtist: "Taylor Swift",
-        seatInfo: "Section 100, Row A, Seat 15",
-        barcodeData: "123456789",
-        price: "$150.00",
-        confirmationNumber: "ABC123XYZ",
-        gateInfo: "Gate 7",
-        eventDescription: "Experience the magic of Taylor Swift's Eras Tour",
-        venueType: "Arena",
-        capacity: "20,000",
-        website: "msg.com",
-        phone: "(212) 465-6741",
-        nearbyLandmarks: ["Empire State Building", "Herald Square"],
-        publicTransport: "Penn Station (1, 2, 3, A, C, E trains)",
-        parkingInfo: "$40 event parking available",
-        ageRestriction: "All ages",
-        dressCode: "Casual",
-        weatherConsiderations: "Indoor venue",
-        amenities: ["Concessions", "Gift Shop", "Accessible Seating"],
-        accessibility: "ADA compliant",
+        eventType: "Ferry",
+        eventName: "Buquebus Ferry",
+        title: "Buquebus: MVD to BUE",
+        description: "Ferry travel from Montevideo to Buenos Aires",
+        date: "2026-03-30",
+        time: "11:00",
+        duration: "2.5 hours",
+        venueName: "Buquebus Ferry",
+        venueAddress: nil,
+        city: "Montevideo",
+        stateCountry: "Uruguay",
+        latitude: -34.9011,
+        longitude: -56.1645,
+        organizer: "Buquebus",
+        performerArtist: nil,
+        seatInfo: nil,
+        barcodeData: nil,
+        price: "$5,423.98",
+        confirmationNumber: "B2600378709",
+        gateInfo: nil,
+        eventDescription: "Ferry travel from Montevideo to Buenos Aires",
+        venueType: "Port",
+        capacity: nil,
+        website: nil,
+        phone: nil,
+        nearbyLandmarks: nil,
+        publicTransport: nil,
+        parkingInfo: nil,
+        ageRestriction: nil,
+        dressCode: nil,
+        weatherConsiderations: nil,
+        amenities: nil,
+        accessibility: nil,
         aiProcessed: true,
-        confidenceScore: 95,
-        processingTimestamp: "2024-01-01T12:00:00Z",
-        modelUsed: "gpt-4",
+        confidenceScore: 90,
+        processingTimestamp: nil,
+        modelUsed: nil,
         enrichmentCompleted: true,
-        backgroundColor: "rgb(138,43,226)",
-        foregroundColor: "rgb(255,255,255)",
-        labelColor: "rgb(255,255,255)",
+        backgroundColor: "rgb(0, 51, 161)",
+        foregroundColor: "rgb(255, 255, 255)",
+        labelColor: "rgb(200, 200, 200)",
         multipleEvents: nil,
         upcomingEvents: nil,
         venuePlaceId: nil,
@@ -103,13 +165,12 @@ struct PassDetailPresentation: View {
         eventUrls: nil
     )
     
-    VStack(spacing: 20) {
+    ScrollView {
         PassDetailPresentation(
             metadata: sampleMetadata,
             ticketCount: 2,
-            isEmbedded: true
+            isEmbedded: false
         )
     }
-    .padding()
     .background(Color(.systemGroupedBackground))
 }
