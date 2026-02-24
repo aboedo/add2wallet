@@ -395,3 +395,20 @@ Currently in **Phase 4** of development plan (see `PLAN.md`). Core functionality
 - 🔄 Production deployment and testing
 
 Next priorities: Enhanced error handling, UI polish, App Store preparation.
+
+## Model Guidance for Agents
+
+**Default: Sonnet** for implementation work — new endpoints, UI views, bug fixes, tests, refactors.
+
+**Escalate to Opus when:**
+- Changing the PDF processing pipeline architecture (orchestrator, barcode pipeline)
+- AI prompt engineering (ai_service.py, ai_extractor.py) — subtle wording matters
+- Certificate/signing logic changes — security-critical
+- Data model changes that affect both iOS and backend
+- Cross-component design decisions (API contract changes)
+- Stuck after 2 attempts on a tricky bug
+
+**MiniMax OK for:**
+- Simple config changes, env vars, dependency updates
+- File renaming, import cleanup
+- README/doc updates
