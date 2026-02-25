@@ -106,8 +106,12 @@ struct AsyncMapView: View {
                     openInAppleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
                 }
             } label: {
-                Label("Open in Apple Maps", systemImage: "map")
-                    .frame(maxWidth: .infinity)
+                HStack {
+                    Spacer(minLength: 0)
+                    Label("Open in Apple Maps", systemImage: "map")
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
 
@@ -116,8 +120,12 @@ struct AsyncMapView: View {
                     openInGoogleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
                 }
             } label: {
-                Label("Open in Google Maps", systemImage: "map.fill")
-                    .frame(maxWidth: .infinity)
+                HStack {
+                    Spacer(minLength: 0)
+                    Label("Open in Google Maps", systemImage: "map.fill")
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
         }

@@ -277,6 +277,10 @@ struct ContentView: View {
                 // Reset all state after dismissal to prevent stale sheet on next pass
                 showingAddPassVC = false
                 passAddedSuccessfully = false
+                // Refresh balance when returning from Apple Wallet (sheet dismissal)
+                Task {
+                    await usageManager.forceRefreshBalance()
+                }
             }) {
                 if let passVC = passViewController {
                     PassKitView(passViewController: passVC, passAdded: $passAddedSuccessfully)
