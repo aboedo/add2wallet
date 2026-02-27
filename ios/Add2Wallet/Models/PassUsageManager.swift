@@ -2,28 +2,19 @@ import Foundation
 import RevenueCat
 
 @MainActor
-class PassUsageManager: ObservableObject {
+class PassUsageManager: NSObject, ObservableObject {
     static let shared = PassUsageManager()
-    
+
     @Published var remainingPasses: Int = 0
     @Published var isLoadingBalance = false
     @Published var customerInfo: CustomerInfo?
-    
-    private init() {
-        // Only use async streams for real-time updates
-        
-        // Subscribe to customer info updates which will trigger balance updates
-        Task {
-            for await customerInfo in Purchases.shared.customerInfoStream {
-                await MainActor.run {
-                    self.customerInfo = customerInfo
-                    print("✅ Customer info updated via stream, refreshing balance...")
-                }
-                // Force refresh (with cache invalidation) to pick up virtual currency changes
-                await forceRefreshBalance()
-            }
-        }
-        
+
+    private override init() {
+        super.init()
+
+        // Set ourselves as the RevenueCat delegate for live customerInfo updates
+        Purchases.shared.delegate = self
+
         // Fetch initial balance after a brief delay to ensure RevenueCat is ready
         Task {
             // Small delay to ensure RevenueCat SDK is fully initialized
@@ -120,14 +111,14 @@ class PassUsageManager: ObservableObject {
     /// Force refresh with retry — use after purchases where server may need time to process
     func forceRefreshBalanceWithRetry(previousBalance: Int, maxRetries: Int = 3) async {
         print("🔄 Force refresh with retry (previous balance: \(previousBalance))...")
-        
+
         for attempt in 1...maxRetries {
             // Exponential backoff: 1s, 2s, 4s
             let delayNanos = UInt64(pow(2.0, Double(attempt - 1))) * 1_000_000_000
             try? await Task.sleep(nanoseconds: delayNanos)
-            
+
             await forceRefreshBalance()
-            
+
             if remainingPasses != previousBalance {
                 print("✅ Balance updated after attempt \(attempt): \(previousBalance) → \(remainingPasses)")
                 return
@@ -135,6 +126,18 @@ class PassUsageManager: ObservableObject {
             print("⏳ Attempt \(attempt): balance still \(remainingPasses), retrying...")
         }
         print("⚠️ Balance didn't change after \(maxRetries) retries")
+    }
+}
+
+// MARK: - PurchasesDelegate
+
+extension PassUsageManager: PurchasesDelegate {
+    nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+        Task { @MainActor in
+            self.customerInfo = customerInfo
+            print("✅ Customer info updated via delegate, refreshing balance...")
+            await self.forceRefreshBalance()
+        }
     }
 }
 

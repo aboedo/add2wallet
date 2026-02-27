@@ -6,7 +6,7 @@ import MessageUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
-    @StateObject private var usageManager = PassUsageManager.shared
+    @EnvironmentObject var passUsageManager: PassUsageManager
     @State private var passViewController: PKAddPassesViewController?
     @State private var showingAddPassVC = false
     @State private var selectedTab = 0
@@ -57,8 +57,8 @@ struct ContentView: View {
                     VStack(spacing: ThemeManager.Spacing.md) {
                     // Hero card — always visible
                     HeroCardStack(
-                        remainingPasses: usageManager.remainingPasses,
-                        isLoadingBalance: usageManager.isLoadingBalance,
+                        remainingPasses: passUsageManager.remainingPasses,
+                        isLoadingBalance: passUsageManager.isLoadingBalance,
                         passColor: nil,
                         isProcessing: viewModel.isProcessing,
                         onSelectPDF: { viewModel.selectPDF() },
@@ -208,12 +208,12 @@ struct ContentView: View {
                 }
             }
             .task {
-                await usageManager.forceRefreshBalance()
+                await passUsageManager.forceRefreshBalance()
             }
             .onAppear {
                 // Refresh balance every time tab appears
                 Task {
-                    await usageManager.forceRefreshBalance()
+                    await passUsageManager.forceRefreshBalance()
                 }
                 
                 // Set up model context for view model
@@ -279,7 +279,7 @@ struct ContentView: View {
                 passAddedSuccessfully = false
                 // Refresh balance when returning from Apple Wallet (sheet dismissal)
                 Task {
-                    await usageManager.forceRefreshBalance()
+                    await passUsageManager.forceRefreshBalance()
                 }
             }) {
                 if let passVC = passViewController {
@@ -323,15 +323,15 @@ struct ContentView: View {
                         print("✅ Purchase completed, starting balance refresh...")
                         viewModel.purchaseCompletedPendingUpload = true
                         // Start refresh immediately — don't wait for dismiss
-                        let previousBalance = usageManager.remainingPasses
+                        let previousBalance = passUsageManager.remainingPasses
                         Task {
-                            await usageManager.forceRefreshBalanceWithRetry(previousBalance: previousBalance)
+                            await passUsageManager.forceRefreshBalanceWithRetry(previousBalance: previousBalance)
                         }
                     }
                     .onRestoreCompleted { customerInfo in
                         print("✅ Restore completed, refreshing balance...")
                         Task {
-                            await usageManager.forceRefreshBalance()
+                            await passUsageManager.forceRefreshBalance()
                         }
                     }
                     .onDisappear {
@@ -340,7 +340,7 @@ struct ContentView: View {
                                 viewModel.purchaseCompletedPendingUpload = false
                                 // Balance should already be updated from onPurchaseCompleted
                                 // but force one more refresh just in case
-                                await usageManager.forceRefreshBalance()
+                                await passUsageManager.forceRefreshBalance()
                                 // Bypass balance check — user just purchased
                                 viewModel.isRetry = true
                                 viewModel.uploadSelected()
@@ -388,6 +388,7 @@ struct ContentView: View {
 #Preview("Pass Ready to Add") {
     // Create a ContentView with mock data showing a pass ready to be added
     ContentView()
+        .environmentObject(PassUsageManager.shared)
         .onAppear {
             // Create sample pass metadata for preview
             let mockMetadata = EnhancedPassMetadata(
@@ -465,10 +466,12 @@ struct ContentView: View {
 
 #Preview("Empty State") {
     ContentView()
+        .environmentObject(PassUsageManager.shared)
 }
 
 #Preview("Processing State") {
     ContentView()
+        .environmentObject(PassUsageManager.shared)
         .onAppear {
             // Simulate processing state
             NotificationCenter.default.post(

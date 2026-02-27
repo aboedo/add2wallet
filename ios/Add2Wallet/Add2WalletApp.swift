@@ -6,9 +6,10 @@ import RevenueCat
 struct Add2WalletApp: App {
     // UIApplicationDelegateAdaptor temporarily disabled; not required for URL
     // @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+
+    @StateObject private var passUsageManager = PassUsageManager.shared
     let container: ModelContainer
-    
+
     init() {
         // Initialize RevenueCat
         #if DEBUG
@@ -17,7 +18,7 @@ struct Add2WalletApp: App {
         Purchases.logLevel = .info
         #endif
         Purchases.configure(withAPIKey: "appl_fYlYmWylgRwabkYEZoocYZaCOGU")
-        
+
         // Initialize PassUsageManager early to set up delegate and fetch initial balance
         _ = PassUsageManager.shared
         
@@ -100,6 +101,7 @@ struct Add2WalletApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(passUsageManager)
                 .modelContainer(container)
                 .tint(ThemeManager.Colors.brandPrimary)
                 .onOpenURL { url in
@@ -110,7 +112,7 @@ struct Add2WalletApp: App {
                     Task {
                         await syncPurchasesOnFreshInstall()
                     }
-                    
+
                     URLHandler.checkForSharedPDF()
                     URLHandler.checkForPendingShareToken()
                 }
@@ -120,7 +122,7 @@ struct Add2WalletApp: App {
                 URLHandler.checkForPendingShareToken()
                 // Refresh balance when app comes to foreground
                 Task {
-                    await PassUsageManager.shared.forceRefreshBalance()
+                    await passUsageManager.forceRefreshBalance()
                 }
             }
         }
@@ -128,33 +130,33 @@ struct Add2WalletApp: App {
     
     private func syncPurchasesOnFreshInstall() async {
         let hasLaunchedBefore = UserDefaults.standard.bool(forKey: "HasLaunchedBefore")
-        
+
         if !hasLaunchedBefore {
             print("🔄 Fresh install detected, syncing purchases with RevenueCat")
             do {
                 let customerInfo = try await Purchases.shared.syncPurchases()
                 print("✅ Successfully synced purchases on fresh install")
                 print("📊 Customer ID: \(customerInfo.originalAppUserId)")
-                
+
                 // Update PassUsageManager with the synced customer info
                 await MainActor.run {
-                    PassUsageManager.shared.customerInfo = customerInfo
+                    passUsageManager.customerInfo = customerInfo
                 }
-                
+
                 // Refresh the balance to update UI
-                await PassUsageManager.shared.refreshBalance()
+                await passUsageManager.refreshBalance()
                 print("💰 Balance refreshed after sync")
-                
+
             } catch {
                 print("❌ Failed to sync purchases on fresh install: \(error)")
             }
-            
+
             // Mark that the app has launched before
             UserDefaults.standard.set(true, forKey: "HasLaunchedBefore")
         } else {
             // Even on non-fresh installs, ensure we have the latest customer info
             print("🔄 Regular launch, refreshing customer info and balance")
-            await PassUsageManager.shared.refreshBalance()
+            await passUsageManager.refreshBalance()
         }
     }
     
