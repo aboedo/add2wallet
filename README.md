@@ -79,27 +79,3 @@ API documentation at `http://localhost:8000/docs`
 5. **Test Again**: Verify your changes work
 6. **Update Plan**: Check off completed tasks
 
-## Current Status
-
-**Phase 1: Foundation Setup** ✅
-- [x] iOS app skeleton created
-- [x] Basic Python server with upload endpoint
-- [x] Test structure for both components
-- [ ] Share extension (next step)
-
-## Next Steps
-
-1. Add iOS Share Extension for PDF import
-2. Implement document picker in main app
-3. Add OpenAI integration for PDF processing
-4. Generate Apple Wallet passes
-
-## Documentation
-
-- [Project Plan](PLAN.md) - Detailed architecture and roadmap
-- [iOS README](ios/README.md) - iOS-specific documentation
-- [Backend README](backend/README.md) - Backend-specific documentation
-
-## License
-
-This project is private and proprietary.
