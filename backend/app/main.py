@@ -8,6 +8,7 @@ import shutil
 import asyncio
 from pathlib import Path
 from dotenv import load_dotenv
+import logging
 
 from app.models.responses import UploadResponse, ErrorResponse, StatusResponse
 from app.services.pdf_validator import PDFValidator
@@ -18,6 +19,8 @@ from app.services.v2.orchestrator import create_passes_v2
 
 # Load environment variables
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Add2Wallet API", version="1.0.0")
 
@@ -295,16 +298,25 @@ async def upload_pdf(
             pass_paths.append(str(pass_path))
         
         # Deduct 1 PASS from user's RevenueCat balance (unless this is a retry or demo)
+        logger.info(
+            "[/upload DEDUCTION PRE] PASS GENERATION COMPLETE, about to deduct. "
+            "user_id=%s is_retry=%s is_demo=%s endpoint=/upload",
+            user_id, is_retry, is_demo,
+        )
         if is_demo:
-            print(f"🎮 Demo mode: Skipping PASS deduction for user {user_id}")
+            logger.info("[/upload DEDUCTION SKIP] is_demo=True user=%s — no deduction", user_id)
             deduction_success = True
         else:
-            print(f"🔄 Attempting to deduct PASS for user: {user_id}, is_retry: {is_retry}")
             deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
-            if deduction_success:
-                print(f"✅ PASS deduction successful for user {user_id}")
-            else:
-                print(f"⚠️ PASS deduction failed for user {user_id}, but continuing with pass generation")
+            logger.info(
+                "[/upload DEDUCTION RESULT] success=%s user=%s",
+                deduction_success, user_id,
+            )
+            if not deduction_success:
+                logger.warning(
+                    "[/upload DEDUCTION FAILED] pass handed out WITHOUT deducting for user=%s",
+                    user_id,
+                )
         
         # Update job information with completion
         jobs[job_id].update({
@@ -422,12 +434,24 @@ async def upload_pdf_v2(
             pass_paths.append(str(pass_path))
 
         # Deduct pass credit
+        logger.info(
+            "[/upload/v2 DEDUCTION PRE] PASS GENERATION COMPLETE, about to deduct. "
+            "user_id=%s is_retry=%s is_demo=%s endpoint=/upload/v2",
+            user_id, is_retry, is_demo,
+        )
         if is_demo:
-            print(f"🎮 Demo mode: skipping PASS deduction for {user_id}")
+            logger.info("[/upload/v2 DEDUCTION SKIP] is_demo=True user=%s — no deduction", user_id)
         else:
             deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
+            logger.info(
+                "[/upload/v2 DEDUCTION RESULT] success=%s user=%s",
+                deduction_success, user_id,
+            )
             if not deduction_success:
-                print(f"⚠️ PASS deduction failed for {user_id}, continuing anyway")
+                logger.warning(
+                    "[/upload/v2 DEDUCTION FAILED] pass handed out WITHOUT deducting for user=%s",
+                    user_id,
+                )
 
         jobs[job_id].update({
             "status": "completed",

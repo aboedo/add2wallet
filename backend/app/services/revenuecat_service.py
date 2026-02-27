@@ -29,106 +29,123 @@ class RevenueCatService:
     def deduct_pass(self, user_id: str, is_retry: bool = False) -> bool:
         """
         Deduct 1 PASS from the user's virtual currency balance
-        
+
         Args:
             user_id: The user's RevenueCat app user ID
             is_retry: If True, skip deduction (for retries)
-            
+
         Returns:
             True if deduction was successful or skipped (retry), False otherwise
         """
-        logger.info(f"🔄 DEDUCT_PASS CALLED: user_id='{user_id}' (type: {type(user_id)}), is_retry={is_retry}")
-        logger.info(f"🔑 RevenueCat service state: secret_key={'present' if self.secret_key else 'MISSING'}")
-        
+        logger.info(
+            "[DEDUCT_PASS START] user_id=%r is_retry=%s secret_key=%s",
+            user_id, is_retry,
+            "present" if self.secret_key else "MISSING",
+        )
+
         if is_retry:
-            logger.info(f"⏭️ Skipping PASS deduction for retry (user: {user_id})")
+            logger.info("[DEDUCT_PASS SKIP] is_retry=True, returning True for user=%s", user_id)
             return True
-        
+
         if not self.secret_key:
-            logger.warning("❌ RevenueCat secret key not configured, skipping PASS deduction")
-            return True  # Return True to not block pass generation
-            
+            logger.warning("[DEDUCT_PASS SKIP] secret_key not configured, returning True to unblock user=%s", user_id)
+            return True
+
         if not user_id or user_id.strip() == "":
-            logger.error(f"❌ Invalid user_id provided: '{user_id}'")
+            logger.error("[DEDUCT_PASS INVALID_USER] user_id=%r is empty/blank, returning False", user_id)
             return False
-        
-        try:
-            # RevenueCat V2 virtual currency transaction endpoint
-            # Note: We need to determine the correct project identifier
-            url = f"{self.base_url}/projects/projd85d45ec/customers/{user_id}/virtual_currencies/transactions"
-            
-            payload = {
-                "adjustments": {
-                    "PASS": -1  # Negative value to deduct 1 PASS
-                }
+
+        url = f"{self.base_url}/projects/projd85d45ec/customers/{user_id}/virtual_currencies/transactions"
+        payload = {
+            "adjustments": {
+                "PASS": -1
             }
-            
-            logger.info(f"Making RevenueCat API call to: {url}")
-            logger.info(f"Payload: {payload}")
-            logger.info(f"Headers: {dict(self.headers)}")
-            
+        }
+
+        logger.info("[DEDUCT_PASS REQUEST] url=%s", url)
+        logger.info("[DEDUCT_PASS REQUEST] payload=%s", payload)
+
+        try:
             response = requests.post(url, json=payload, headers=self.headers, timeout=10)
-            
-            logger.info(f"RevenueCat API Response - Status: {response.status_code}")
-            logger.info(f"RevenueCat API Response - Body: {response.text}")
-            logger.info(f"RevenueCat API Response - Headers: {dict(response.headers)}")
-            
+
+            logger.info(
+                "[DEDUCT_PASS RESPONSE] status=%d headers=%s body=%s",
+                response.status_code, dict(response.headers), response.text,
+            )
+
             if response.status_code == 200:
-                logger.info(f"✅ Successfully deducted 1 PASS from user {user_id}")
+                # Try to extract new balance from response
+                new_balance = "unknown"
+                try:
+                    resp_data = response.json()
+                    new_balance = resp_data.get("customer", {}).get("virtual_currencies", {}).get("PASS", {}).get("balance", "not_in_response")
+                except Exception:
+                    pass
+                logger.info("[DEDUCTION OK] user=%s new_balance=%s", user_id, new_balance)
                 return True
+            elif response.status_code == 422:
+                logger.warning("[INSUFFICIENT BALANCE] user=%s body=%s", user_id, response.text)
+                return False
             elif response.status_code == 404:
-                logger.warning(f"❌ User {user_id} not found in RevenueCat")
+                logger.warning("[USER NOT FOUND] user=%s body=%s", user_id, response.text)
                 return False
             elif response.status_code == 400:
-                # Bad request
-                logger.warning(f"❌ Failed to deduct PASS for user {user_id} (Bad Request): {response.text}")
-                return False
-            elif response.status_code == 422:
-                # Insufficient balance (unprocessable entity)
-                logger.warning(f"❌ Insufficient PASS balance for user {user_id}: {response.text}")
+                logger.warning("[DEDUCTION FAILED] BAD_REQUEST user=%s body=%s", user_id, response.text)
                 return False
             else:
-                logger.error(f"❌ RevenueCat API error: {response.status_code} - {response.text}")
+                logger.error("[DEDUCTION FAILED] status=%d user=%s body=%s", response.status_code, user_id, response.text)
                 return False
-                
+
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error calling RevenueCat API: {str(e)}")
-            # Don't block pass generation if RevenueCat is down
+            logger.error(
+                "[NETWORK ERROR] user=%s exception=%s — returning True (silent fail to unblock)",
+                user_id, e,
+            )
             return True
         except Exception as e:
-            logger.error(f"Unexpected error in deduct_pass: {str(e)}")
+            logger.error(
+                "[SILENT FAIL] user=%s exception=%s — returning True to unblock",
+                user_id, e, exc_info=True,
+            )
             return True
     
     def get_balance(self, user_id: str) -> Optional[int]:
         """
         Get the user's current PASS balance
-        
+
         Args:
             user_id: The user's RevenueCat app user ID
-            
+
         Returns:
             The user's PASS balance, or None if error
         """
+        logger.info("[GET_BALANCE START] user_id=%s", user_id)
+
         if not self.secret_key or self.secret_key == "your-revenuecat-secret-key-here":
-            logger.warning("RevenueCat secret key not configured")
+            logger.warning("[GET_BALANCE SKIP] secret_key not configured")
             return None
-        
+
         try:
             url = f"{self.base_url}/projects/projd85d45ec/customers/{user_id}"
             response = requests.get(url, headers=self.headers, timeout=10)
-            
+
+            logger.info(
+                "[GET_BALANCE RESPONSE] status=%d body=%s",
+                response.status_code, response.text[:2000],
+            )
+
             if response.status_code == 200:
                 data = response.json()
-                # Extract virtual currency balance from customer info (V2 format)
                 virtual_currencies = data.get("customer", {}).get("virtual_currencies", {})
                 pass_balance = virtual_currencies.get("PASS", {}).get("balance", 0)
+                logger.info("[GET_BALANCE OK] user=%s balance=%s", user_id, pass_balance)
                 return pass_balance
             else:
-                logger.error(f"Failed to get balance for user {user_id}: {response.status_code}")
+                logger.error("[GET_BALANCE FAILED] user=%s status=%d body=%s", user_id, response.status_code, response.text)
                 return None
-                
+
         except Exception as e:
-            logger.error(f"Error getting balance: {str(e)}")
+            logger.error("[GET_BALANCE ERROR] user=%s exception=%s", user_id, e, exc_info=True)
             return None
 
 # Create singleton instance
