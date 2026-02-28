@@ -320,12 +320,11 @@ struct ContentView: View {
             .sheet(isPresented: $viewModel.showingPurchaseAlert) {
                 PaywallView(displayCloseButton: true)
                     .onPurchaseCompleted { customerInfo in
-                        print("✅ Purchase completed, starting balance refresh...")
+                        print("✅ Purchase completed, refreshing VC balance...")
                         viewModel.purchaseCompletedPendingUpload = true
-                        // Start refresh immediately — don't wait for dismiss
-                        let previousBalance = passUsageManager.remainingPasses
+                        // RC already processed the purchase — just refresh VC balance once
                         Task {
-                            await passUsageManager.forceRefreshBalanceWithRetry(previousBalance: previousBalance)
+                            await passUsageManager.forceRefreshBalance()
                         }
                     }
                     .onRestoreCompleted { customerInfo in
