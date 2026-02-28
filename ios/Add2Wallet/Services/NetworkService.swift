@@ -180,7 +180,8 @@ struct UploadResponse: Codable {
     let aiMetadata: EnhancedPassMetadata?
     let ticketCount: Int?
     let warnings: [String]?
-    
+    let remainingPasses: Int?
+
     enum CodingKeys: String, CodingKey {
         case jobId = "job_id"
         case status
@@ -188,6 +189,7 @@ struct UploadResponse: Codable {
         case aiMetadata = "ai_metadata"
         case ticketCount = "ticket_count"
         case warnings
+        case remainingPasses = "remaining_passes"
     }
 }
 

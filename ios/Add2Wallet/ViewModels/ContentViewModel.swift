@@ -329,8 +329,11 @@ class ContentViewModel: ObservableObject {
                         // Server done — snap progress to 100%
                         self.progressViewModel.completeProgress()
                         
-                        // Refresh balance after successful pass generation
+                        // Update balance immediately from server response, then refresh
                         Task { @MainActor in
+                            if let remaining = response.remainingPasses {
+                                self.usageManager.remainingPasses = remaining
+                            }
                             self.usageManager.passGenerated()
                         }
                         

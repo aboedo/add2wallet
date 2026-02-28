@@ -1,6 +1,6 @@
 import os
 import requests
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from dotenv import load_dotenv
 import logging
 
@@ -26,7 +26,7 @@ class RevenueCatService:
             logger.warning("RevenueCat secret key not found in environment variables")
             self.headers = {}
     
-    def deduct_pass(self, user_id: str, is_retry: bool = False) -> bool:
+    def deduct_pass(self, user_id: str, is_retry: bool = False) -> Tuple[bool, Optional[int]]:
         """
         Deduct 1 PASS from the user's virtual currency balance
 
@@ -35,7 +35,7 @@ class RevenueCatService:
             is_retry: If True, skip deduction (for retries)
 
         Returns:
-            True if deduction was successful or skipped (retry), False otherwise
+            Tuple of (success, new_balance). new_balance is None if unknown.
         """
         logger.info(
             "[DEDUCT_PASS START] user_id=%r is_retry=%s secret_key=%s",
@@ -45,15 +45,15 @@ class RevenueCatService:
 
         if is_retry:
             logger.info("[DEDUCT_PASS SKIP] is_retry=True, returning True for user=%s", user_id)
-            return True
+            return True, None
 
         if not self.secret_key:
             logger.warning("[DEDUCT_PASS SKIP] secret_key not configured, returning True to unblock user=%s", user_id)
-            return True
+            return True, None
 
         if not user_id or user_id.strip() == "":
             logger.error("[DEDUCT_PASS INVALID_USER] user_id=%r is empty/blank, returning False", user_id)
-            return False
+            return False, None
 
         from urllib.parse import quote
         encoded_user_id = quote(user_id, safe="")
@@ -77,40 +77,36 @@ class RevenueCatService:
             )
 
             if response.status_code == 200:
-                # Try to extract new balance from response
-                new_balance = "unknown"
-                try:
-                    resp_data = response.json()
-                    new_balance = resp_data.get("customer", {}).get("virtual_currencies", {}).get("PASS", {}).get("balance", "not_in_response")
-                except Exception:
-                    pass
-                logger.info("[DEDUCTION OK] user=%s new_balance=%s", user_id, new_balance)
-                return True
+                logger.info("[DEDUCTION OK] user=%s", user_id)
+                # Fetch fresh balance after successful deduction
+                new_balance = self.get_balance(user_id)
+                logger.info("[DEDUCTION POST-BALANCE] user=%s new_balance=%s", user_id, new_balance)
+                return True, new_balance
             elif response.status_code == 422:
                 logger.warning("[INSUFFICIENT BALANCE] user=%s body=%s", user_id, response.text)
-                return False
+                return False, None
             elif response.status_code == 404:
                 logger.warning("[USER NOT FOUND] user=%s body=%s", user_id, response.text)
-                return False
+                return False, None
             elif response.status_code == 400:
                 logger.warning("[DEDUCTION FAILED] BAD_REQUEST user=%s body=%s", user_id, response.text)
-                return False
+                return False, None
             else:
                 logger.error("[DEDUCTION FAILED] status=%d user=%s body=%s", response.status_code, user_id, response.text)
-                return False
+                return False, None
 
         except requests.exceptions.RequestException as e:
             logger.error(
                 "[NETWORK ERROR] user=%s exception=%s — returning True (silent fail to unblock)",
                 user_id, e,
             )
-            return True
+            return True, None
         except Exception as e:
             logger.error(
                 "[SILENT FAIL] user=%s exception=%s — returning True to unblock",
                 user_id, e, exc_info=True,
             )
-            return True
+            return True, None
     
     def get_balance(self, user_id: str) -> Optional[int]:
         """

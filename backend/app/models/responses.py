@@ -9,6 +9,7 @@ class UploadResponse(BaseModel):
     ai_metadata: Optional[Dict[str, Any]] = None
     ticket_count: Optional[int] = None
     warnings: Optional[List[str]] = None
+    remaining_passes: Optional[int] = None
 
 class ErrorResponse(BaseModel):
     error: str

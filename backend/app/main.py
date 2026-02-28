@@ -303,14 +303,15 @@ async def upload_pdf(
             "user_id=%s is_retry=%s is_demo=%s endpoint=/upload",
             user_id, is_retry, is_demo,
         )
+        new_balance = None
         if is_demo:
             logger.info("[/upload DEDUCTION SKIP] is_demo=True user=%s — no deduction", user_id)
             deduction_success = True
         else:
-            deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
+            deduction_success, new_balance = revenuecat_service.deduct_pass(user_id, is_retry)
             logger.info(
-                "[/upload DEDUCTION RESULT] success=%s user=%s",
-                deduction_success, user_id,
+                "[DEDUCTION RESULT] success=%s new_balance=%s user=%s",
+                deduction_success, new_balance, user_id,
             )
             if not deduction_success:
                 logger.warning(
@@ -349,12 +350,13 @@ async def upload_pdf(
                 print(f"🎨 Using enhanced metadata with colors for upload response")
         
         return UploadResponse(
-            job_id=job_id, 
-            status="completed", 
+            job_id=job_id,
+            status="completed",
             pass_url=f"/pass/{job_id}",
             ai_metadata=sanitize_metadata(enhanced_metadata),
             ticket_count=len(pkpass_files),
-            warnings=warnings if warnings else None
+            warnings=warnings if warnings else None,
+            remaining_passes=new_balance,
         )
         
     except Exception as e:
@@ -439,13 +441,14 @@ async def upload_pdf_v2(
             "user_id=%s is_retry=%s is_demo=%s endpoint=/upload/v2",
             user_id, is_retry, is_demo,
         )
+        new_balance = None
         if is_demo:
             logger.info("[/upload/v2 DEDUCTION SKIP] is_demo=True user=%s — no deduction", user_id)
         else:
-            deduction_success = revenuecat_service.deduct_pass(user_id, is_retry)
+            deduction_success, new_balance = revenuecat_service.deduct_pass(user_id, is_retry)
             logger.info(
-                "[/upload/v2 DEDUCTION RESULT] success=%s user=%s",
-                deduction_success, user_id,
+                "[DEDUCTION RESULT] success=%s new_balance=%s user=%s",
+                deduction_success, new_balance, user_id,
             )
             if not deduction_success:
                 logger.warning(
@@ -477,6 +480,7 @@ async def upload_pdf_v2(
             ai_metadata=sanitize_metadata(enhanced_metadata),
             ticket_count=len(pkpass_files),
             warnings=warnings if warnings else None,
+            remaining_passes=new_balance,
         )
 
     except Exception as exc:
