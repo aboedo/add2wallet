@@ -51,6 +51,7 @@
 		D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2518CFE7B9502126499FA643 /* TestHelpers.swift */; };
 		DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */; };
 		DA762FCAB2B8BA3B36E6ACDD /* eTicket.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 2A325F414CB4D737F46E1705 /* eTicket.pdf */; };
+		DB1CF464CA38D4B3978177DA /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 284B8475DB1A77104B35E3FF /* OnboardingView.swift */; };
 		DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */; };
 		E0849A5D57E3132B1E9683B3 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 169E5D42997400CE2FC8E0A8 /* NotificationManager.swift */; };
 		E2F6FF5D4CBF46C13774A890 /* PassAddedSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */; };
@@ -111,6 +112,7 @@
 		24D7B9D34B651C0C6D4C8D38 /* Add2WalletTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Add2WalletTests-Info.plist"; sourceTree = "<group>"; };
 		2518CFE7B9502126499FA643 /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroCardStack.swift; sourceTree = "<group>"; };
+		284B8475DB1A77104B35E3FF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		2A325F414CB4D737F46E1705 /* eTicket.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = eTicket.pdf; sourceTree = "<group>"; };
 		2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatter.swift; sourceTree = "<group>"; };
 		3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2WalletTests.swift"; sourceTree = "<group>"; };
@@ -292,6 +294,7 @@
 				2B4B7184CE9B3AF850CF85E9 /* Components */,
 				8A91CE7499406EC6640F1F93 /* Shared */,
 				13372BE4DCB2183466AD3A53 /* ContentView.swift */,
+				284B8475DB1A77104B35E3FF /* OnboardingView.swift */,
 				C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */,
 				CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */,
 				EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */,
@@ -504,6 +507,7 @@
 				FD77B0E7DA26C6BF665FE1DD /* MailComposeView.swift in Sources */,
 				FAA9CD8941A19E8191BDA068 /* PassKitView.swift in Sources */,
 				B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */,
+				DB1CF464CA38D4B3978177DA /* OnboardingView.swift in Sources */,
 				DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */,
 				E2F6FF5D4CBF46C13774A890 /* PassAddedSuccessView.swift in Sources */,
 				9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */,
@@ -560,7 +564,7 @@
 				CODE_SIGN_ENTITLEMENTS = Add2Wallet/Add2Wallet.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Add2Wallet/Info.plist;
@@ -593,7 +597,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = "Derived/InfoPlists/Add2WalletTests-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -740,7 +744,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = "Derived/InfoPlists/Add2WalletTests-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -781,7 +785,7 @@
 				CODE_SIGN_ENTITLEMENTS = Add2Wallet/Add2Wallet.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Add2Wallet/Info.plist;

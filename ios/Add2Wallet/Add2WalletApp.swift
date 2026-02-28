@@ -96,14 +96,21 @@ struct Add2WalletApp: App {
         }
     }
     
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
-    
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(passUsageManager)
                 .modelContainer(container)
                 .tint(ThemeManager.Colors.brandPrimary)
+                .sheet(isPresented: .constant(!hasSeenOnboarding)) {
+                    OnboardingView {
+                        hasSeenOnboarding = true
+                    }
+                    .interactiveDismissDisabled()
+                }
                 .onOpenURL { url in
                     URLHandler.handleURL(url)
                 }
