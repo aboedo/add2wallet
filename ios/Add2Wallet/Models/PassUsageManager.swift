@@ -30,8 +30,11 @@ class PassUsageManager: NSObject, ObservableObject {
     func refreshBalance() async {
         isLoadingBalance = true
         defer { isLoadingBalance = false }
-        
+
         do {
+            // Invalidate cached virtual currencies so we get fresh data
+            Purchases.shared.invalidateVirtualCurrenciesCache()
+
             // Fetch virtual currencies from RevenueCat
             let virtualCurrencies = try await Purchases.shared.virtualCurrencies()
             
@@ -86,10 +89,11 @@ class PassUsageManager: NSObject, ObservableObject {
         do {
             // Force fetch fresh data from RevenueCat
             Purchases.shared.invalidateCustomerInfoCache()
-            
+            Purchases.shared.invalidateVirtualCurrenciesCache()
+
             // Fetch fresh customer info first (triggers server sync)
             self.customerInfo = try await Purchases.shared.customerInfo()
-            
+
             // Then fetch virtual currencies
             let virtualCurrencies = try await Purchases.shared.virtualCurrencies()
             

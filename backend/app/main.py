@@ -308,7 +308,7 @@ async def upload_pdf(
             logger.info("[/upload DEDUCTION SKIP] is_demo=True user=%s — no deduction", user_id)
             deduction_success = True
         else:
-            deduction_success, new_balance = revenuecat_service.deduct_pass(user_id, is_retry)
+            deduction_success, new_balance = revenuecat_service.deduct_pass(user_id, is_retry, job_id=job_id)
             logger.info(
                 "[DEDUCTION RESULT] success=%s new_balance=%s user=%s",
                 deduction_success, new_balance, user_id,
@@ -445,7 +445,7 @@ async def upload_pdf_v2(
         if is_demo:
             logger.info("[/upload/v2 DEDUCTION SKIP] is_demo=True user=%s — no deduction", user_id)
         else:
-            deduction_success, new_balance = revenuecat_service.deduct_pass(user_id, is_retry)
+            deduction_success, new_balance = revenuecat_service.deduct_pass(user_id, is_retry, job_id=job_id)
             logger.info(
                 "[DEDUCTION RESULT] success=%s new_balance=%s user=%s",
                 deduction_success, new_balance, user_id,

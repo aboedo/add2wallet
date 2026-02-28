@@ -1,4 +1,5 @@
 import os
+import uuid as uuid_mod
 import requests
 from typing import Optional, Dict, Any, Tuple
 from dotenv import load_dotenv
@@ -26,13 +27,14 @@ class RevenueCatService:
             logger.warning("RevenueCat secret key not found in environment variables")
             self.headers = {}
     
-    def deduct_pass(self, user_id: str, is_retry: bool = False) -> Tuple[bool, Optional[int]]:
+    def deduct_pass(self, user_id: str, is_retry: bool = False, job_id: Optional[str] = None) -> Tuple[bool, Optional[int]]:
         """
         Deduct 1 PASS from the user's virtual currency balance
 
         Args:
             user_id: The user's RevenueCat app user ID
             is_retry: If True, skip deduction (for retries)
+            job_id: Optional job ID used as Idempotency-Key header
 
         Returns:
             Tuple of (success, new_balance). new_balance is None if unknown.
@@ -65,11 +67,14 @@ class RevenueCatService:
             }
         }
 
-        logger.info("[DEDUCT_PASS REQUEST] url=%s", url)
+        idempotency_key = job_id if job_id else str(uuid_mod.uuid4())
+        request_headers = {**self.headers, "Idempotency-Key": idempotency_key}
+
+        logger.info("[DEDUCT_PASS REQUEST] url=%s idempotency_key=%s", url, idempotency_key)
         logger.info("[DEDUCT_PASS REQUEST] payload=%s", payload)
 
         try:
-            response = requests.post(url, json=payload, headers=self.headers, timeout=10)
+            response = requests.post(url, json=payload, headers=request_headers, timeout=10)
 
             logger.info(
                 "[DEDUCT_PASS RESPONSE] status=%d headers=%s body=%s",
@@ -78,8 +83,16 @@ class RevenueCatService:
 
             if response.status_code == 200:
                 logger.info("[DEDUCTION OK] user=%s", user_id)
-                # Fetch fresh balance after successful deduction
-                new_balance = self.get_balance(user_id)
+                # Parse new PASS balance directly from the transaction response
+                new_balance = None
+                try:
+                    data = response.json()
+                    for item in data.get("items", []):
+                        if item.get("currency_code") == "PASS":
+                            new_balance = item.get("balance")
+                            break
+                except Exception as parse_err:
+                    logger.warning("[DEDUCTION PARSE] couldn't parse balance from response: %s", parse_err)
                 logger.info("[DEDUCTION POST-BALANCE] user=%s new_balance=%s", user_id, new_balance)
                 return True, new_balance
             elif response.status_code == 422:
