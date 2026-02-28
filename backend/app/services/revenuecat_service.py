@@ -55,7 +55,10 @@ class RevenueCatService:
             logger.error("[DEDUCT_PASS INVALID_USER] user_id=%r is empty/blank, returning False", user_id)
             return False
 
-        url = f"{self.base_url}/projects/projd85d45ec/customers/{user_id}/virtual_currencies/transactions"
+        from urllib.parse import quote
+        encoded_user_id = quote(user_id, safe="")
+        logger.info("[DEDUCT_PASS URL] raw=%r encoded=%r", user_id, encoded_user_id)
+        url = f"{self.base_url}/projects/projd85d45ec/customers/{encoded_user_id}/virtual_currencies/transactions"
         payload = {
             "adjustments": {
                 "PASS": -1
@@ -126,7 +129,9 @@ class RevenueCatService:
             return None
 
         try:
-            url = f"{self.base_url}/projects/projd85d45ec/customers/{user_id}"
+            from urllib.parse import quote
+            encoded_user_id = quote(user_id, safe="")
+            url = f"{self.base_url}/projects/projd85d45ec/customers/{encoded_user_id}"
             response = requests.get(url, headers=self.headers, timeout=10)
 
             logger.info(
