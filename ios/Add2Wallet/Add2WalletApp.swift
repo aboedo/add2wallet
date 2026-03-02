@@ -92,7 +92,18 @@ struct Add2WalletApp: App {
                 }
             }
         } catch {
-            fatalError("Failed to initialize Swift Data container: \(error)")
+            // Last resort: in-memory container to prevent crash on launch
+            print("⚠️ All SwiftData container attempts failed, using in-memory fallback: \(error)")
+            do {
+                let fallbackConfig = ModelConfiguration(
+                    schema: Schema([SavedPass.self]),
+                    isStoredInMemoryOnly: true
+                )
+                container = try ModelContainer(for: Schema([SavedPass.self]), configurations: [fallbackConfig])
+                print("✅ Using in-memory fallback container")
+            } catch {
+                fatalError("Failed to initialize even in-memory Swift Data container: \(error)")
+            }
         }
     }
     
