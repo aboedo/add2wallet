@@ -239,13 +239,21 @@ async def upload_pdf(
         "status": "processing",
         "progress": 10,
         "file_path": str(file_path),
-        "filename": file.filename
+        "filename": file.filename,
+        "is_retry": is_retry,
+        "is_demo": is_demo,
     }
-    
-    # Process PDF with AI and generate Apple Wallet pass
+
+    # Kick off processing in the background and return immediately
+    asyncio.create_task(_process_upload_job(job_id, contents, file.filename, user_id, is_retry, is_demo))
+
+    return UploadResponse(job_id=job_id, status="processing")
+
+async def _process_upload_job(job_id: str, contents: bytes, filename: str, user_id: str, is_retry: bool, is_demo: bool):
+    """Background task that processes a PDF and updates jobs[job_id] in-place."""
     try:
-        print(f"🔄 Starting processing for {file.filename}")
-        
+        print(f"🔄 Starting processing for {filename}")
+
         # Step 1: Extract text from PDF for AI analysis
         try:
             from app.services.pass_generator import PassGenerator
@@ -254,37 +262,38 @@ async def upload_pdf(
             print(f"📝 PDF text extracted: {len(pdf_text)} characters")
         except Exception as e:
             print(f"❌ Error extracting PDF text: {e}")
-            raise HTTPException(status_code=400, detail=f"Failed to extract PDF text: {str(e)}")
-        
+            jobs[job_id].update({"status": "failed", "progress": 0, "error": f"Failed to extract PDF text: {e}"})
+            return
+
         # Update progress
         jobs[job_id]["progress"] = 30
-        
+
         # Step 2: AI analysis of PDF content
         ai_metadata = None
         try:
-            ai_metadata = await ai_service.analyze_pdf_content(pdf_text, file.filename)
+            ai_metadata = await ai_service.analyze_pdf_content(pdf_text, filename)
             jobs[job_id]["progress"] = 70
             jobs[job_id]["ai_metadata"] = ai_metadata
-            print(f"✅ AI analysis completed for {file.filename}")
+            print(f"✅ AI analysis completed for {filename}")
         except Exception as ai_error:
             print(f"⚠️ AI analysis failed, using fallback: {ai_error}")
-            # Continue with basic extraction
             jobs[job_id]["progress"] = 50
-        
+
         # Step 3: Generate enhanced pass(es) with AI metadata and barcode extraction
         try:
             pkpass_files, detected_barcodes, ticket_info, warnings = pass_generator.create_pass_from_pdf_data(
-                contents, 
-                file.filename,
-                ai_metadata
+                contents,
+                filename,
+                ai_metadata,
             )
             print(f"🎫 Generated {len(pkpass_files)} pass files")
             if warnings:
                 print(f"⚠️ Warnings generated: {warnings}")
         except Exception as e:
             print(f"❌ Error generating passes: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to generate passes: {str(e)}")
-        
+            jobs[job_id].update({"status": "failed", "progress": 0, "error": f"Failed to generate passes: {e}"})
+            return
+
         # Save pass files
         pass_paths = []
         for i, pkpass_data in enumerate(pkpass_files):
@@ -292,11 +301,11 @@ async def upload_pdf(
                 pass_path = UPLOAD_DIR / f"{job_id}_ticket_{i+1}.pkpass"
             else:
                 pass_path = UPLOAD_DIR / f"{job_id}.pkpass"
-            
+
             with open(pass_path, "wb") as f:
                 f.write(pkpass_data)
             pass_paths.append(str(pass_path))
-        
+
         # Deduct 1 PASS from user's RevenueCat balance (unless this is a retry or demo)
         logger.info(
             "[/upload DEDUCTION PRE] PASS GENERATION COMPLETE, about to deduct. "
@@ -306,7 +315,6 @@ async def upload_pdf(
         new_balance = None
         if is_demo:
             logger.info("[/upload DEDUCTION SKIP] is_demo=True user=%s — no deduction", user_id)
-            deduction_success = True
         else:
             deduction_success, new_balance = revenuecat_service.deduct_pass(user_id, is_retry, job_id=job_id)
             logger.info(
@@ -318,7 +326,18 @@ async def upload_pdf(
                     "[/upload DEDUCTION FAILED] pass handed out WITHOUT deducting for user=%s",
                     user_id,
                 )
-        
+
+        # Build enhanced metadata for the status response
+        enhanced_metadata = ai_metadata
+        if ticket_info and len(ticket_info) > 0:
+            first_ticket = ticket_info[0]
+            if "metadata" in first_ticket and first_ticket["metadata"]:
+                enhanced_metadata = first_ticket["metadata"].copy()
+                if len(ticket_info) > 1 and enhanced_metadata.get("title"):
+                    import re
+                    enhanced_metadata["title"] = re.sub(r'\s*\(#\d+\)\s*$', '', enhanced_metadata["title"])
+                print(f"🎨 Using enhanced metadata with colors for job {job_id}")
+
         # Update job information with completion
         jobs[job_id].update({
             "status": "completed",
@@ -329,46 +348,16 @@ async def upload_pdf(
             "ticket_count": len(pkpass_files),
             "ticket_info": ticket_info,
             "warnings": warnings,
-            # Keep backwards compatibility
-            "pass_path": pass_paths[0] if pass_paths else None
+            "pass_path": pass_paths[0] if pass_paths else None,
+            "remaining_passes": new_balance,
+            "enhanced_metadata": enhanced_metadata,
         })
-        
-        # Use enhanced metadata with colors from ticket_info for the upload response
-        # For multi-pass documents, use base metadata without ticket-specific numbering
-        enhanced_metadata = ai_metadata  # fallback to original
-        if ticket_info and len(ticket_info) > 0:
-            first_ticket = ticket_info[0]
-            if "metadata" in first_ticket and first_ticket["metadata"]:
-                enhanced_metadata = first_ticket["metadata"].copy()
-                # Remove ticket-specific numbering from title for upload response
-                if len(ticket_info) > 1 and enhanced_metadata.get("title"):
-                    title = enhanced_metadata["title"]
-                    # Remove "(#N)" pattern from title
-                    import re
-                    clean_title = re.sub(r'\s*\(#\d+\)\s*$', '', title)
-                    enhanced_metadata["title"] = clean_title
-                print(f"🎨 Using enhanced metadata with colors for upload response")
-        
-        return UploadResponse(
-            job_id=job_id,
-            status="completed",
-            pass_url=f"/pass/{job_id}",
-            ai_metadata=sanitize_metadata(enhanced_metadata),
-            ticket_count=len(pkpass_files),
-            warnings=warnings if warnings else None,
-            remaining_passes=new_balance,
-        )
-        
+        print(f"✅ Job {job_id} completed successfully")
+
     except Exception as e:
-        # If pass generation fails, mark job as failed
-        jobs[job_id].update({
-            "status": "failed",
-            "progress": 0,
-            "error": str(e)
-        })
-        print(f"❌ Pass generation failed: {e}")
-        
-        return UploadResponse(job_id=job_id, status="failed")
+        jobs[job_id].update({"status": "failed", "progress": 0, "error": str(e)})
+        print(f"❌ Pass generation failed for job {job_id}: {e}")
+
 
 @app.post("/upload/v2", response_model=UploadResponse)
 async def upload_pdf_v2(
@@ -517,13 +506,18 @@ async def get_status(
         else:
             print(f"⚠️ No enhanced metadata found in ticket_info for job {job_id}")
     
+    is_completed = job["status"] == "completed"
+
     return StatusResponse(
         job_id=job_id,
         status=job["status"],
         progress=job["progress"],
-        result_url=f"/pass/{job_id}" if job["status"] == "completed" else None,
+        result_url=f"/pass/{job_id}" if is_completed else None,
+        pass_url=f"/pass/{job_id}" if is_completed else None,
         ai_metadata=sanitize_metadata(metadata_to_return),
-        warnings=job.get("warnings")
+        ticket_count=job.get("ticket_count") if is_completed else None,
+        warnings=job.get("warnings"),
+        remaining_passes=job.get("remaining_passes") if is_completed else None,
     )
 
 @app.get("/pass/{job_id}")

@@ -19,8 +19,11 @@ class StatusResponse(BaseModel):
     status: str
     progress: int
     result_url: Optional[str] = None
+    pass_url: Optional[str] = None
     ai_metadata: Optional[Dict[str, Any]] = None
+    ticket_count: Optional[int] = None
     warnings: Optional[List[str]] = None
+    remaining_passes: Optional[int] = None
 
 class PassMetadata(BaseModel):
     event_name: Optional[str] = None
