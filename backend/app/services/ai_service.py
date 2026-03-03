@@ -184,6 +184,7 @@ Important:
 - COMBINE that main subject with any descriptors (2 parks, 3 days, etc.) found in the document
 - IGNORE legal headers, terms, conditions - focus on what's prominently displayed
 - The title should be specific enough that someone would recognize what they bought
+- FLIGHT DIRECTION: For boarding passes, origin is the DEPARTURE airport (labeled DESDE, FROM, ORIGIN, DEPARTURE, or the city/airport shown on the LEFT side of the route). Destination is the ARRIVAL airport (labeled CON DESTINO, TO, DESTINATION, ARRIVAL, or shown on the RIGHT). IATA codes may appear concatenated (e.g. "MADMDE" = MAD→MDE). The departure time always matches the origin airport. Use event_name like "Flight MAD → MDE" with correct direction.
 """.format(filename, safe_pdf_text)
 
         try:
