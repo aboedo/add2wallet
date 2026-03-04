@@ -326,95 +326,44 @@ class ContentViewModel: ObservableObject {
                     self.ticketCount = response.ticketCount
                     self.warnings = response.warnings ?? []
                     if response.status == "completed", let passUrl = response.passUrl {
-                        self.handleCompletedUpload(passUrl: passUrl, ticketCount: response.ticketCount, remainingPasses: response.remainingPasses)
-                    } else if response.status == "processing" {
-                        // Server accepted the job — poll until done
+                        // Server done — snap progress to 100%
+                        self.progressViewModel.completeProgress()
+                        
+                        // Update balance immediately from server response, then refresh
                         Task { @MainActor in
-                            await self.pollUntilComplete(jobId: response.jobId)
+                            if let remaining = response.remainingPasses {
+                                self.usageManager.remainingPasses = remaining
+                            }
+                            self.usageManager.passGenerated()
+                        }
+                        
+                        // Show success toast for pass generation
+                        let count = response.ticketCount ?? 1
+                        let message = count > 1 ? "Generated \(count) passes!" : "Pass generated!"
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("PassGenerated"),
+                            object: nil,
+                            userInfo: ["message": message]
+                        )
+                        
+                        if count > 1 {
+                            self.downloadAndOpenMultiplePasses(passUrl: passUrl, count: count)
+                        } else {
+                            self.downloadAndOpenPass(passUrl: passUrl)
                         }
                     } else {
                         self.isProcessing = false
                         self.progressViewModel.stopProgress()
                         self.errorMessage = "Pass generation failed. Status: \(response.status)"
                         self.hasError = true
-                        self.isRetry = false
                     }
+                    // Reset retry flag on success or failure
+                    self.isRetry = false
                 }
             )
             .store(in: &cancellables)
     }
     
-    private func handleCompletedUpload(passUrl: String, ticketCount: Int?, remainingPasses: Int?) {
-        // Server done — snap progress to 100%
-        progressViewModel.completeProgress()
-
-        // Update balance immediately from server response, then refresh
-        Task { @MainActor in
-            if let remaining = remainingPasses {
-                self.usageManager.remainingPasses = remaining
-            }
-            self.usageManager.passGenerated()
-        }
-
-        // Show success toast for pass generation
-        let count = ticketCount ?? 1
-        let message = count > 1 ? "Generated \(count) passes!" : "Pass generated!"
-        NotificationCenter.default.post(
-            name: NSNotification.Name("PassGenerated"),
-            object: nil,
-            userInfo: ["message": message]
-        )
-
-        if count > 1 {
-            downloadAndOpenMultiplePasses(passUrl: passUrl, count: count)
-        } else {
-            downloadAndOpenPass(passUrl: passUrl)
-        }
-
-        isRetry = false
-    }
-
-    @MainActor
-    private func pollUntilComplete(jobId: String) async {
-        let maxAttempts = 60  // 60 × 2s = 120s max
-        for attempt in 1...maxAttempts {
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-
-            // Bail out if user cancelled (cleared selection)
-            guard isProcessing else { return }
-
-            do {
-                let status = try await networkService.pollStatus(jobId: jobId)
-
-                if status.status == "completed", let passUrl = status.passUrl {
-                    passMetadata = status.aiMetadata
-                    ticketCount = status.ticketCount
-                    warnings = status.warnings ?? []
-                    handleCompletedUpload(passUrl: passUrl, ticketCount: status.ticketCount, remainingPasses: status.remainingPasses)
-                    return
-                } else if status.status == "failed" {
-                    isProcessing = false
-                    progressViewModel.stopProgress()
-                    errorMessage = "Pass generation failed on the server."
-                    hasError = true
-                    isRetry = false
-                    return
-                }
-                // Still processing — continue polling
-            } catch {
-                // Transient network error — keep trying
-                print("⚠️ Poll attempt \(attempt) failed: \(error.localizedDescription)")
-            }
-        }
-
-        // Timed out after max attempts
-        isProcessing = false
-        progressViewModel.stopProgress()
-        errorMessage = "Processing timed out. Please try again."
-        hasError = true
-        isRetry = false
-    }
-
     private func downloadAndOpenPass(passUrl: String) {
         errorMessage = ""
         

@@ -193,28 +193,6 @@ struct UploadResponse: Codable {
     }
 }
 
-struct StatusResponse: Codable {
-    let jobId: String
-    let status: String
-    let progress: Int
-    let passUrl: String?
-    let aiMetadata: EnhancedPassMetadata?
-    let ticketCount: Int?
-    let warnings: [String]?
-    let remainingPasses: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case jobId = "job_id"
-        case status
-        case progress
-        case passUrl = "pass_url"
-        case aiMetadata = "ai_metadata"
-        case ticketCount = "ticket_count"
-        case warnings
-        case remainingPasses = "remaining_passes"
-    }
-}
-
 struct ErrorResponse: Codable {
     let error: String
 }
@@ -331,30 +309,6 @@ class NetworkService {
             .eraseToAnyPublisher()
     }
     
-    func pollStatus(jobId: String) async throws -> StatusResponse {
-        guard let url = URL(string: "\(baseURL)/status/\(jobId)") else {
-            throw NetworkError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        request.setValue("add2wallet-prod-4fafa87d63f30ecc38e1a156bcb240d6", forHTTPHeaderField: "X-API-Key")
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.invalidResponse
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                throw NetworkError.serverError(errorResponse.error, statusCode: httpResponse.statusCode)
-            }
-            throw NetworkError.serverError("Server error: \(httpResponse.statusCode)", statusCode: httpResponse.statusCode)
-        }
-
-        return try JSONDecoder().decode(StatusResponse.self, from: data)
-    }
-
     func downloadPass(from passUrl: String) -> AnyPublisher<Data, Error> {
         guard let url = URL(string: "\(baseURL)\(passUrl)") else {
             return Fail(error: NetworkError.invalidURL)
