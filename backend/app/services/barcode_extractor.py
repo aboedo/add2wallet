@@ -47,10 +47,11 @@ class BarcodeExtractor:
         
         # Format groups for ordered detection
         self.format_groups = [
-            {'AZTEC'},  # Try Aztec first
-            {'DATAMATRIX'},  # Try Data Matrix second (before QR to avoid misidentification)
-            {'QRCODE'},  # Then QR
-            {'CODE128', 'CODE39', 'CODE93', 'EAN8', 'EAN13', 'UPC_A', 'UPC_E', 'CODABAR', 'ITF', 'PDF417'}  # Then 1D codes
+            {'AZTEC'},      # Try Aztec first
+            {'DATAMATRIX'}, # Try Data Matrix second (before QR to avoid misidentification)
+            {'PDF417'},     # Try PDF417 before QR — pyzbar sometimes misidentifies PDF417 as QRCODE
+            {'QRCODE'},     # Then QR
+            {'CODE128', 'CODE39', 'CODE93', 'EAN8', 'EAN13', 'UPC_A', 'UPC_E', 'CODABAR', 'ITF'}  # Then 1D codes
         ]
     
     def extract_barcodes_from_pdf(self, pdf_data: bytes, filename: str) -> List[Dict[str, Any]]:
