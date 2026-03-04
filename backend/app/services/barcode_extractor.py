@@ -2,6 +2,7 @@
 
 import io
 import os
+import re
 import logging
 import tempfile
 import base64
@@ -102,10 +103,14 @@ class BarcodeExtractor:
             text_barcodes = self._extract_barcodes_from_text(pdf_data, filename)
             barcodes.extend(text_barcodes)
         
+        # Filter out false positives (text fragments misdetected as barcodes)
+        if barcodes:
+            barcodes = self._filter_false_positives(barcodes)
+
         # Apply context-aware mixed Aztec/QR handling before deduplication
         if barcodes:
             barcodes = self._handle_mixed_aztec_qr(barcodes, filename)
-        
+
         logger.info(f"✅ Total barcodes extracted: {len(barcodes)}")
         return self._deduplicate_barcodes(barcodes)
     
@@ -153,7 +158,10 @@ class BarcodeExtractor:
                             'confidence': self._calculate_confidence(barcode),
                             'center_distance': self._calculate_center_distance(image, rect)
                         }
-                        
+
+                        # Correct misidentified barcode types (e.g. PDF417 reported as QRCODE)
+                        barcode_info = self._correct_barcode_type(barcode_info)
+
                         barcodes.append(barcode_info)
                         logger.debug(f"📱 Found {barcode.type} with format filter: {barcode_data[:50]}...")
                         
@@ -184,7 +192,7 @@ class BarcodeExtractor:
             page = doc[page_num]
             
             # Get page as image
-            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x scale for better quality
+            pix = page.get_pixmap(matrix=fitz.Matrix(300/72, 300/72))  # 300 DPI for reliable barcode detection
             img_data = pix.tobytes("png")
             
             # Convert to PIL Image and then to OpenCV format
@@ -643,11 +651,10 @@ class BarcodeExtractor:
         Returns:
             List of potential barcodes extracted from text
         """
-        import re
         from io import BytesIO
-        
+
         barcodes = []
-        
+
         try:
             # Extract text from PDF
             pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_data))
@@ -671,15 +678,19 @@ class BarcodeExtractor:
                     'source': 'text_numeric'
                 })
             
-            # Pattern 2: Mixed alphanumeric sequences (15+ chars)
+            # Pattern 2: Mixed alphanumeric sequences (15+ chars) containing both letters and digits
             alnum_patterns = re.findall(r'\b[A-Za-z0-9]{15,}\b', text_content)
             for pattern in alnum_patterns:
-                if not pattern.isdigit():  # Skip if already caught by numeric pattern
-                    potential_barcodes.append({
-                        'data': pattern,
-                        'type': self._infer_barcode_type_from_content(pattern, filename),
-                        'source': 'text_alphanumeric'
-                    })
+                if pattern.isdigit():  # Skip if already caught by numeric pattern
+                    continue
+                if pattern.isalpha():  # Skip purely alphabetic strings (likely natural language)
+                    logger.debug(f"⏭️ Skipping purely alphabetic text pattern: {pattern[:30]}")
+                    continue
+                potential_barcodes.append({
+                    'data': pattern,
+                    'type': self._infer_barcode_type_from_content(pattern, filename),
+                    'source': 'text_alphanumeric'
+                })
             
             # Convert potential barcodes to structured format
             for i, potential in enumerate(potential_barcodes):
@@ -709,6 +720,78 @@ class BarcodeExtractor:
             logger.warning(f"⚠️ Text-based barcode extraction failed: {e}")
         
         return barcodes
+
+    def _correct_barcode_type(self, barcode: Dict[str, Any]) -> Dict[str, Any]:
+        """Correct barcode type based on physical characteristics.
+
+        pyzbar sometimes misidentifies PDF417 as QRCODE. PDF417 barcodes are
+        much wider than tall (aspect ratio 3:1+), while QR codes are square.
+        """
+        bbox = barcode.get('bbox', [0, 0, 0, 0])
+        width, height = bbox[2], bbox[3]
+
+        if barcode.get('type') == 'QRCODE' and width > 0 and height > 0:
+            aspect_ratio = max(width, height) / max(min(width, height), 1)
+            if aspect_ratio >= 2.5:
+                logger.info(f"🔄 Reclassifying QRCODE → PDF417 based on aspect ratio {aspect_ratio:.1f}")
+                barcode['type'] = 'PDF417'
+                barcode['format'] = self._normalize_barcode_format('PDF417')
+                barcode['type_corrected'] = True
+
+        return barcode
+
+    def _is_likely_false_positive(self, data: str) -> bool:
+        """Check if detected barcode data is likely a text fragment falsely identified as a barcode.
+
+        False positives from pyzbar/text extraction look like natural language words
+        concatenated without spaces (e.g. 'PRECIOSemifinal', 'responsabilidad').
+        """
+
+        if not data or len(data) < 4:
+            return True
+
+        # Pure numeric data is almost always a real barcode
+        if data.isdigit():
+            return False
+
+        # URLs are legitimate barcode data
+        if re.match(r'^https?://', data, re.IGNORECASE):
+            return False
+
+        # Data with structural characters (JSON, URLs, delimited codes) = likely real
+        if re.search(r'[:/{}()\[\]@#$%&*+=|<>?,;\\]', data):
+            return False
+
+        # 5+ consecutive lowercase letters in a short string = likely natural language
+        # (real barcodes are numeric, structured alphanumeric, or encoded binary)
+        if len(data) < 40 and re.search(r'[a-z]{5,}', data):
+            return True
+
+        # Digits followed by all-uppercase word (4+ chars) = like "108671DOCUMENTO"
+        if re.match(r'^\d+[A-Z]{4,}$', data):
+            return True
+
+        return False
+
+    def _filter_false_positives(self, barcodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Filter out barcodes that are likely false positives from text misdetection."""
+        if not barcodes:
+            return barcodes
+
+        filtered = []
+        for bc in barcodes:
+            data = bc.get('data', '')
+            if self._is_likely_false_positive(data):
+                logger.info(f"🚫 Filtering false-positive barcode: {data[:50]}")
+            else:
+                filtered.append(bc)
+
+        # If ALL barcodes were filtered, keep originals (better than nothing)
+        if not filtered and barcodes:
+            logger.warning("⚠️ All barcodes filtered as false positives, keeping originals")
+            return barcodes
+
+        return filtered
 
     def _deduplicate_barcodes(self, barcodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Remove duplicate barcodes based on data content.
