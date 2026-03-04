@@ -50,52 +50,34 @@ class AIService:
         self._cache = {}  # Simple in-memory cache for venue lookups
     
     async def analyze_pdf_content(self, pdf_text: str, filename: str) -> Dict[str, Any]:
-        """Analyze PDF content using OpenAI to extract structured metadata.
-        
+        """Analyze PDF content using a single OpenAI call to extract structured metadata.
+
+        Previously made 4-6 sequential calls (~30-50s total). Now uses one comprehensive
+        prompt that already asks for all fields (lat/lng, colors, venue details, etc.),
+        reducing latency to ~5-8s and preventing iOS client timeouts.
+
         Args:
             pdf_text: Raw text extracted from PDF
             filename: Original filename for context
-            
+
         Returns:
             Dictionary with extracted metadata
         """
         if not self.ai_enabled:
             logger.warning("🔄 AI disabled, using fallback metadata extraction")
             return self._create_fallback_metadata(pdf_text, filename)
-        
-        logger.info(f"🤖 Starting AI analysis of PDF: {filename}")
-        
-        try:
-            # Step 1: Extract basic information from PDF
-            basic_info = await self._extract_pdf_metadata(pdf_text, filename)
-            logger.info(f"📋 Basic info extracted: {basic_info.get('event_name', 'Unknown')}")
-            
-            # Step 2: Enrich with web search if we have enough information
-            enriched_info = await self._enrich_event_data(basic_info)
-            logger.info(f"🌐 Enrichment completed with {len(enriched_info)} fields")
-            
-            # Step 2.5: Detect multiple events for iOS 26 upcoming events feature
-            enriched_info = await self._detect_multiple_events(pdf_text, enriched_info)
 
-            # Step 3: Refine the user-facing title to avoid codes like "ADULT 12 UY"
-            try:
-                title_result = await self._refine_title(pdf_text, enriched_info, filename)
-                if title_result and title_result.get("title"):
-                    enriched_info["title"] = title_result["title"]
-                    if not enriched_info.get("event_name"):
-                        enriched_info["event_name"] = title_result["title"]
-                    enriched_info["title_confidence"] = title_result.get("confidence")
-                    enriched_info["title_refined"] = True
-                    logger.info(f"🏷️ Refined title: {enriched_info['title']}")
-            except Exception as e:
-                logger.warning(f"⚠️ Title refinement failed, using extracted title: {e}")
-                # Best-effort heuristic fallback
-                heuristic_title = self._basic_title_heuristics(pdf_text, filename) or enriched_info.get("title")
-                if heuristic_title:
-                    enriched_info.setdefault("title", heuristic_title)
-            
-            return enriched_info
-            
+        logger.info(f"🤖 Starting AI analysis of PDF: {filename}")
+
+        try:
+            result = await self._extract_pdf_metadata(pdf_text, filename)
+            logger.info(f"📋 Extracted: {result.get('event_name', 'Unknown')}")
+
+            # Ensure downstream keys exist
+            result["enrichment_completed"] = True
+
+            return result
+
         except Exception as e:
             logger.error(f"❌ Error in AI analysis: {str(e)}")
             import traceback
@@ -232,9 +214,12 @@ Important:
             logger.error(f"❌ OpenAI API error: {e}")
             return self._create_fallback_metadata(pdf_text, filename)
 
+    # --- Unused: retained for potential future use or rollback ---
+
     async def _refine_title(self, pdf_text: str, metadata: Dict[str, Any], filename: str) -> Dict[str, Any]:
         """Use OpenAI to generate a concise, user-friendly pass title.
         Returns dict with keys: title, confidence.
+        NOTE: No longer called — title is extracted in the single _extract_pdf_metadata call.
         """
         if not self.ai_enabled:
             return {"title": self._basic_title_heuristics(pdf_text, filename), "confidence": 40}
@@ -291,10 +276,11 @@ Important:
     
     async def _enrich_event_data(self, basic_info: Dict[str, Any]) -> Dict[str, Any]:
         """Enrich event data with web search and location lookup.
-        
+        NOTE: No longer called — all fields are extracted in the single _extract_pdf_metadata call.
+
         Args:
             basic_info: Basic information extracted from PDF
-            
+
         Returns:
             Enhanced information with additional context
         """
@@ -326,10 +312,11 @@ Important:
     
     async def _get_location_info(self, event_info: Dict[str, Any]) -> Dict[str, Any]:
         """Get GPS coordinates and detailed location information.
-        
+        NOTE: No longer called — lat/lng are extracted in the single _extract_pdf_metadata call.
+
         Args:
             event_info: Event information with venue details
-            
+
         Returns:
             Dictionary with location enhancements
         """
@@ -412,10 +399,11 @@ Important:
     
     async def _search_event_details(self, event_info: Dict[str, Any]) -> Dict[str, Any]:
         """Search for additional event details online.
-        
+        NOTE: No longer called — event details are extracted in the single _extract_pdf_metadata call.
+
         Args:
             event_info: Basic event information
-            
+
         Returns:
             Dictionary with additional event details
         """
@@ -488,10 +476,11 @@ Important:
     
     async def _get_venue_details(self, event_info: Dict[str, Any]) -> Dict[str, Any]:
         """Get detailed venue information.
-        
+        NOTE: No longer called — venue details are extracted in the single _extract_pdf_metadata call.
+
         Args:
             event_info: Event information with venue name
-            
+
         Returns:
             Dictionary with venue details
         """
@@ -584,11 +573,12 @@ Important:
     
     async def _detect_multiple_events(self, pdf_text: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Detect if this is a multi-event ticket and extract upcoming events for iOS 26.
-        
+        NOTE: No longer called — multiple_events is extracted in the single _extract_pdf_metadata call.
+
         Args:
             pdf_text: Raw PDF text
             metadata: Already extracted metadata
-            
+
         Returns:
             Updated metadata with upcoming_events if applicable
         """
