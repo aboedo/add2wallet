@@ -28,6 +28,12 @@ from pyzbar import pyzbar
 from pdf2image import convert_from_bytes
 from PIL import Image
 import fitz  # PyMuPDF
+
+try:
+    import zxingcpp
+    ZXING_AVAILABLE = True
+except ImportError:
+    ZXING_AVAILABLE = False
 import PyPDF2
 
 # Configure logging
@@ -98,6 +104,17 @@ class BarcodeExtractor:
             except Exception as e:
                 logger.warning(f"⚠️ Enhanced extraction failed: {e}")
         
+        # Method 4: zxing-cpp — better PDF417/DataMatrix support than pyzbar
+        try:
+            zxing_barcodes = self._extract_with_zxing(pdf_data)
+            existing_data = {bc['data'] for bc in barcodes}
+            new_zxing = [bc for bc in zxing_barcodes if bc['data'] not in existing_data]
+            barcodes.extend(new_zxing)
+            if new_zxing:
+                logger.info(f"🔍 zxing-cpp found {len(new_zxing)} additional barcodes")
+        except Exception as e:
+            logger.warning(f"⚠️ zxing-cpp extraction failed: {e}")
+
         # If no barcodes found through image processing, try text extraction as fallback
         if not barcodes:
             logger.info("🔄 No visual barcodes found, attempting text-based extraction")
@@ -267,6 +284,76 @@ class BarcodeExtractor:
         
         return barcodes
     
+    def _extract_with_zxing(self, pdf_data: bytes) -> List[Dict[str, Any]]:
+        """Extract barcodes using zxing-cpp (better PDF417/DataMatrix support than pyzbar).
+
+        zxing-cpp format names → PKBarcodeFormat mapping:
+          PDF417   → PKBarcodeFormatPDF417
+          QRCode   → PKBarcodeFormatQR
+          Aztec    → PKBarcodeFormatAztec
+          Code128  → PKBarcodeFormatCode128
+        """
+        if not ZXING_AVAILABLE:
+            return []
+
+        zxing_format_map = {
+            'PDF417': 'PKBarcodeFormatPDF417',
+            'QRCode': 'PKBarcodeFormatQR',
+            'Aztec': 'PKBarcodeFormatAztec',
+            'Code128': 'PKBarcodeFormatCode128',
+            'Code39': 'PKBarcodeFormatCode128',
+            'DataMatrix': 'PKBarcodeFormatQR',
+        }
+
+        barcodes = []
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
+
+        for page_num in range(doc.page_count):
+            page = doc[page_num]
+            pix = page.get_pixmap(matrix=fitz.Matrix(300/72, 300/72))
+            img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+            if pix.n == 4:
+                img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+
+            results = zxingcpp.read_barcodes(img)
+            for b in results:
+                fmt_name = str(b.format)  # e.g. "PDF417"
+                pk_format = zxing_format_map.get(fmt_name, 'PKBarcodeFormatQR')
+
+                # Use raw bytes — more reliable than .text for binary payloads
+                raw = bytes(b.bytes) if b.bytes else b.text.encode('utf-8')
+                try:
+                    data = raw.decode('utf-8')
+                except UnicodeDecodeError:
+                    try:
+                        data = raw.decode('iso-8859-1')
+                    except Exception:
+                        data = b.text
+
+                # Compute bbox from position
+                pos = b.position
+                xs = [pos.top_left.x, pos.top_right.x, pos.bottom_left.x, pos.bottom_right.x]
+                ys = [pos.top_left.y, pos.top_right.y, pos.bottom_left.y, pos.bottom_right.y]
+                x, y = min(xs), min(ys)
+                w, h = max(xs) - x, max(ys) - y
+
+                barcode_info = {
+                    'data': data,
+                    'type': fmt_name,
+                    'format': pk_format,
+                    'encoding': 'utf-8',
+                    'raw_bytes': raw,
+                    'bytes_b64': base64.b64encode(raw).decode('ascii'),
+                    'bbox': [x, y, w, h],
+                    'area': w * h,
+                    'source': 'zxing',
+                    'page': page_num,
+                }
+                logger.info(f"🔍 zxing found {fmt_name} ({pk_format}): {data[:60]!r}")
+                barcodes.append(barcode_info)
+
+        return barcodes
+
     def _extract_with_enhancement(self, pdf_data: bytes) -> List[Dict[str, Any]]:
         """Extract barcodes with image enhancement techniques.
         
@@ -779,8 +866,13 @@ class BarcodeExtractor:
         if not barcodes:
             return barcodes
 
+        IMAGE_SOURCES = {'zxing', 'embedded-image', 'rasterized-page'}
         filtered = []
         for bc in barcodes:
+            # Barcodes detected via image scanning are never false positives
+            if bc.get('source') in IMAGE_SOURCES:
+                filtered.append(bc)
+                continue
             data = bc.get('data', '')
             if self._is_likely_false_positive(data):
                 logger.info(f"🚫 Filtering false-positive barcode: {data[:50]}")
