@@ -107,11 +107,32 @@ class BarcodeExtractor:
         # Method 4: zxing-cpp — better PDF417/DataMatrix support than pyzbar
         try:
             zxing_barcodes = self._extract_with_zxing(pdf_data)
-            existing_data = {bc['data'] for bc in barcodes}
-            new_zxing = [bc for bc in zxing_barcodes if bc['data'] not in existing_data]
-            barcodes.extend(new_zxing)
-            if new_zxing:
-                logger.info(f"🔍 zxing-cpp found {len(new_zxing)} additional barcodes")
+            if zxing_barcodes:
+                # zxing results are authoritative for format detection.
+                # For each zxing barcode, remove any pyzbar barcode from the same page
+                # that covers an overlapping region (pyzbar often misidentifies PDF417 as QRCODE).
+                zxing_data_set = {bc['data'] for bc in zxing_barcodes}
+                zxing_pages = {bc.get('page', 0) for bc in zxing_barcodes}
+
+                # Drop pyzbar barcodes from pages where zxing also found something,
+                # unless the pyzbar barcode data doesn't appear in zxing results at all
+                # (meaning it's a different, distinct barcode on the same page).
+                filtered_existing = []
+                for bc in barcodes:
+                    page = bc.get('page', 0)
+                    if page in zxing_pages and bc.get('data') not in zxing_data_set:
+                        # Different data on same page — keep only if it's not a QRCODE
+                        # that might be a misidentification (pyzbar is unreliable for PDF417)
+                        if bc.get('type') == 'QRCODE' and bc.get('source') != 'zxing':
+                            logger.info(f"🔄 Dropping pyzbar QRCODE in favour of zxing results for same page: {bc.get('data','')[:40]}")
+                            continue
+                    filtered_existing.append(bc)
+                barcodes = filtered_existing
+
+                existing_data = {bc['data'] for bc in barcodes}
+                new_zxing = [bc for bc in zxing_barcodes if bc['data'] not in existing_data]
+                barcodes.extend(new_zxing)
+                logger.info(f"🔍 zxing-cpp found {len(zxing_barcodes)} barcode(s), added {len(new_zxing)} new")
         except Exception as e:
             logger.warning(f"⚠️ zxing-cpp extraction failed: {e}")
 
