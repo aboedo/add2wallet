@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     libzbar0 \
     libzbar-dev \
     poppler-utils \
+    g++ \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
