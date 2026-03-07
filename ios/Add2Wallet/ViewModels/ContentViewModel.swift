@@ -439,9 +439,17 @@ class ContentViewModel: ObservableObject {
             
             // Present the add pass view controller
             guard let passVC = PKAddPassesViewController(pass: pass) else {
-                throw NSError(domain: "PassError", code: 5, userInfo: [
-                    NSLocalizedDescriptionKey: "Unable to create pass viewer. Please try again."
-                ])
+                // PKAddPassesViewController returns nil when pass already exists in Wallet
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("PassAlreadyInWallet"),
+                        object: nil,
+                        userInfo: [:]
+                    )
+                }
+                isProcessing = false
+                progressViewModel.completeProgress()
+                return
             }
             
             hasError = false

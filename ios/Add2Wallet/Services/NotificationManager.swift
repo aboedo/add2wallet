@@ -13,6 +13,7 @@ class NotificationManager {
         case passGenerated = "PassGenerated"
         case resetPassUIState = "ResetPassUIState"
         case showSupportEmail = "ShowSupportEmail"
+        case passAlreadyInWallet = "PassAlreadyInWallet"
         
         var notificationName: NSNotification.Name {
             return NSNotification.Name(self.rawValue)

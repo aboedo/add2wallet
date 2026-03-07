@@ -269,6 +269,14 @@ struct ContentView: View {
                         self.showingSuccessToast = true
                     }
                 }
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("PassAlreadyInWallet"),
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    self.successToastMessage = "Already in your Wallet ✓"
+                    self.showingSuccessToast = true
+                }
             }
             .sheet(isPresented: Binding(
                 get: { showingAddPassVC && passViewController != nil },
