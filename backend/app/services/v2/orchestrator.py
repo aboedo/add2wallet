@@ -197,17 +197,17 @@ def _consolidate_barcodes(
     if len(barcodes) == 1:
         return barcodes
 
-    if extraction.multiple_tickets:
-        print(f"🎫 [v2] multiple_tickets=True — keeping all {len(barcodes)} barcodes")
-        return barcodes
-
-    # Filter out URL-only barcodes (they're scan-gate redirect links, not the ticket)
+    # Always filter out URL-only barcodes (redirect links, not scan codes)
     real_barcodes = [
         bc for bc in barcodes
         if not bc.message.startswith(("http://", "https://"))
     ]
     if not real_barcodes:
         real_barcodes = barcodes  # all are URLs — keep first one as fallback
+
+    if extraction.multiple_tickets and len(real_barcodes) >= 3:
+        print(f"🎫 [v2] multiple_tickets=True — keeping all {len(real_barcodes)} barcodes")
+        return real_barcodes
 
     # Pick primary by priority then payload length
     def _score(bc: "ExtractedBarcode") -> tuple:

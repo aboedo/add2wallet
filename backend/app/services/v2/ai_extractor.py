@@ -24,7 +24,7 @@ RULES:
 - For date: ISO 8601 format YYYY-MM-DD
 - For time: HH:MM (24-hour)
 - document_type must be one of: event_ticket, boarding_pass, transit, hotel, generic
-- Set multiple_tickets=true ONLY if the PDF clearly contains separate tickets for different people or different entry slots (e.g. 4 museum entry tickets, 2 Olympic passages). A single ticket with multiple barcodes (e.g. scan point + backup) is NOT multiple tickets.
+- Set multiple_tickets=true ONLY when the document contains 3 or more clearly separate tickets/entries with distinct barcodes for different people in a group (e.g. 4 family entry tickets each with a unique QR code). If the PDF has only 1 or 2 entries/barcodes, ALWAYS set multiple_tickets=false — even if the text shows "1/2" and "2/2" or repeats the ticket info twice.
 
 DOCUMENT FILENAME: {filename}
 
