@@ -72,10 +72,11 @@ def create_passes_v2(
     bg_color, fg_color, label_color = extract_colors(pdf_bytes, extraction.document_type)
 
     # ------------------------------------------------------------------
-    # Step 5: Determine ticket count and build passes
-    # One pass per barcode, minimum one pass (with no barcode).
+    # Step 5: Consolidate barcodes and determine ticket count
     # ------------------------------------------------------------------
+    barcodes = _consolidate_barcodes(barcodes, extraction)
     total_tickets = max(1, len(barcodes))
+    print(f"🎫 [v2] {total_tickets} ticket(s) after consolidation")
     signer = get_signer()
     pass_type_id, team_id = signer.get_identifiers()
 
@@ -158,6 +159,67 @@ def create_passes_v2(
 
     print(f"✅ [v2] Generated {len(pkpass_files)} pass(es)")
     return pkpass_files, detected_barcodes_raw, ticket_info, all_warnings
+
+
+# ---------------------------------------------------------------------------
+# Barcode consolidation
+# ---------------------------------------------------------------------------
+
+# Priority: higher = better primary barcode
+_FORMAT_PRIORITY = {
+    "PDF417": 5,
+    "AZTEC": 4,
+    "QRCODE": 3,
+    "CODE128": 2,
+    "CODE39": 2,
+    "DATA MATRIX": 1,
+    "DATAMATRIX": 1,
+    "EAN13": 1,
+    "EAN8": 1,
+}
+
+
+def _consolidate_barcodes(
+    barcodes: List["ExtractedBarcode"],
+    extraction: "PDFExtraction",
+) -> List["ExtractedBarcode"]:
+    """Reduce barcodes to the minimum set needed.
+
+    - If AI says multiple_tickets=True → keep all (one pass per barcode)
+    - Otherwise → pick the single best primary barcode:
+        * Skip URL barcodes (message starts with http/https) — they're redirect links
+        * Prefer by format priority (PDF417 > Aztec > QR > 1D > DataMatrix)
+        * Break ties by payload length (longer = more info)
+    """
+    if not barcodes:
+        return barcodes
+
+    if len(barcodes) == 1:
+        return barcodes
+
+    if extraction.multiple_tickets:
+        print(f"🎫 [v2] multiple_tickets=True — keeping all {len(barcodes)} barcodes")
+        return barcodes
+
+    # Filter out URL-only barcodes (they're scan-gate redirect links, not the ticket)
+    real_barcodes = [
+        bc for bc in barcodes
+        if not bc.message.startswith(("http://", "https://"))
+    ]
+    if not real_barcodes:
+        real_barcodes = barcodes  # all are URLs — keep first one as fallback
+
+    # Pick primary by priority then payload length
+    def _score(bc: "ExtractedBarcode") -> tuple:
+        prio = _FORMAT_PRIORITY.get(bc.source_type.upper(), 0)
+        return (prio, len(bc.message))
+
+    primary = max(real_barcodes, key=_score)
+    print(
+        f"🎫 [v2] Consolidated {len(barcodes)} barcodes → 1 "
+        f"(primary: {primary.source_type}, {len(primary.message)} chars)"
+    )
+    return [primary]
 
 
 # ---------------------------------------------------------------------------

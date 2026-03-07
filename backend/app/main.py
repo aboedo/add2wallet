@@ -259,28 +259,38 @@ async def upload_pdf(
         # Update progress
         jobs[job_id]["progress"] = 30
         
-        # Step 2: AI analysis of PDF content
-        ai_metadata = None
+        # Step 2 + 3: Generate passes via v2 pipeline (AI extraction is internal to v2)
+        ai_metadata = None  # populated from ticket_info after v2 runs
         try:
-            ai_metadata = await ai_service.analyze_pdf_content(pdf_text, file.filename)
+            from app.services.v2.orchestrator import create_passes_v2
+            pkpass_files, detected_barcodes, ticket_info, warnings = create_passes_v2(
+                contents,
+                file.filename,
+            )
+            # Extract ai_metadata from v2 ticket_info for response/job storage
+            if ticket_info:
+                ai_metadata = ticket_info[0].get("metadata", {})
             jobs[job_id]["progress"] = 70
             jobs[job_id]["ai_metadata"] = ai_metadata
-            print(f"✅ AI analysis completed for {file.filename}")
-        except Exception as ai_error:
-            print(f"⚠️ AI analysis failed, using fallback: {ai_error}")
-            # Continue with basic extraction
-            jobs[job_id]["progress"] = 50
-        
-        # Step 3: Generate enhanced pass(es) with AI metadata and barcode extraction
-        try:
-            pkpass_files, detected_barcodes, ticket_info, warnings = pass_generator.create_pass_from_pdf_data(
-                contents, 
-                file.filename,
-                ai_metadata
-            )
             print(f"🎫 Generated {len(pkpass_files)} pass files")
             if warnings:
                 print(f"⚠️ Warnings generated: {warnings}")
+
+            # ---------------------------------------------------------------
+            # V1 FALLBACK — uncomment to revert to v1 pipeline
+            # ---------------------------------------------------------------
+            # ai_metadata = None
+            # try:
+            #     ai_metadata = await ai_service.analyze_pdf_content(pdf_text, file.filename)
+            #     jobs[job_id]["progress"] = 70
+            #     jobs[job_id]["ai_metadata"] = ai_metadata
+            # except Exception as ai_error:
+            #     print(f"⚠️ AI analysis failed, using fallback: {ai_error}")
+            #     jobs[job_id]["progress"] = 50
+            # pkpass_files, detected_barcodes, ticket_info, warnings = pass_generator.create_pass_from_pdf_data(
+            #     contents, file.filename, ai_metadata
+            # )
+            # ---------------------------------------------------------------
         except Exception as e:
             print(f"❌ Error generating passes: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to generate passes: {str(e)}")

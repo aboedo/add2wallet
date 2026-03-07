@@ -131,6 +131,7 @@ class PDFExtraction(BaseModel):
     performer: Optional[str] = Field(default=None, description="Main performer, artist, or speaker")
     price: Optional[str] = Field(default=None, description="Ticket price if shown")
     confidence: int = Field(ge=0, le=100, description="Extraction confidence 0-100")
+    multiple_tickets: bool = Field(default=False, description="True if PDF contains separate tickets for different people or entry slots")
 
     @field_validator("title")
     @classmethod
