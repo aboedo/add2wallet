@@ -100,8 +100,10 @@ class AIService:
         # Design a comprehensive prompt for metadata extraction  
         safe_pdf_text = pdf_text[:4000].replace('{', '{{').replace('}', '}}').replace('%', '%%')
         
+        current_date = datetime.now().strftime("%Y-%m-%d")
         prompt = """You are preparing content for an Apple Wallet pass. Your job is to extract the PRIMARY SUBJECT from this document - what did the user actually buy access to?
 
+TODAY'S DATE: {}
 FILE: {}
 DOCUMENT CONTENT:
 {}
@@ -156,6 +158,7 @@ Important:
 - For most fields, include information that is clearly present in the text
 - Use null for missing information
 - Standardize date/time formats
+- For dates with abbreviated years (e.g. "11 abril/26", "Apr/26", "11.04.26"), interpret the 2-digit year relative to TODAY'S DATE. If "26" means the year is in the past with the current century, use the next century. Always prefer future or near-future dates over past dates when the year is ambiguous.
 - For venue_name, extract ONLY the venue name (e.g., 'Eiffel Tower'), not contact info or website URLs
 - Be precise with venue names and addresses
 - Identify the document type accurately
@@ -167,7 +170,7 @@ Important:
 - IGNORE legal headers, terms, conditions - focus on what's prominently displayed
 - The title should be specific enough that someone would recognize what they bought
 - FLIGHT DIRECTION: For boarding passes, origin is the DEPARTURE airport (labeled DESDE, FROM, ORIGIN, DEPARTURE, or the city/airport shown on the LEFT side of the route). Destination is the ARRIVAL airport (labeled CON DESTINO, TO, DESTINATION, ARRIVAL, or shown on the RIGHT). IATA codes may appear concatenated (e.g. "MADMDE" = MAD→MDE). The departure time always matches the origin airport. Use event_name like "Flight MAD → MDE" with correct direction.
-""".format(filename, safe_pdf_text)
+""".format(current_date, filename, safe_pdf_text)
 
         try:
             response = self.client.chat.completions.create(
