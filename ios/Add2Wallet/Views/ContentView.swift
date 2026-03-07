@@ -226,9 +226,13 @@ struct ContentView: View {
                 ) { notification in
                     if let userInfo = notification.userInfo,
                        let passVC = userInfo["passViewController"] as? PKAddPassesViewController {
-                        // Reset showingAddPassVC first to ensure clean state for new pass
+                        // Nil out old VC first so SwiftUI tears it down cleanly,
+                        // then assign new one on next runloop tick
                         self.showingAddPassVC = false
-                        self.passViewController = passVC
+                        self.passViewController = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            self.passViewController = passVC
+                        }
                     }
                 }
                 NotificationCenter.default.addObserver(
@@ -285,6 +289,7 @@ struct ContentView: View {
                 // Reset all state after dismissal to prevent stale sheet on next pass
                 showingAddPassVC = false
                 passAddedSuccessfully = false
+                passViewController = nil  // ensure stale VC doesn't linger
                 // Refresh balance when returning from Apple Wallet (sheet dismissal)
                 Task {
                     await passUsageManager.forceRefreshBalance()
