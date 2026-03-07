@@ -57,3 +57,6 @@ annotated_types*/
 pydantic*/
 typing_extensions*/
 typing_inspection*/
+.venv311/
+_pydantic_shadowed/
+_pydantic_core_shadowed/
