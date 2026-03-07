@@ -240,62 +240,94 @@ class NetworkService {
         self.session = URLSession(configuration: config)
     }
     
+    private static let retryDelays: [TimeInterval] = [0.5, 1.0, 2.0]
+
+    private static func isRetryableError(_ error: Error) -> Bool {
+        guard let networkError = error as? NetworkError,
+              let statusCode = networkError.statusCode else {
+            return false
+        }
+        return statusCode >= 500
+    }
+
     func uploadPDF(data: Data, filename: String, isRetry: Bool = false, isDemo: Bool = false) -> AnyPublisher<UploadResponse, Error> {
+        func attempt(retryIndex: Int) -> AnyPublisher<UploadResponse, Error> {
+            return makeUploadRequest(data: data, filename: filename, isRetry: isRetry, isDemo: isDemo)
+                .catch { error -> AnyPublisher<UploadResponse, Error> in
+                    guard retryIndex < Self.retryDelays.count,
+                          Self.isRetryableError(error) else {
+                        return Fail(error: error).eraseToAnyPublisher()
+                    }
+                    let delay = Self.retryDelays[retryIndex]
+                    print("[NetworkService] Upload failed with \(error.localizedDescription), retrying in \(delay)s (attempt \(retryIndex + 2)/\(Self.retryDelays.count + 1))")
+                    return Just(())
+                        .delay(for: .seconds(delay), scheduler: DispatchQueue.main)
+                        .setFailureType(to: Error.self)
+                        .flatMap { _ in attempt(retryIndex: retryIndex + 1) }
+                        .eraseToAnyPublisher()
+                }
+                .eraseToAnyPublisher()
+        }
+
+        return attempt(retryIndex: 0)
+    }
+
+    private func makeUploadRequest(data: Data, filename: String, isRetry: Bool, isDemo: Bool) -> AnyPublisher<UploadResponse, Error> {
         guard let url = URL(string: "\(baseURL)/upload") else {
             return Fail(error: NetworkError.invalidURL)
                 .eraseToAnyPublisher()
         }
-        
+
         let boundary = UUID().uuidString
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue("add2wallet-prod-4fafa87d63f30ecc38e1a156bcb240d6", forHTTPHeaderField: "X-API-Key")
-        
+
         var body = Data()
-        
+
         // Add file data
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
         body.append("Content-Type: application/pdf\r\n\r\n".data(using: .utf8)!)
         body.append(data)
         body.append("\r\n".data(using: .utf8)!)
-        
+
         // Add user_id (from RevenueCat)
         let appUserId = Purchases.shared.appUserID
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"user_id\"\r\n\r\n".data(using: .utf8)!)
         body.append(appUserId.data(using: .utf8)!)
         body.append("\r\n".data(using: .utf8)!)
-        
+
         // Add session_token
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"session_token\"\r\n\r\n".data(using: .utf8)!)
         body.append("development-token".data(using: .utf8)!)
         body.append("\r\n".data(using: .utf8)!)
-        
+
         // Add is_retry flag
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"is_retry\"\r\n\r\n".data(using: .utf8)!)
         body.append("\(isRetry)".data(using: .utf8)!)
         body.append("\r\n".data(using: .utf8)!)
-        
+
         // Add is_demo flag
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"is_demo\"\r\n\r\n".data(using: .utf8)!)
         body.append("\(isDemo)".data(using: .utf8)!)
         body.append("\r\n".data(using: .utf8)!)
-        
+
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-        
+
         request.httpBody = body
-        
+
         return session.dataTaskPublisher(for: request)
             .tryMap { data, response in
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw NetworkError.invalidResponse
                 }
-                
+
                 if httpResponse.statusCode == 200 {
                     return data
                 } else {
