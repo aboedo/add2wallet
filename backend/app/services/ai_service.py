@@ -19,6 +19,26 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def _normalize_date(date_str: str) -> str:
+    """Expand 2-digit years to 4-digit years in a date string.
+
+    The AI is instructed to expand them, but this is a deterministic safety net
+    for cases where it doesn't. Handles formats like:
+      - "26-04-11" → "2026-04-11"
+      - "2024-04-11" → "2024-04-11" (unchanged)
+      - "04/11/26"  → kept as-is (pass_generator handles these)
+    Only touches strings that look like YYYY-MM-DD with a 2-digit year.
+    """
+    if not date_str or not isinstance(date_str, str):
+        return date_str
+    # Match 2-digit year at start: "26-04-11"
+    m = re.match(r'^(\d{2})-(\d{2})-(\d{2})$', date_str.strip())
+    if m:
+        y, mo, d = m.groups()
+        return f"20{y}-{mo}-{d}"
+    return date_str
+
+
 class AIService:
     """Service for AI-powered PDF analysis and event enrichment."""
     
@@ -158,7 +178,7 @@ Important:
 - For most fields, include information that is clearly present in the text
 - Use null for missing information
 - Standardize date/time formats
-- For dates with abbreviated years (e.g. "11 abril/26", "Apr/26", "11.04.26"), interpret the 2-digit year relative to TODAY'S DATE. If "26" means the year is in the past with the current century, use the next century. Always prefer future or near-future dates over past dates when the year is ambiguous.
+- For 2-digit years (e.g. "/26", "'26", "11 abril/26"), complete them as 20XX literally. "26" = 2026, "27" = 2027. Do not infer whether the event is past or future — just expand the year as written.
 - For venue_name, extract ONLY the venue name (e.g., 'Eiffel Tower'), not contact info or website URLs
 - Be precise with venue names and addresses
 - Identify the document type accurately
@@ -202,6 +222,10 @@ Important:
                 response_text = response_text[json_start:json_end]
             
             extracted_data = json.loads(response_text)
+
+            # Normalize date: expand 2-digit years the AI may have left (e.g. "26-04-11" or "04/11/26")
+            if extracted_data.get("date"):
+                extracted_data["date"] = _normalize_date(extracted_data["date"])
             
             # Add processing metadata
             extracted_data["ai_processed"] = True
