@@ -125,20 +125,30 @@ class SavedPass {
     // Parse event date string or fallback to creation date for sorting/grouping
     var eventDateOrFallback: Date {
         if let eventDateString = eventDate, !eventDateString.isEmpty {
-            // Try common date formats
+            // Try common date formats — with time first (more specific), then date-only
             let formatters = [
-                "MMM d, yyyy",    // "Dec 15, 2024"
-                "MMMM d, yyyy",   // "December 15, 2024"
-                "MM/dd/yyyy",     // "12/15/2024"
-                "dd/MM/yyyy",     // "15/12/2024"
-                "yyyy-MM-dd",     // "2024-12-15"
-                "d MMMM yyyy",    // "15 December 2024"
-                "MMM d",          // "Dec 15" (current year assumed)
-                "MMMM d"          // "December 15" (current year assumed)
+                "MMM d, yyyy 'at' h:mm a",  // "Dec 15, 2024 at 8:00 PM"
+                "MMM d, yyyy h:mm a",        // "Dec 15, 2024 8:00 PM"
+                "MMMM d, yyyy 'at' h:mm a",  // "December 15, 2024 at 8:00 PM"
+                "MMMM d, yyyy h:mm a",       // "December 15, 2024 8:00 PM"
+                "M/d/yy, h:mm a",            // "4/4/26, 2:45 PM" (localized short format)
+                "M/d/yyyy, h:mm a",          // "4/4/2026, 2:45 PM"
+                "d/M/yy, h:mm a",            // "4/4/26, 2:45 PM" (EU)
+                "yyyy-MM-dd'T'HH:mm:ss",     // "2024-12-15T20:00:00"
+                "yyyy-MM-dd HH:mm:ss",       // "2024-12-15 20:00:00"
+                "MMM d, yyyy",               // "Dec 15, 2024"
+                "MMMM d, yyyy",              // "December 15, 2024"
+                "MM/dd/yyyy",                // "12/15/2024"
+                "dd/MM/yyyy",                // "15/12/2024"
+                "yyyy-MM-dd",                // "2024-12-15"
+                "d MMMM yyyy",               // "15 December 2024"
+                "MMM d",                     // "Dec 15" (current year assumed)
+                "MMMM d"                     // "December 15" (current year assumed)
             ]
             
             for formatString in formatters {
                 let formatter = DateFormatter()
+                formatter.locale = Locale(identifier: "en_US_POSIX")
                 formatter.dateFormat = formatString
                 if let parsedDate = formatter.date(from: eventDateString) {
                     return parsedDate
