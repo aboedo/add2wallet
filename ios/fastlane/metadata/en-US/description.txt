@@ -1,0 +1,17 @@
+Add2Wallet turns your PDF tickets, vouchers, and booking confirmations into Apple Wallet passes — in seconds.
+
+Just share any PDF from your Files, email, or browser, and Add2Wallet automatically extracts the event name, date, venue, barcode, and more. Your pass goes straight to Wallet, ready to scan.
+
+Works with:
+• Concert and show tickets
+• Museum and attraction entries
+• Guided tour vouchers
+• Sports events
+• Any PDF with a barcode or QR code
+
+How it works:
+1. Share a PDF from anywhere
+2. Add2Wallet reads the details automatically
+3. Add the pass to Apple Wallet
+
+No account needed. No personal data stored. PDFs are processed and immediately deleted.

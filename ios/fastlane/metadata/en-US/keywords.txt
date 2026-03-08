@@ -1,0 +1,1 @@
+wallet,ticket,pdf,pass,qr,barcode,event,museum,concert,voucher,boarding,tour,entrada,billete
