@@ -23,10 +23,12 @@ struct ScreenshotModeSeeder {
         formatter.dateFormat = "MMM d, yyyy"
 
         let fakeData: [(title: String, venue: String, city: String, passType: String, daysFromNow: Int)] = [
-            ("Coldplay World Tour", "Camp Nou", "Barcelona", "concert", 45),
-            ("Real Madrid vs Barcelona", "Santiago Bernabéu", "Madrid", "sports", 12),
-            ("Eiffel Tower Access", "Eiffel Tower", "Paris", "attraction", 30),
-            ("Musée d'Orsay", "Musée d'Orsay", "Paris", "museum", 60),
+            ("Coldplay World Tour", "Camp Nou", "Barcelona", "concert", 8),
+            ("Real Madrid vs Barcelona", "Santiago Bernabéu", "Madrid", "sports", 15),
+            ("Hamilton", "Victoria Palace Theatre", "London", "theatre", 22),
+            ("Eiffel Tower", "Champ de Mars", "Paris", "attraction", 35),
+            ("Musée d'Orsay", "Rue de la Légion d'Honneur", "Paris", "museum", 36),
+            ("JFK → CDG", "John F. Kennedy Intl.", "New York", "flight", 50),
         ]
 
         for (index, data) in fakeData.enumerated() {
