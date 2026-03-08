@@ -9,71 +9,12 @@
       }
     ]
   },
-  "identifier" : "29100577",
+  "identifier" : "5055D5A0",
   "nonRenewingSubscriptions" : [
 
   ],
   "products" : [
-    {
-      "displayPrice" : "0.99",
-      "familyShareable" : false,
-      "internalID" : "6751009521",
-      "localizations" : [
-        {
-          "description" : "10 passes",
-          "displayName" : "10 passes",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "10_passes",
-      "referenceName" : "10 passes",
-      "type" : "Consumable"
-    },
-    {
-      "displayPrice" : "1.99",
-      "familyShareable" : false,
-      "internalID" : "6759552794",
-      "localizations" : [
-        {
-          "description" : "Convert 15 PDFs into Apple Wallet passes",
-          "displayName" : "15 Passes",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "15_passes",
-      "referenceName" : "15 Passes",
-      "type" : "Consumable"
-    },
-    {
-      "displayPrice" : "0.99",
-      "familyShareable" : false,
-      "internalID" : "6759552828",
-      "localizations" : [
-        {
-          "description" : "Convert 5 PDFs into Apple Wallet passes",
-          "displayName" : "5 Passes",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "5_passes",
-      "referenceName" : "5 Passes",
-      "type" : "Consumable"
-    },
-    {
-      "displayPrice" : "4.99",
-      "familyShareable" : false,
-      "internalID" : "6759552554",
-      "localizations" : [
-        {
-          "description" : "Convert 50 PDFs into Apple Wallet passes. Best value!",
-          "displayName" : "50 Passes",
-          "locale" : "en_US"
-        }
-      ],
-      "productID" : "50_passes",
-      "referenceName" : "50 Passes",
-      "type" : "Consumable"
-    }
+
   ],
   "settings" : {
     "_applicationInternalID" : "6749784629",
@@ -83,9 +24,9 @@
     "_developerTeamID" : "H9DPH4DQG7",
     "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_lastSynchronizedDate" : 794661782.978549,
     "_locale" : "en_US",
     "_renewalBillingIssuesEnabled" : false,
+    "_shouldSetupSyncOnLoad" : true,
     "_storefront" : "USA",
     "_storeKitErrors" : [
 
