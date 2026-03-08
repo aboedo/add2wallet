@@ -60,7 +60,7 @@ struct HeroCardStack: View {
                         .scaleEffect(0.8)
                         .tint(.white.opacity(0.8))
                 } else {
-                    Text("\(remainingPasses) passes left")
+                    Text("\(remainingPasses) credits left")
                         .font(ThemeManager.Typography.footnoteMonospaced)
                         .foregroundColor(.white.opacity(0.8))
                         .padding(.horizontal, ThemeManager.Spacing.sm)

@@ -137,8 +137,28 @@ struct ContentView: View {
                         // Primary CTA and secondary actions
                         if let _ = viewModel.selectedFileURL, !viewModel.isProcessing {
                             VStack(spacing: ThemeManager.Spacing.sm) {
-                                // Primary CTA - full width, prominent
-                                if passViewController != nil {
+                                if passAddedSuccessfully {
+                                    // Post-add state: pass was added to wallet
+                                    Button {
+                                        ThemeManager.Haptics.light()
+                                        selectedTab = 1
+                                    } label: {
+                                        Label("View in My Passes", systemImage: "wallet.pass")
+                                    }
+                                    .themedPrimaryButton()
+
+                                    Button {
+                                        ThemeManager.Haptics.selection()
+                                        viewModel.clearSelection()
+                                        passAddedSuccessfully = false
+                                        passViewController = nil
+                                    } label: {
+                                        Label("New Pass", systemImage: "doc.badge.plus")
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .themedSecondaryButton()
+                                } else if passViewController != nil {
+                                    // Primary CTA - full width, prominent
                                     Button {
                                         ThemeManager.Haptics.light()
                                         addToWalletBounce += 1
@@ -148,6 +168,18 @@ struct ContentView: View {
                                             .symbolEffect(.bounce, value: addToWalletBounce)
                                     }
                                     .themedPrimaryButton()
+
+                                    // Secondary actions row
+                                    HStack(spacing: ThemeManager.Spacing.sm) {
+                                        Button(role: .cancel) {
+                                            ThemeManager.Haptics.selection()
+                                            viewModel.clearSelection()
+                                        } label: {
+                                            Label("Cancel", systemImage: "xmark")
+                                                .frame(maxWidth: .infinity)
+                                        }
+                                        .themedSecondaryButton()
+                                    }
                                 } else if !viewModel.hasError {
                                     Button {
                                         ThemeManager.Haptics.light()
@@ -158,21 +190,30 @@ struct ContentView: View {
                                             .symbolEffect(.bounce, value: createPassBounce)
                                     }
                                     .themedPrimaryButton()
-                                }
-                                
-                                // Secondary actions row
-                                HStack(spacing: ThemeManager.Spacing.sm) {
-                                    Button(role: .cancel) {
-                                        ThemeManager.Haptics.selection()
-                                        viewModel.clearSelection()
-                                    } label: {
-                                        Label("Cancel", systemImage: "xmark")
-                                            .frame(maxWidth: .infinity)
+
+                                    // Secondary actions row
+                                    HStack(spacing: ThemeManager.Spacing.sm) {
+                                        Button(role: .cancel) {
+                                            ThemeManager.Haptics.selection()
+                                            viewModel.clearSelection()
+                                        } label: {
+                                            Label("Cancel", systemImage: "xmark")
+                                                .frame(maxWidth: .infinity)
+                                        }
+                                        .themedSecondaryButton()
                                     }
-                                    .themedSecondaryButton()
-                                    
-                                    // Show retry button if there was an error
-                                    if viewModel.hasError {
+                                } else {
+                                    // Error state: show cancel + retry + contact support
+                                    HStack(spacing: ThemeManager.Spacing.sm) {
+                                        Button(role: .cancel) {
+                                            ThemeManager.Haptics.selection()
+                                            viewModel.clearSelection()
+                                        } label: {
+                                            Label("Cancel", systemImage: "xmark")
+                                                .frame(maxWidth: .infinity)
+                                        }
+                                        .themedSecondaryButton()
+
                                         Button {
                                             ThemeManager.Haptics.light()
                                             viewModel.retryUpload()
@@ -181,8 +222,7 @@ struct ContentView: View {
                                                 .frame(maxWidth: .infinity)
                                         }
                                         .themedSecondaryButton()
-                                        
-                                        // Show contact support button for 4xx errors
+
                                         if viewModel.showingContactSupport {
                                             Button {
                                                 ThemeManager.Haptics.light()
@@ -286,10 +326,11 @@ struct ContentView: View {
                 get: { showingAddPassVC && passViewController != nil },
                 set: { showingAddPassVC = $0 }
             ), onDismiss: {
-                // Reset all state after dismissal to prevent stale sheet on next pass
                 showingAddPassVC = false
-                passAddedSuccessfully = false
-                passViewController = nil  // ensure stale VC doesn't linger
+                // If pass was added successfully, keep the flag true so the UI shows post-add buttons
+                if !passAddedSuccessfully {
+                    passViewController = nil
+                }
                 // Refresh balance when returning from Apple Wallet (sheet dismissal)
                 Task {
                     await passUsageManager.forceRefreshBalance()
