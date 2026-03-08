@@ -1,0 +1,8 @@
+appId: com.andresboedo.add2wallet
+---
+# Screenshot 4: My Passes tab — navigate to saved passes
+- launchApp:
+    clearState: false
+- tapOn:
+    text: "My Passes"
+- takeScreenshot: screenshots/04_my_passes

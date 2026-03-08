@@ -1,0 +1,8 @@
+appId: com.andresboedo.add2wallet
+---
+# Screenshot 2: Processing state — tap demo to load sample PDF and catch the processing spinner
+- launchApp:
+    clearState: true
+- tapOn:
+    text: "or try a demo"
+- takeScreenshot: screenshots/02_processing

@@ -1,0 +1,6 @@
+appId: com.andresboedo.add2wallet
+---
+# Screenshot 1: Home screen (empty state, clean)
+- launchApp:
+    clearState: true
+- takeScreenshot: screenshots/01_home

@@ -1,0 +1,12 @@
+appId: com.andresboedo.add2wallet
+---
+# Screenshot 3: Pass ready to add — after demo processes, show the "Add to Wallet" CTA
+- launchApp:
+    clearState: true
+- tapOn:
+    text: "or try a demo"
+# Wait for processing to complete
+- assertVisible:
+    text: "Add to Wallet"
+    timeout: 30000
+- takeScreenshot: screenshots/03_pass_ready
