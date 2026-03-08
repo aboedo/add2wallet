@@ -22,7 +22,7 @@ struct SavedPassesView: View {
     }
     
     // Group passes by month based on event date
-    private func groupByMonth(_ passes: [SavedPass]) -> [(String, [SavedPass])] {
+    private func groupByMonth(_ passes: [SavedPass], ascending: Bool = true) -> [(String, [SavedPass])] {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         
@@ -30,8 +30,16 @@ struct SavedPassesView: View {
             formatter.string(from: pass.eventDateOrFallback)
         }
         
-        return grouped.sorted { $0.value.first!.eventDateOrFallback < $1.value.first!.eventDateOrFallback }
-            .map { ($0.key, $0.value.sorted { $0.eventDateOrFallback < $1.eventDateOrFallback }) }
+        return grouped.sorted {
+            ascending
+                ? $0.value.first!.eventDateOrFallback < $1.value.first!.eventDateOrFallback
+                : $0.value.first!.eventDateOrFallback > $1.value.first!.eventDateOrFallback
+        }
+        .map { ($0.key, $0.value.sorted {
+            ascending
+                ? $0.eventDateOrFallback < $1.eventDateOrFallback
+                : $0.eventDateOrFallback > $1.eventDateOrFallback
+        }) }
     }
     
     var body: some View {
@@ -120,7 +128,7 @@ struct SavedPassesView: View {
             if !expiredPasses.isEmpty {
                 Section {
                     DisclosureGroup(isExpanded: $showExpiredPasses) {
-                        ForEach(groupByMonth(expiredPasses), id: \.0) { month, passes in
+                        ForEach(groupByMonth(expiredPasses, ascending: false), id: \.0) { month, passes in
                             Section(header:
                                 Text(month.uppercased())
                                     .font(ThemeManager.Typography.caption)
