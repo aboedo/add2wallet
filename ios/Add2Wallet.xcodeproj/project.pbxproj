@@ -3,14 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 55;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */; };
 		03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = C0628EC3E9565A946EC494F7 /* torre ifel.pdf */; };
-		057528E82F5D92F20043B5F4 /* Storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 057528E72F5D92F20043B5F4 /* Storekit.storekit */; };
-		057528E92F5D92F20043B5F4 /* Storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 057528E72F5D92F20043B5F4 /* Storekit.storekit */; };
 		0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
@@ -45,6 +43,7 @@
 		98152283E0433D7A6B7CB0D1 /* FullScreenPDFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B12CD04C3AC60CBEE72A360 /* FullScreenPDFView.swift */; };
 		A0BA476BAF50473741E021BD /* MockNetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF82BD9C1A86CC59B78A265E /* MockNetworkService.swift */; };
 		A3BF14B25B521496ABB065BD /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 516DD5D634A86F0E2AF2612A /* RevenueCatUI */; };
+		A7BD8FAAAA7A47BEBE474014 /* ScreenshotModeSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2386722CE6A91621AA0C638E /* ScreenshotModeSeeder.swift */; };
 		AD3E9B86369A7493CB041239 /* ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A33C0E1CF6C5AC9B3DCF49 /* ProgressViewModel.swift */; };
 		AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */; };
 		B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */; };
@@ -102,7 +101,6 @@
 /* Begin PBXFileReference section */
 		04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailPresentation.swift; sourceTree = "<group>"; };
 		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
-		057528E72F5D92F20043B5F4 /* Storekit.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Storekit.storekit; sourceTree = "<group>"; };
 		0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2Wallet.swift"; sourceTree = "<group>"; };
 		0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		13372BE4DCB2183466AD3A53 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -112,6 +110,7 @@
 		1CE7FC42ECD8EB77B1730666 /* mock_upload_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_upload_response.json; sourceTree = "<group>"; };
 		20402F2F51A6E2826F18CF35 /* PassManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassManager.swift; sourceTree = "<group>"; };
 		231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatterTests.swift; sourceTree = "<group>"; };
+		2386722CE6A91621AA0C638E /* ScreenshotModeSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotModeSeeder.swift; sourceTree = "<group>"; };
 		24D7B9D34B651C0C6D4C8D38 /* Add2WalletTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Add2WalletTests-Info.plist"; sourceTree = "<group>"; };
 		2518CFE7B9502126499FA643 /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroCardStack.swift; sourceTree = "<group>"; };
@@ -309,7 +308,6 @@
 		9ABB94B6BBF07318A6B5CD32 = {
 			isa = PBXGroup;
 			children = (
-				057528E72F5D92F20043B5F4 /* Storekit.storekit */,
 				1BEF356E45B24589BB0387D4 /* Products */,
 				9C01ABA288CD704D6A728BD7 /* Project */,
 			);
@@ -349,6 +347,7 @@
 				2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */,
 				F353078F405CB7DB90DC2599 /* DebugShakeDetector.swift */,
 				5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */,
+				2386722CE6A91621AA0C638E /* ScreenshotModeSeeder.swift */,
 				A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */,
 			);
 			path = Utilities;
@@ -400,6 +399,8 @@
 				AB65BB412199440422B5842A /* PBXTargetDependency */,
 			);
 			name = Add2WalletTests;
+			packageProductDependencies = (
+			);
 			productName = Add2WalletTests;
 			productReference = 565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -467,7 +468,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				264E2AA0EBFE6331FA88325B /* Assets.xcassets in Resources */,
-				057528E82F5D92F20043B5F4 /* Storekit.storekit in Resources */,
 				1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */,
 				712F644BC2183AD74F05902D /* torre_ifel.pdf in Resources */,
 			);
@@ -479,7 +479,6 @@
 			files = (
 				DA762FCAB2B8BA3B36E6ACDD /* eTicket.pdf in Resources */,
 				67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */,
-				057528E92F5D92F20043B5F4 /* Storekit.storekit in Resources */,
 				5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */,
 				EDC5D55FDEB0DE4AA9373979 /* mock_upload_response.json in Resources */,
 				4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */,
@@ -505,6 +504,7 @@
 				4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */,
 				2F6228C32E7227E0349B3294 /* DebugShakeDetector.swift in Sources */,
 				20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */,
+				A7BD8FAAAA7A47BEBE474014 /* ScreenshotModeSeeder.swift in Sources */,
 				02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */,
 				2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */,
 				AD3E9B86369A7493CB041239 /* ProgressViewModel.swift in Sources */,
@@ -568,7 +568,7 @@
 				CODE_SIGN_ENTITLEMENTS = Add2Wallet/Add2Wallet.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Add2Wallet/Info.plist;
@@ -591,7 +591,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -601,7 +601,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = "Derived/InfoPlists/Add2WalletTests-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -624,7 +624,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Add2Wallet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Add2Wallet";
 				TEST_TARGET_NAME = Add2Wallet;
 			};
@@ -748,7 +748,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = "Derived/InfoPlists/Add2WalletTests-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -768,11 +768,14 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Add2Wallet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Add2Wallet";
 				TEST_TARGET_NAME = Add2Wallet;
 			};
@@ -786,7 +789,7 @@
 				CODE_SIGN_ENTITLEMENTS = Add2Wallet/Add2Wallet.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Add2Wallet/Info.plist;
@@ -806,11 +809,14 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
+					"$(inherited)",
+					DEBUG,
+				);
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};

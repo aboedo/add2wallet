@@ -30,7 +30,18 @@ struct Add2WalletApp: App {
         do {
             // Create a schema with the current model
             let schema = Schema([SavedPass.self])
-            
+
+            // In screenshot mode, use local-only storage (no CloudKit sign-in dialog)
+            if ScreenshotModeSeeder.isScreenshotMode() {
+                let localConfig = ModelConfiguration(
+                    schema: schema,
+                    isStoredInMemoryOnly: false,
+                    allowsSave: true,
+                    cloudKitDatabase: .none
+                )
+                container = try ModelContainer(for: schema, configurations: [localConfig])
+            } else {
+
             // Configure with iCloud sync enabled
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
@@ -38,7 +49,7 @@ struct Add2WalletApp: App {
                 allowsSave: true,
                 cloudKitDatabase: .private("iCloud.com.andresboedo.add2wallet")
             )
-            
+
             // First, try to create the container normally
             do {
                 container = try ModelContainer(for: schema, configurations: [modelConfiguration])
@@ -91,9 +102,13 @@ struct Add2WalletApp: App {
                     print("Successfully created new store after dropping old data")
                 }
             }
+            } // end else (non-screenshot mode)
         } catch {
             fatalError("Failed to initialize Swift Data container: \(error)")
         }
+
+        // Seed fake passes for App Store screenshots (must run before body evaluates)
+        ScreenshotModeSeeder.seedIfNeeded(context: container.mainContext)
     }
     
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false

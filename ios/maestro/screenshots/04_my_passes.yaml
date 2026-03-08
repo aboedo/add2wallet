@@ -1,25 +1,24 @@
 appId: com.andresboedo.add2wallet
 ---
-# Screenshot 4: My Passes with passes in it
-# Assumes the demo was already run at least once (passes saved in history)
+# Screenshot 4: My Passes with fake future passes (screenshot mode)
 - launchApp:
     clearState: false
-# Generate a pass via demo so it gets saved to My Passes
+    arguments:
+      SCREENSHOT_MODE: "1"
+# Dismiss iCloud sign-in dialog — hide keyboard first, then tap Cancel button
+- hideKeyboard:
+    optional: true
 - tapOn:
-    text: "or try a demo"
+    text: "Cancel"
+    optional: true
+    retryTapIfNoChange: false
+- hideKeyboard:
+    optional: true
 - tapOn:
-    text: "Create Pass"
-- extendedWaitUntil:
-    visible:
-      text: "Add to Wallet"
-    timeout: 60000
-- waitForAnimationToEnd
-# Now go to My Passes — the generated pass should appear there
+    text: "Cancel"
+    optional: true
+    retryTapIfNoChange: false
 - tapOn:
     text: "My Passes"
-- waitForAnimationToEnd
-# Tap "Expired Passes" to expand and show the saved passes
-- tapOn:
-    text: "Expired Passes"
 - waitForAnimationToEnd
 - takeScreenshot: screenshots/04_my_passes
