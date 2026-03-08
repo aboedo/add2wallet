@@ -156,6 +156,7 @@
 		EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Add2WalletApp.swift; sourceTree = "<group>"; };
 		F0647FA2EE1335D1CD3543C9 /* Add2Wallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Add2Wallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F353078F405CB7DB90DC2599 /* DebugShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugShakeDetector.swift; sourceTree = "<group>"; };
+		FBCC53CDEDF7400F95DCBE76 /* Configuration.storekit */ = {isa = PBXFileReference; includeInIndex = 1; path = Configuration.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,6 +243,7 @@
 				5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */,
 				C7287DB2FC0F76437E783DEA /* Assets.xcassets */,
 				14163BCA5715B9BC2F933391 /* Info.plist */,
+				FBCC53CDEDF7400F95DCBE76 /* Configuration.storekit */,
 			);
 			path = Add2Wallet;
 			sourceTree = "<group>";
@@ -396,8 +398,6 @@
 				AB65BB412199440422B5842A /* PBXTargetDependency */,
 			);
 			name = Add2WalletTests;
-			packageProductDependencies = (
-			);
 			productName = Add2WalletTests;
 			productReference = 565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -587,7 +587,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -620,7 +620,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Add2Wallet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Add2Wallet";
 				TEST_TARGET_NAME = Add2Wallet;
 			};
@@ -764,14 +764,11 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Add2Wallet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Add2Wallet";
 				TEST_TARGET_NAME = Add2Wallet;
 			};
@@ -805,14 +802,11 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};

@@ -1,0 +1,17 @@
+{
+  "_applicationInternalVersion" : "8",
+  "_compatibilityVersion" : "3",
+  "_developmentRegion" : "en_US",
+  "_defaultLocale" : "en_US",
+  "identifier" : "com.andresboedo.add2wallet.storekit",
+  "nonConsumableIAP" : [],
+  "nonRenewingSubscriptionIAP" : [],
+  "products" : [],
+  "subscriptionGroups" : [],
+  "syncsWithStoreKit" : true,
+  "version" : {
+    "major" : 3,
+    "minor" : 0,
+    "patch" : 0
+  }
+}
