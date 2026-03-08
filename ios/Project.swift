@@ -2,6 +2,19 @@ import ProjectDescription
 
 let project = Project(
     name: "Add2Wallet",
+    schemes: [
+        .scheme(
+            name: "Add2Wallet",
+            shared: true,
+            buildAction: .buildAction(targets: [.target("Add2Wallet")]),
+            testAction: .targets([.testableTarget(target: .target("Add2WalletTests"))]),
+            runAction: .runAction(
+                configuration: .debug,
+                storeKitFilePath: "Storekit.storekit"
+            ),
+            archiveAction: .archiveAction(configuration: .release)
+        )
+    ],
     packages: [
         .remote(
             url: "https://github.com/RevenueCat/purchases-ios-spm.git",
