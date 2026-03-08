@@ -30,8 +30,8 @@ struct SavedPassesView: View {
             formatter.string(from: pass.eventDateOrFallback)
         }
         
-        return grouped.sorted { $0.value.first!.eventDateOrFallback > $1.value.first!.eventDateOrFallback }
-            .map { ($0.key, $0.value.sorted { $0.eventDateOrFallback > $1.eventDateOrFallback }) }
+        return grouped.sorted { $0.value.first!.eventDateOrFallback < $1.value.first!.eventDateOrFallback }
+            .map { ($0.key, $0.value.sorted { $0.eventDateOrFallback < $1.eventDateOrFallback }) }
     }
     
     var body: some View {
@@ -103,7 +103,7 @@ struct SavedPassesView: View {
                     Text(month.uppercased())
                         .font(ThemeManager.Typography.sectionHeader)
                         .foregroundColor(ThemeManager.Colors.textSecondary)
-                        .padding(.top, ThemeManager.Spacing.sm)
+                        .padding(.top, ThemeManager.Spacing.xs)
                 ) {
                     ForEach(passes) { pass in
                         PassRowView(pass: pass) {
@@ -236,7 +236,7 @@ struct PassRowView: View {
                 }
                 
             }
-            .padding(.vertical, ThemeManager.Spacing.sm)
+            .padding(.vertical, ThemeManager.Spacing.xs)
             .padding(.trailing, ThemeManager.Spacing.xs)
             .contentShape(Rectangle())
             .onTapGesture {
