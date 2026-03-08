@@ -2,7 +2,7 @@ appId: com.andresboedo.add2wallet
 ---
 # Screenshot 4: My Passes with fake future passes (screenshot mode)
 - launchApp:
-    clearState: false
+    clearState: true
     arguments:
       SCREENSHOT_MODE: "1"
 # Dismiss iCloud sign-in dialog — hide keyboard first, then tap Cancel button

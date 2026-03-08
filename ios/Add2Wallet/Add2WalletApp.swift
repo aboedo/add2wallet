@@ -31,11 +31,11 @@ struct Add2WalletApp: App {
             // Create a schema with the current model
             let schema = Schema([SavedPass.self])
 
-            // In screenshot mode, use local-only storage (no CloudKit sign-in dialog)
+            // In screenshot mode, use in-memory storage (no disk, no CloudKit dialog)
             if ScreenshotModeSeeder.isScreenshotMode() {
                 let localConfig = ModelConfiguration(
                     schema: schema,
-                    isStoredInMemoryOnly: false,
+                    isStoredInMemoryOnly: true,
                     allowsSave: true,
                     cloudKitDatabase: .none
                 )

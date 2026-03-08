@@ -3,6 +3,8 @@ appId: com.andresboedo.add2wallet
 # Helper: complete onboarding from fresh install
 - launchApp:
     clearState: true
+    arguments:
+      SCREENSHOT_MODE: "1"
 # Slide 1
 - tapOn:
     text: "Next"

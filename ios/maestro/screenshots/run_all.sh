@@ -3,7 +3,7 @@ set -e
 
 export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH:$HOME/.maestro/bin"
 
-DEVICE="iPhone 16 Pro Max"
+DEVICE="iPhone 17 Pro Max"
 APP_BUNDLE="com.andresboedo.add2wallet"
 BUILD_DIR="$HOME/repos/add2wallet/ios/build/Debug-iphonesimulator"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

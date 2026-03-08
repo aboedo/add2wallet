@@ -103,6 +103,12 @@ struct PassColorUtils {
             return parseRGBColor("rgb(0,122,255)") ?? .blue // Aviation blue
         case let type where type.contains("movie"):
             return parseRGBColor("rgb(94,92,230)") ?? .purple // Theater purple
+        case let type where type.contains("theatre") || type.contains("theater"):
+            return parseRGBColor("rgb(94,92,230)") ?? .purple // Theatre purple
+        case let type where type.contains("museum") || type.contains("gallery") || type.contains("exhibition"):
+            return parseRGBColor("rgb(255,140,0)") ?? .orange // Museum orange
+        case let type where type.contains("attraction") || type.contains("landmark"):
+            return parseRGBColor("rgb(255,196,0)") ?? .yellow // Attraction gold
         case let type where type.contains("sport"):
             return parseRGBColor("rgb(52,199,89)") ?? .green // Sports green
         case let type where type.contains("transit"):

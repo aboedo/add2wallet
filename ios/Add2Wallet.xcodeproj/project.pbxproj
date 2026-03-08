@@ -3,12 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */; };
 		03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = C0628EC3E9565A946EC494F7 /* torre ifel.pdf */; };
+		057528EC2F5E20300043B5F4 /* storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 057528EB2F5E20300043B5F4 /* storekit.storekit */; };
+		057528ED2F5E20300043B5F4 /* storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 057528EB2F5E20300043B5F4 /* storekit.storekit */; };
 		0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
@@ -101,6 +103,7 @@
 /* Begin PBXFileReference section */
 		04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailPresentation.swift; sourceTree = "<group>"; };
 		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
+		057528EB2F5E20300043B5F4 /* storekit.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = storekit.storekit; sourceTree = "<group>"; };
 		0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2Wallet.swift"; sourceTree = "<group>"; };
 		0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		13372BE4DCB2183466AD3A53 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -308,6 +311,7 @@
 		9ABB94B6BBF07318A6B5CD32 = {
 			isa = PBXGroup;
 			children = (
+				057528EB2F5E20300043B5F4 /* storekit.storekit */,
 				1BEF356E45B24589BB0387D4 /* Products */,
 				9C01ABA288CD704D6A728BD7 /* Project */,
 			);
@@ -468,6 +472,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				264E2AA0EBFE6331FA88325B /* Assets.xcassets in Resources */,
+				057528EC2F5E20300043B5F4 /* storekit.storekit in Resources */,
 				1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */,
 				712F644BC2183AD74F05902D /* torre_ifel.pdf in Resources */,
 			);
@@ -481,6 +486,7 @@
 				67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */,
 				5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */,
 				EDC5D55FDEB0DE4AA9373979 /* mock_upload_response.json in Resources */,
+				057528ED2F5E20300043B5F4 /* storekit.storekit in Resources */,
 				4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */,
 				03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */,
 			);
@@ -768,10 +774,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -809,10 +812,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (
-					"$(inherited)",
-					DEBUG,
-				);
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;

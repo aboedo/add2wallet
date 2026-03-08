@@ -4,14 +4,18 @@ appId: com.andresboedo.add2wallet
 # After this, all other flows use clearState: false.
 - launchApp:
     clearState: true
-# Slide 1 — "Turn tickets into Wallet passes"
+    arguments:
+      SCREENSHOT_MODE: "1"
+# Slide 1 — "Turn tickets into Wallet passes" (skipped in screenshot mode)
 - tapOn:
     text: "Next"
+    optional: true
 - waitForAnimationToEnd
 # The Apple Account prompt fires here — Cancel it
 - tapOn:
     text: "Cancel"
     optional: true
+- waitForAnimationToEnd
 # Slide 2 / remaining slides
 - tapOn:
     text: "Next"
