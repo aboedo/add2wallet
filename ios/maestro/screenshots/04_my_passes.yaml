@@ -1,8 +1,25 @@
 appId: com.andresboedo.add2wallet
 ---
-# Screenshot 4: My Passes tab — navigate to saved passes
+# Screenshot 4: My Passes with passes in it
+# Assumes the demo was already run at least once (passes saved in history)
 - launchApp:
     clearState: false
+# Generate a pass via demo so it gets saved to My Passes
+- tapOn:
+    text: "or try a demo"
+- tapOn:
+    text: "Create Pass"
+- extendedWaitUntil:
+    visible:
+      text: "Add to Wallet"
+    timeout: 60000
+- waitForAnimationToEnd
+# Now go to My Passes — the generated pass should appear there
 - tapOn:
     text: "My Passes"
+- waitForAnimationToEnd
+# Tap "Expired Passes" to expand and show the saved passes
+- tapOn:
+    text: "Expired Passes"
+- waitForAnimationToEnd
 - takeScreenshot: screenshots/04_my_passes

@@ -1,0 +1,31 @@
+appId: com.andresboedo.add2wallet
+---
+# Helper: complete onboarding from fresh install
+- launchApp:
+    clearState: true
+# Slide 1
+- tapOn:
+    text: "Next"
+    optional: true
+# Slide 2
+- tapOn:
+    text: "Next"
+    optional: true
+# Slide 3 / last — may say "Get Started" or "Continue"
+- tapOn:
+    text: "Get Started"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+# Dismiss system dialogs
+- tapOn:
+    text: "Cancel"
+    optional: true
+- tapOn:
+    text: "Not Now"
+    optional: true
+# Wait for main screen
+- assertVisible:
+    text: "or try a demo"
+    timeout: 10000

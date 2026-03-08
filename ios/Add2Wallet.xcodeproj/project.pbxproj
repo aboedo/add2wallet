@@ -3,12 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */; };
 		03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = C0628EC3E9565A946EC494F7 /* torre ifel.pdf */; };
+		057528E82F5D92F20043B5F4 /* Storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 057528E72F5D92F20043B5F4 /* Storekit.storekit */; };
+		057528E92F5D92F20043B5F4 /* Storekit.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 057528E72F5D92F20043B5F4 /* Storekit.storekit */; };
 		0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
@@ -100,6 +102,7 @@
 /* Begin PBXFileReference section */
 		04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailPresentation.swift; sourceTree = "<group>"; };
 		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
+		057528E72F5D92F20043B5F4 /* Storekit.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Storekit.storekit; sourceTree = "<group>"; };
 		0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2Wallet.swift"; sourceTree = "<group>"; };
 		0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
 		13372BE4DCB2183466AD3A53 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -156,7 +159,6 @@
 		EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Add2WalletApp.swift; sourceTree = "<group>"; };
 		F0647FA2EE1335D1CD3543C9 /* Add2Wallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Add2Wallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F353078F405CB7DB90DC2599 /* DebugShakeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugShakeDetector.swift; sourceTree = "<group>"; };
-		FBCC53CDEDF7400F95DCBE76 /* Configuration.storekit */ = {isa = PBXFileReference; includeInIndex = 1; path = Configuration.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -243,7 +245,6 @@
 				5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */,
 				C7287DB2FC0F76437E783DEA /* Assets.xcassets */,
 				14163BCA5715B9BC2F933391 /* Info.plist */,
-				FBCC53CDEDF7400F95DCBE76 /* Configuration.storekit */,
 			);
 			path = Add2Wallet;
 			sourceTree = "<group>";
@@ -308,6 +309,7 @@
 		9ABB94B6BBF07318A6B5CD32 = {
 			isa = PBXGroup;
 			children = (
+				057528E72F5D92F20043B5F4 /* Storekit.storekit */,
 				1BEF356E45B24589BB0387D4 /* Products */,
 				9C01ABA288CD704D6A728BD7 /* Project */,
 			);
@@ -465,6 +467,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				264E2AA0EBFE6331FA88325B /* Assets.xcassets in Resources */,
+				057528E82F5D92F20043B5F4 /* Storekit.storekit in Resources */,
 				1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */,
 				712F644BC2183AD74F05902D /* torre_ifel.pdf in Resources */,
 			);
@@ -476,6 +479,7 @@
 			files = (
 				DA762FCAB2B8BA3B36E6ACDD /* eTicket.pdf in Resources */,
 				67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */,
+				057528E92F5D92F20043B5F4 /* Storekit.storekit in Resources */,
 				5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */,
 				EDC5D55FDEB0DE4AA9373979 /* mock_upload_response.json in Resources */,
 				4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */,

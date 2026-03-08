@@ -1,6 +1,8 @@
 appId: com.andresboedo.add2wallet
 ---
-# Screenshot 1: Home screen (empty state, clean)
+# Screenshot 1: Home screen — run after 00_setup
 - launchApp:
-    clearState: true
+    clearState: false
+- assertVisible:
+    text: "Add2Wallet"
 - takeScreenshot: screenshots/01_home

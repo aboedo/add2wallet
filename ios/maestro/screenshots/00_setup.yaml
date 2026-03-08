@@ -1,0 +1,27 @@
+appId: com.andresboedo.add2wallet
+---
+# Run this ONCE to complete onboarding.
+# After this, all other flows use clearState: false.
+- launchApp:
+    clearState: true
+# Slide 1 — "Turn tickets into Wallet passes"
+- tapOn:
+    text: "Next"
+- waitForAnimationToEnd
+# The Apple Account prompt fires here — Cancel it
+- tapOn:
+    text: "Cancel"
+    optional: true
+# Slide 2 / remaining slides
+- tapOn:
+    text: "Next"
+    optional: true
+- tapOn:
+    text: "Get Started"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+# Should now be on main screen
+- assertVisible:
+    text: "or try a demo"

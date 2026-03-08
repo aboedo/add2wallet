@@ -1,6 +1,6 @@
 appId: com.andresboedo.add2wallet
 ---
-# Screenshot 3: Pass ready — "Add to Wallet" visible
+# Screenshot 5: Apple Wallet modal (PKAddPassesViewController)
 - launchApp:
     clearState: false
 - tapOn:
@@ -11,7 +11,9 @@ appId: com.andresboedo.add2wallet
     visible:
       text: "Add to Wallet"
     timeout: 60000
-# Wait for the toast to disappear before screenshotting
 - waitForAnimationToEnd
-- scroll
-- takeScreenshot: screenshots/03_pass_ready
+- tapOn:
+    text: "Add to Wallet"
+# Wait for PKAddPassesViewController to present
+- waitForAnimationToEnd
+- takeScreenshot: screenshots/05_add_to_wallet
