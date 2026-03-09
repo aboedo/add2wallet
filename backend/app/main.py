@@ -649,6 +649,24 @@ async def _cleanup_old_files():
         except Exception as e:
             print(f"⚠️ Cleanup error: {e}")
 
+@app.get("/demo-pass")
+async def get_demo_pass():
+    """
+    One-off endpoint: returns a pre-generated .pkpass with a future date (2026-12-15).
+    Used exclusively for App Store screenshot generation. Not part of the main product flow.
+    """
+    import os
+    demo_path = os.path.join(os.path.dirname(__file__), "../../demo_eiffel_future.pkpass")
+    if not os.path.exists(demo_path):
+        raise HTTPException(status_code=404, detail="Demo pass not found")
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        demo_path,
+        media_type="application/vnd.apple.pkpass",
+        filename="demo_eiffel_future.pkpass"
+    )
+
+
 @app.on_event("startup")
 async def startup_event():
     """Start background cleanup task."""
