@@ -656,7 +656,7 @@ async def get_demo_pass():
     Used exclusively for App Store screenshot generation. Not part of the main product flow.
     """
     import os
-    demo_path = os.path.join(os.path.dirname(__file__), "../../demo_eiffel_future.pkpass")
+    demo_path = os.path.join(os.path.dirname(__file__), "demo_eiffel_future.pkpass")
     if not os.path.exists(demo_path):
         raise HTTPException(status_code=404, detail="Demo pass not found")
     from fastapi.responses import FileResponse
