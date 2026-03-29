@@ -56,6 +56,10 @@ struct PassColorUtils {
         // Match backend's _analyze_pdf_colors_enhanced logic exactly
         if eventType == "flight" || eventName.contains("airline") || venueType.contains("airport") {
             return parseRGBColor("rgb(0,122,255)") ?? .blue // Aviation blue
+        } else if eventType == "ferry" || eventName.contains("ferry") || venueType.contains("port") {
+            return parseRGBColor("rgb(0,102,153)") ?? .blue // Maritime blue
+        } else if eventType == "bus" || eventName.contains("bus") {
+            return parseRGBColor("rgb(88,86,214)") ?? .purple // Bus purple
         } else if eventType == "concert" || eventName.contains("music") || venueType.contains("concert") {
             return parseRGBColor("rgb(255,45,85)") ?? .red // Concert red
         } else if eventType == "sports" || venueType.contains("stadium") {
@@ -101,6 +105,10 @@ struct PassColorUtils {
             return parseRGBColor("rgb(255,45,85)") ?? .red // Concert red
         case let type where type.contains("flight"):
             return parseRGBColor("rgb(0,122,255)") ?? .blue // Aviation blue
+        case let type where type.contains("ferry"):
+            return parseRGBColor("rgb(0,102,153)") ?? .blue // Maritime blue
+        case let type where type.contains("bus"):
+            return parseRGBColor("rgb(88,86,214)") ?? .purple // Bus purple
         case let type where type.contains("movie"):
             return parseRGBColor("rgb(94,92,230)") ?? .purple // Theater purple
         case let type where type.contains("theatre") || type.contains("theater"):

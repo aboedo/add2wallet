@@ -137,7 +137,7 @@ INSTRUCTIONS:
 
 Return JSON with extracted information:
 {{
-    "event_type": "concert|flight|hotel|train|movie|conference|sports|museum|attraction|theater|festival|other",
+    "event_type": "concert|flight|ferry|bus|hotel|train|movie|conference|sports|museum|attraction|theater|festival|other",
     "event_name": "The PRIMARY SUBJECT of this ticket - what the user is actually going to see/do/experience",
     "title": "Concise title (max 30 chars) combining the MAIN SUBJECT with any relevant descriptors. Extract the primary proper noun/brand from the document and combine with scope/duration if present. Never return generic terms like 'ticket' or '2 parks' without the actual venue/brand name.",
     "description": "Brief description",

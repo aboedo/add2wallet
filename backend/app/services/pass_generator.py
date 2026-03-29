@@ -636,18 +636,29 @@ class PassGenerator:
             }
         }
 
-        # Add expirationDate so Apple Wallet greys out expired passes
-        # Event is over the next day
+        # Add expirationDate (7 days after event) and relevantDate (for lock screen suggestions)
         event_date_str = pass_info.get('date')
         if event_date_str:
             try:
                 from datetime import timedelta
                 event_date = datetime.strptime(event_date_str, '%Y-%m-%d')
+                
+                # Combine with time if available for more precise relevantDate
+                event_time_str = pass_info.get('time')
+                if event_time_str:
+                    try:
+                        time_parts = datetime.strptime(event_time_str, '%H:%M')
+                        event_datetime = event_date.replace(hour=time_parts.hour, minute=time_parts.minute)
+                    except (ValueError, TypeError):
+                        event_datetime = event_date
+                else:
+                    event_datetime = event_date
+                
                 expiration = event_date + timedelta(days=7)
                 pass_json["expirationDate"] = expiration.strftime('%Y-%m-%dT00:00Z')
                 
-                # Add relevantDate for Smart Lock Screen suggestions
-                pass_json["relevantDate"] = event_date.strftime('%Y-%m-%dT%H:%M:%S')
+                # relevantDate triggers lock screen suggestions near event time
+                pass_json["relevantDate"] = event_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
                 
                 print(f"📅 Set expirationDate: {pass_json['expirationDate']}")
                 print(f"🔔 Set relevantDate: {pass_json['relevantDate']}")
@@ -1029,6 +1040,10 @@ class PassGenerator:
         token = (pass_info.get('event_type') or pass_info.get('title') or '').lower()
         if 'flight' in token or 'air' in token:
             abbrev = 'FLY'
+        elif 'ferry' in token or 'boat' in token:
+            abbrev = 'FRY'
+        elif 'bus' in token:
+            abbrev = 'BUS'
         elif 'concert' in token or 'music' in token or 'show' in token:
             abbrev = 'MUS'
         elif 'sport' in token or 'stadium' in token or 'game' in token:
@@ -1338,6 +1353,10 @@ class PassGenerator:
         # Enhanced color theming based on event type and context
         if event_type == 'flight' or 'airline' in event_name or 'airport' in venue_type:
             return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Aviation blue
+        elif event_type == 'ferry' or 'ferry' in event_name or 'port' in venue_type:
+            return "rgb(0, 102, 153)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Maritime blue
+        elif event_type == 'bus' or 'bus' in event_name:
+            return "rgb(88, 86, 214)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Bus purple
         elif event_type == 'concert' or 'music' in event_name or 'concert' in venue_type:
             return "rgb(255, 45, 85)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Concert red
         elif event_type == 'sports' or 'stadium' in venue_type:
@@ -1370,10 +1389,14 @@ class PassGenerator:
             text = self._extract_pdf_text(pdf_data).lower()
             
             # Simple color inference based on content type
-            if any(word in text for word in ['airline', 'flight', 'boarding']):
+            if any(word in text for word in ['ferry', 'barco', 'buque', 'embarque', 'vessel']):
+                return "rgb(0, 102, 153)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Maritime blue
+            elif any(word in text for word in ['airline', 'flight', 'boarding']):
                 return "rgb(0, 122, 255)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Blue theme
             elif any(word in text for word in ['concert', 'music', 'show', 'festival']):
                 return "rgb(255, 45, 85)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"   # Red theme
+            elif any(word in text for word in ['bus', 'coach', 'ómnibus']):
+                return "rgb(88, 86, 214)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Bus purple
             elif any(word in text for word in ['train', 'railway', 'rail']):
                 return "rgb(48, 176, 199)", "rgb(255, 255, 255)", "rgb(255, 255, 255)"  # Teal theme
             elif any(word in text for word in ['hotel', 'reservation', 'check']):
@@ -1465,7 +1488,7 @@ class PassGenerator:
     
     def _compute_expiration_date(self, pass_info: Dict[str, Any]) -> str:
         """Compute an ISO8601 expiration date for the pass.
-        - If pass_info has an explicit date (and optional time), expire next day 03:00 local time.
+        - If pass_info has an explicit date (and optional time), expire 7 days after the event.
         - Otherwise, expire 90 days from now.
         """
         try:
@@ -1476,11 +1499,8 @@ class PassGenerator:
                 # Combine if time present
                 combined = f"{date_str} {time_str}" if time_str else date_str
                 dt = date_parser.parse(combined, fuzzy=True, dayfirst=False)
-                # Expire next day at 03:00
-                expire = dt.replace(hour=3, minute=0, second=0, microsecond=0)
-                if expire <= dt:
-                    from datetime import timedelta
-                    expire = expire + timedelta(days=1)
+                from datetime import timedelta
+                expire = dt + timedelta(days=7)
             else:
                 from datetime import timedelta
                 expire = now + timedelta(days=90)
