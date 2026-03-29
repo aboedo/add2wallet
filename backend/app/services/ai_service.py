@@ -8,7 +8,7 @@ import asyncio
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 import requests
-from openai import OpenAI
+from openai import OpenAI, AuthenticationError, RateLimitError, APIStatusError
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -17,6 +17,11 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class AIServiceError(Exception):
+    """Raised when the AI service is unavailable (billing, auth, rate limit, etc.)."""
+    pass
 
 
 def _normalize_date(date_str: str) -> str:
@@ -98,6 +103,8 @@ class AIService:
 
             return result
 
+        except AIServiceError:
+            raise
         except Exception as e:
             logger.error(f"❌ Error in AI analysis: {str(e)}")
             import traceback
@@ -189,7 +196,13 @@ Important:
 - COMBINE that main subject with any descriptors (2 parks, 3 days, etc.) found in the document
 - IGNORE legal headers, terms, conditions - focus on what's prominently displayed
 - The title should be specific enough that someone would recognize what they bought
-- FLIGHT DIRECTION: For boarding passes, origin is the DEPARTURE airport (labeled DESDE, FROM, ORIGIN, DEPARTURE, or the city/airport shown on the LEFT side of the route). Destination is the ARRIVAL airport (labeled CON DESTINO, TO, DESTINATION, ARRIVAL, or shown on the RIGHT). IATA codes may appear concatenated (e.g. "MADMDE" = MAD→MDE). The departure time always matches the origin airport. Use event_name like "Flight MAD → MDE" with correct direction.
+- TRANSPORT TYPE: For travel/transport documents, classify the actual mode of transport accurately. Look for keywords that indicate the specific type:
+  * flight/airplane: airline names, IATA codes, "boarding pass", "gate", "terminal", aircraft references
+  * ferry/ship: port names, ship/vessel names, "embark", "maritime", "buque", "ferry", shipping company names
+  * train: railway, station names, "platform", "coach", "carriage", rail company names
+  * bus: bus company names, "terminal de buses", "coach", route numbers
+  Do NOT assume "flight" just because a document has departure/arrival times, origin/destination codes, or boarding information — these exist for all transport types.
+- TRANSPORT DIRECTION: For any transport document (flight, ferry, train, bus), origin is the DEPARTURE point (labeled DESDE, FROM, ORIGIN, DEPARTURE, or shown on the LEFT side of the route). Destination is the ARRIVAL point (labeled CON DESTINO, TO, DESTINATION, ARRIVAL, or shown on the RIGHT). For flights, IATA codes may appear concatenated (e.g. "MADMDE" = MAD→MDE). Use event_name format like "Ferry MVD → BUE" or "Flight MAD → MDE" with the correct transport type prefix and direction.
 """.format(current_date, filename, safe_pdf_text)
 
         try:
@@ -237,7 +250,21 @@ Important:
         except json.JSONDecodeError as e:
             logger.error(f"❌ Failed to parse JSON response: {e}")
             return self._create_fallback_metadata(pdf_text, filename)
+        except (AuthenticationError, RateLimitError) as e:
+            logger.error(f"❌ OpenAI API error (non-recoverable): {e}")
+            raise AIServiceError(f"AI service unavailable: {e}") from e
+        except APIStatusError as e:
+            if e.status_code in (402, 429):
+                logger.error(f"❌ OpenAI API error (non-recoverable): {e}")
+                raise AIServiceError(f"AI service unavailable: {e}") from e
+            logger.error(f"❌ OpenAI API error: {e}")
+            return self._create_fallback_metadata(pdf_text, filename)
         except Exception as e:
+            error_msg = str(e).lower()
+            billing_keywords = ["billing", "credits", "quota", "insufficient_quota"]
+            if any(kw in error_msg for kw in billing_keywords):
+                logger.error(f"❌ OpenAI API error (non-recoverable): {e}")
+                raise AIServiceError(f"AI service unavailable: {e}") from e
             logger.error(f"❌ OpenAI API error: {e}")
             return self._create_fallback_metadata(pdf_text, filename)
 

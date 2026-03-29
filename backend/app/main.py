@@ -13,7 +13,7 @@ import logging
 from app.models.responses import UploadResponse, ErrorResponse, StatusResponse
 from app.services.pdf_validator import PDFValidator
 from app.services.pass_generator import pass_generator
-from app.services.ai_service import ai_service
+from app.services.ai_service import ai_service, AIServiceError
 from app.services.revenuecat_service import revenuecat_service
 from app.services.v2.orchestrator import create_passes_v2
 
@@ -266,6 +266,12 @@ async def upload_pdf(
             jobs[job_id]["progress"] = 70
             jobs[job_id]["ai_metadata"] = ai_metadata
             print(f"✅ AI analysis completed for {file.filename}")
+        except AIServiceError as e:
+            jobs[job_id].update({"status": "failed", "progress": 0, "error": str(e)})
+            raise HTTPException(
+                status_code=503,
+                detail="Could not process PDF: AI service temporarily unavailable. Please try again later."
+            )
         except Exception as ai_error:
             print(f"⚠️ AI analysis failed, using fallback: {ai_error}")
             jobs[job_id]["progress"] = 50
