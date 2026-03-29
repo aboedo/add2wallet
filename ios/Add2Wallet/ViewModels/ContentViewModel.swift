@@ -300,7 +300,14 @@ class ContentViewModel: ObservableObject {
         // Pass consumption is now handled server-side
         // The server will deduct 1 PASS via RevenueCat API
         // unless this is a retry or demo
-        
+
+        // In screenshot mode, skip the upload entirely and use the pre-built demo pass
+        if ScreenshotModeSeeder.isScreenshotMode() {
+            progressViewModel.completeProgress()
+            downloadAndOpenPass(passUrl: "/demo-pass")
+            return
+        }
+
         networkService.uploadPDF(data: data, filename: filename, isRetry: isRetry, isDemo: isDemo)
             .receive(on: DispatchQueue.main)
             .sink(
@@ -640,7 +647,7 @@ class ContentViewModel: ObservableObject {
         // Extract basic information for the SavedPass model
         let passType = metadata.eventType ?? "Pass"
         let title = metadata.title ?? metadata.eventName ?? "Untitled Pass"
-        let eventDate = metadata.date
+        let eventDate = ScreenshotModeSeeder.isScreenshotMode() ? "2026-12-15" : metadata.date
         let venue = metadata.venueName
         let city = metadata.city
         
@@ -684,7 +691,7 @@ class ContentViewModel: ObservableObject {
         // Extract basic information for the SavedPass model
         let passType = metadata.eventType ?? "Pass"
         let title = metadata.title ?? metadata.eventName ?? "Untitled Pass"
-        let eventDate = metadata.date
+        let eventDate = ScreenshotModeSeeder.isScreenshotMode() ? "2026-12-15" : metadata.date
         let venue = metadata.venueName
         let city = metadata.city
         

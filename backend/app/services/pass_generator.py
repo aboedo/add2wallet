@@ -643,9 +643,14 @@ class PassGenerator:
             try:
                 from datetime import timedelta
                 event_date = datetime.strptime(event_date_str, '%Y-%m-%d')
-                expiration = event_date + timedelta(days=1)
+                expiration = event_date + timedelta(days=7)
                 pass_json["expirationDate"] = expiration.strftime('%Y-%m-%dT00:00Z')
+                
+                # Add relevantDate for Smart Lock Screen suggestions
+                pass_json["relevantDate"] = event_date.strftime('%Y-%m-%dT%H:%M:%S')
+                
                 print(f"📅 Set expirationDate: {pass_json['expirationDate']}")
+                print(f"🔔 Set relevantDate: {pass_json['relevantDate']}")
             except (ValueError, TypeError):
                 print(f"⚠️ Could not parse event date for expiration: {event_date_str}")
 

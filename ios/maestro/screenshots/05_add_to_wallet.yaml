@@ -1,8 +1,16 @@
 appId: com.andresboedo.add2wallet
 ---
 # Screenshot 5: Apple Wallet modal (PKAddPassesViewController)
+# Uses demo flow — date is overridden to future in screenshot mode via ContentViewModel
 - launchApp:
-    clearState: false
+    clearState: true
+    arguments:
+      SCREENSHOT_MODE: "1"
+- hideKeyboard:
+    optional: true
+- tapOn:
+    text: "Cancel"
+    optional: true
 - tapOn:
     text: "or try a demo"
 - tapOn:
@@ -14,6 +22,5 @@ appId: com.andresboedo.add2wallet
 - waitForAnimationToEnd
 - tapOn:
     text: "Add to Wallet"
-# Wait for PKAddPassesViewController to present
 - waitForAnimationToEnd
 - takeScreenshot: screenshots/05_add_to_wallet

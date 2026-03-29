@@ -1,0 +1,3 @@
+// Build config for screenshot mode
+// Adds SCREENSHOT_MODE compilation flag so isScreenshotMode() returns true at compile time
+OTHER_SWIFT_FLAGS = $(inherited) -DSCREENSHOT_MODE
