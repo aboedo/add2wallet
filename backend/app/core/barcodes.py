@@ -124,12 +124,17 @@ def _normalize(raw: list[dict[str, Any]]) -> tuple[list[Barcode], list[str]]:
         if key in seen:
             continue
         seen.add(key)
+        # Detectors report 1-based pages; expose a 0-based index so it lines up
+        # with ExtractedDocument.pages.
+        page = item.get("page")
+        page_index = page - 1 if isinstance(page, int) and page > 0 else None
         results.append(
             Barcode(
                 type=source_type,
                 pk_format=pk_format,
                 message=value,
                 confidence=int(item.get("confidence") or 0),
+                page=page_index,
             )
         )
     return results, warnings

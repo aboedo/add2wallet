@@ -16,8 +16,13 @@ struct SavedPassDetailView: View {
     @State private var showingSuccessToast = false
     @State private var successToastMessage = ""
     @State private var addToWalletBounce = 0
-    
-    
+
+    /// Per-pass detail, read back from the .pkpass files themselves so a
+    /// multi-leg booking shows each leg instead of one opaque group.
+    private var tickets: [PassTicketInfo] {
+        PassTicketInfo.all(from: savedPass.passDatas)
+    }
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -77,12 +82,23 @@ struct SavedPassDetailView: View {
                     
                 }
                 
+                // Each pass of the booking, with its own leg detail.
+                if tickets.count > 1 {
+                    PassGroupList(
+                        tickets: tickets,
+                        groupName: savedPass.displayTitle,
+                        onAdd: { addSingleTicketToWallet($0) }
+                    )
+                    .padding(.horizontal, ThemeManager.Spacing.md)
+                    .padding(.bottom, ThemeManager.Spacing.md)
+                }
+
                 // Original source preview if available (collapsed by default)
                 if let sourceData = savedPass.sourceData,
                    let tempSourceURL = createTempSourceURL(from: sourceData) {
                     CollapsibleFilePreview(url: tempSourceURL)
                         .padding(.bottom, ThemeManager.Spacing.md)
-                    
+
                 }
                 
                 
@@ -209,6 +225,31 @@ struct SavedPassDetailView: View {
         }
     }
     
+    /// Add one leg of a booking on its own, rather than the whole group.
+    private func addSingleTicketToWallet(_ ticket: PassTicketInfo) {
+        guard ticket.id < savedPass.passDatas.count else {
+            statusMessage = "Pass data not available"
+            hasError = true
+            return
+        }
+
+        guard PKPassLibrary.isPassLibraryAvailable() else {
+            statusMessage = "Apple Wallet is not available on this device"
+            hasError = true
+            return
+        }
+
+        do {
+            let pass = try PKPass(data: savedPass.passDatas[ticket.id])
+            passViewController = PKAddPassesViewController(pass: pass)
+            showingAddPassVC = true
+            hasError = false
+        } catch {
+            statusMessage = "Could not read this pass: \(error.localizedDescription)"
+            hasError = true
+        }
+    }
+
     private func addPassToWallet() {
         guard !savedPass.passDatas.isEmpty else {
             statusMessage = "Pass data not available"

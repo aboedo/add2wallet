@@ -9,7 +9,14 @@ from typing import Any
 
 from app.core.config import Settings
 from app.core.errors import ProcessingError
-from app.core.models import AnalysisResult, Barcode, PassArtifact, StructuredMetadata, ValidatedUpload
+from app.core.models import (
+    AnalysisResult,
+    Barcode,
+    PassArtifact,
+    PassSegment,
+    StructuredMetadata,
+    ValidatedUpload,
+)
 from app.services.v2.asset_generator import generate_assets
 from app.services.v2.models import PKBarcode, PassField, PassJSON, PassStructure
 from app.services.v2.pass_signer import get_signer
@@ -25,19 +32,24 @@ class WalletPassBuilder:
         artifacts: list[PassArtifact] = []
         for index in range(ticket_count):
             barcode = analysis.barcodes[index] if index < len(analysis.barcodes) else (analysis.barcodes[0] if analysis.barcodes else None)
-            pass_json = self._pass_json(analysis.metadata, barcode, index, ticket_count)
+            # Each pass describes its own leg when the document has several.
+            segment = _segment_for(analysis, barcode, index)
+            metadata = _merge_segment(analysis.metadata, segment)
+            pass_json = self._pass_json(metadata, barcode, index, ticket_count, segment, analysis)
             valid, errors = validate_pass(pass_json)
             if not valid:
                 raise ProcessingError(f"Pass validation failed: {'; '.join(errors)}")
 
-            data = self._package(upload, analysis, pass_json)
+            data = self._package(upload, analysis, pass_json, metadata)
             artifacts.append(
                 PassArtifact(
                     ticket_number=index + 1,
-                    title=self._ticket_title(analysis.metadata, index, ticket_count),
+                    title=self._ticket_title(metadata, index, ticket_count, segment),
                     description=pass_json.description,
                     barcode=barcode,
-                    metadata=self._metadata_for_response(analysis.metadata, index, ticket_count),
+                    metadata=self._metadata_for_response(
+                        metadata, index, ticket_count, segment, analysis
+                    ),
                     data=data,
                 )
             )
@@ -46,6 +58,11 @@ class WalletPassBuilder:
     def _ticket_count(self, analysis: AnalysisResult) -> int:
         if analysis.metadata.multiple_tickets and analysis.barcodes:
             return len(analysis.barcodes)
+        # Several legs means several passes even when the model didn't flag the
+        # document as multi-ticket; otherwise a five-leg itinerary collapsed
+        # into a single pass carrying only the first leg.
+        if analysis.segments:
+            return max(len(analysis.barcodes), len(analysis.segments), 1)
         return 1
 
     def _pass_json(
@@ -54,15 +71,17 @@ class WalletPassBuilder:
         barcode: Barcode | None,
         ticket_index: int,
         total_tickets: int,
+        segment: PassSegment | None = None,
+        analysis: AnalysisResult | None = None,
     ) -> PassJSON:
         signer = get_signer()
         pass_type, team_id = signer.get_identifiers()
         pass_type = pass_type or self.settings.pass_type_identifier
         team_id = team_id or self.settings.team_identifier
 
-        title = self._ticket_title(metadata, ticket_index, total_tickets)
-        description = _description(metadata)
-        structure = _structure(metadata)
+        title = self._ticket_title(metadata, ticket_index, total_tickets, segment)
+        description = _description(metadata, segment)
+        structure = _structure(metadata, segment, analysis)
         payload: dict[str, Any] = {
             "formatVersion": 1,
             "passTypeIdentifier": pass_type,
@@ -98,7 +117,14 @@ class WalletPassBuilder:
             ]
         return PassJSON(**payload)
 
-    def _package(self, upload: ValidatedUpload, analysis: AnalysisResult, pass_json: PassJSON) -> bytes:
+    def _package(
+        self,
+        upload: ValidatedUpload,
+        analysis: AnalysisResult,
+        pass_json: PassJSON,
+        metadata: StructuredMetadata | None = None,
+    ) -> bytes:
+        metadata = metadata or analysis.metadata
         with tempfile.TemporaryDirectory() as temp_dir:
             pass_path = os.path.join(temp_dir, "pass.json")
             with open(pass_path, "w") as f:
@@ -107,31 +133,162 @@ class WalletPassBuilder:
             generate_assets(
                 temp_dir,
                 pdf_for_thumbnail,
-                analysis.metadata.event_type,
-                analysis.metadata.title,
-                analysis.metadata.background_color,
-                analysis.metadata.foreground_color,
+                metadata.event_type,
+                metadata.title,
+                metadata.background_color,
+                metadata.foreground_color,
             )
             return get_signer().package_pass(temp_dir)
 
-    def _ticket_title(self, metadata: StructuredMetadata, ticket_index: int, total_tickets: int) -> str:
+    def _ticket_title(
+        self,
+        metadata: StructuredMetadata,
+        ticket_index: int,
+        total_tickets: int,
+        segment: PassSegment | None = None,
+    ) -> str:
+        # A leg names itself ("Train Bergen to Voss"); only fall back to a
+        # numbered document title when there is nothing better.
+        if segment and (segment.label or segment.route()):
+            return (segment.label or segment.route() or "")[:30]
         title = (metadata.title or metadata.event_name or "Digital Pass")[:30]
         if total_tickets > 1:
             suffix = f" #{ticket_index + 1}"
             return f"{title[:30 - len(suffix)]}{suffix}"
         return title
 
-    def _metadata_for_response(self, metadata: StructuredMetadata, ticket_index: int, total_tickets: int) -> dict[str, Any]:
+    def _metadata_for_response(
+        self,
+        metadata: StructuredMetadata,
+        ticket_index: int,
+        total_tickets: int,
+        segment: PassSegment | None = None,
+        analysis: AnalysisResult | None = None,
+    ) -> dict[str, Any]:
         data = metadata.model_dump(exclude_none=True)
-        data["title"] = self._ticket_title(metadata, ticket_index, total_tickets)
+        data["title"] = self._ticket_title(metadata, ticket_index, total_tickets, segment)
+        if segment:
+            data["segment"] = segment.model_dump(exclude_none=True)
+            if segment.route():
+                data["route"] = segment.route()
+        if analysis and analysis.group_id:
+            data["group_id"] = analysis.group_id
+        if analysis and analysis.group_name:
+            data["group_name"] = analysis.group_name
+        if analysis and analysis.segments:
+            data["group_size"] = len(analysis.barcodes) or len(analysis.segments)
         return data
 
 
-def _structure(metadata: StructuredMetadata) -> PassStructure:
-    primary = [PassField(key="title", label="", value=metadata.title or metadata.event_name or "Digital Pass")]
+def _segment_for(
+    analysis: AnalysisResult, barcode: Barcode | None, ticket_index: int
+) -> PassSegment | None:
+    """Match a pass to its leg — by the page its barcode came from."""
+    if not analysis.segments:
+        return None
+    if barcode is not None and barcode.page is not None:
+        for segment in analysis.segments:
+            if segment.page == barcode.page:
+                return segment
+    # No page information (image upload, or a code the scanner couldn't place):
+    # fall back to position, which is right for a one-code-per-leg document.
+    if ticket_index < len(analysis.segments):
+        return analysis.segments[ticket_index]
+    return None
+
+
+def _merge_segment(metadata: StructuredMetadata, segment: PassSegment | None) -> StructuredMetadata:
+    """Overlay a leg's own detail on the document-level metadata."""
+    if segment is None:
+        return metadata
+
+    merged = metadata.model_copy(deep=True)
+    if segment.label:
+        merged.title = segment.label[:60]
+        merged.event_name = segment.label
+    if segment.depart_date:
+        merged.date = segment.depart_date
+    if segment.depart_time:
+        merged.time = segment.depart_time
+    # A leg ends the same day it starts; end_* would otherwise still describe
+    # the whole trip and push the expiry far past this leg.
+    merged.end_date = segment.arrive_date
+    merged.end_time = segment.arrive_time
+    if segment.seat_info:
+        merged.seat_info = segment.seat_info
+    if segment.confirmation_number:
+        merged.confirmation_number = segment.confirmation_number
+    if segment.carrier:
+        merged.organizer = segment.carrier
+    if segment.origin:
+        merged.venue_name = segment.origin
+    return merged
+
+
+def _structure(
+    metadata: StructuredMetadata,
+    segment: PassSegment | None = None,
+    analysis: AnalysisResult | None = None,
+) -> PassStructure:
     secondary: list[PassField] = []
     auxiliary: list[PassField] = []
     back: list[PassField] = []
+
+    # A journey leg leads with its route and departure/arrival times; that is
+    # what tells two passes of the same booking apart at a glance.
+    if segment and segment.route():
+        primary = [PassField(key="route", label="", value=segment.route() or "")]
+        if segment.depart_time:
+            secondary.append(
+                PassField(
+                    key="depart",
+                    label=f"Depart{f' · {segment.origin}' if segment.origin else ''}"[:16],
+                    value=f"{segment.depart_time}{f'  {segment.depart_date}' if segment.depart_date else ''}",
+                )
+            )
+        if segment.arrive_time:
+            secondary.append(
+                PassField(
+                    key="arrive",
+                    label=f"Arrive{f' · {segment.destination}' if segment.destination else ''}"[:16],
+                    value=f"{segment.arrive_time}{f'  {segment.arrive_date}' if segment.arrive_date else ''}",
+                )
+            )
+        if segment.seat_info:
+            secondary.append(PassField(key="seat", label="Seat", value=segment.seat_info))
+        if segment.carrier:
+            auxiliary.append(PassField(key="carrier", label="Operator", value=segment.carrier))
+        if segment.vehicle_info:
+            auxiliary.append(PassField(key="vehicle", label="Service", value=segment.vehicle_info))
+        if segment.travel_class:
+            auxiliary.append(PassField(key="class", label="Class", value=segment.travel_class))
+        if segment.confirmation_number:
+            auxiliary.append(
+                PassField(key="confirmation", label="Reference", value=segment.confirmation_number)
+            )
+        if segment.traveler:
+            back.append(PassField(key="traveler", label="Traveller", value=segment.traveler))
+        if segment.notes:
+            back.append(PassField(key="notes", label="Good to know", value=segment.notes))
+        if analysis and analysis.group_name:
+            back.append(PassField(key="trip", label="Trip", value=analysis.group_name))
+        if analysis and analysis.group_id:
+            back.append(PassField(key="order", label="Order", value=analysis.group_id))
+        if metadata.venue_address:
+            back.append(PassField(key="address", label="Address", value=metadata.venue_address))
+        if metadata.description:
+            back.append(PassField(key="description", label="Details", value=metadata.description))
+        return PassStructure(
+            headerFields=[
+                PassField(key="kind", label="PASS", value=_type_label(metadata.event_type))
+            ],
+            primaryFields=primary,
+            secondaryFields=secondary,
+            auxiliaryFields=auxiliary,
+            backFields=back,
+        )
+
+    primary = [PassField(key="title", label="", value=metadata.title or metadata.event_name or "Digital Pass")]
 
     # A stay/rental shows both ends of the range; a point-in-time event just
     # shows when it starts.
@@ -185,8 +342,12 @@ def _structure(metadata: StructuredMetadata) -> PassStructure:
     )
 
 
-def _description(metadata: StructuredMetadata) -> str:
-    parts = [part for part in [metadata.event_name, metadata.date, metadata.venue_name] if part]
+def _description(metadata: StructuredMetadata, segment: PassSegment | None = None) -> str:
+    if segment and segment.route():
+        parts = [segment.route(), segment.depart_date, segment.depart_time]
+    else:
+        parts = [metadata.event_name, metadata.date, metadata.venue_name]
+    parts = [part for part in parts if part]
     return " - ".join(parts)[:80] if parts else "Digital pass"
 
 

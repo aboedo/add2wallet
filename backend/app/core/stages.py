@@ -50,13 +50,15 @@ class ExtractionStage:
         )
 
         if upload.kind is DocumentKind.pdf:
-            text, page_count = await asyncio.to_thread(_extract_pdf_text, upload.data)
+            pages, page_count = await asyncio.to_thread(_extract_pdf_pages, upload.data)
+            text = "\n".join(pages).strip()
             vision_images = []
             if not text.strip():
                 vision_images = await asyncio.to_thread(_render_pdf_pages, upload.data)
             return ExtractedDocument(
                 text=text,
                 page_count=page_count,
+                pages=pages,
                 vision_images=vision_images,
                 barcodes=barcodes,
                 warnings=warnings,
@@ -81,18 +83,25 @@ class ClassificationStage:
     async def run(self, upload: ValidatedUpload, extracted: ExtractedDocument) -> ClassifiedDocument:
         barcode_messages = [barcode.message for barcode in extracted.barcodes]
         if extracted.vision_images and (upload.kind is not DocumentKind.pdf or not extracted.text.strip()):
-            metadata = await self.metadata_extractor.extract_from_vision(
+            metadata_task = self.metadata_extractor.extract_from_vision(
                 extracted.vision_images,
                 upload.filename,
                 barcode_messages,
                 fallback_text=extracted.text,
             )
         else:
-            metadata = await self.metadata_extractor.extract_from_text(
+            metadata_task = self.metadata_extractor.extract_from_text(
                 extracted.text,
                 upload.filename,
                 barcode_messages,
             )
+
+        # Segment extraction is independent of the document-level pass — run
+        # both together so a multi-leg document costs one round trip, not two.
+        metadata, (segments, group_id, group_name) = await asyncio.gather(
+            metadata_task,
+            self.metadata_extractor.extract_segments(extracted.pages, upload.filename),
+        )
 
         barcodes = _consolidate_barcodes(extracted.barcodes, metadata)
         if barcode_messages and not metadata.barcode_data:
@@ -102,6 +111,9 @@ class ClassificationStage:
             metadata=metadata,
             barcodes=barcodes,
             warnings=extracted.warnings,
+            segments=segments,
+            group_id=group_id or metadata.confirmation_number,
+            group_name=group_name,
         )
 
 
@@ -115,6 +127,9 @@ class EnrichmentStage:
             metadata=metadata,
             barcodes=classified.barcodes,
             warnings=classified.warnings,
+            segments=classified.segments,
+            group_id=classified.group_id,
+            group_name=classified.group_name,
         )
 
 
@@ -136,7 +151,11 @@ def _consolidate_barcodes(barcodes: list, metadata: StructuredMetadata) -> list:
         if not barcode.message.lower().startswith(("http://", "https://"))
     ] or barcodes
 
-    if metadata.multiple_tickets:
+    # Codes sitting on different pages are different legs of the same journey,
+    # never duplicates of one ticket — keep every one regardless of what the
+    # model said about multiple_tickets.
+    pages = {barcode.page for barcode in real_barcodes if barcode.page is not None}
+    if metadata.multiple_tickets or len(pages) > 1:
         return real_barcodes
 
     def score(barcode) -> tuple[int, int, int]:
@@ -168,6 +187,12 @@ def _apply_derived_colors(upload: ValidatedUpload, metadata: StructuredMetadata)
 
 
 def _extract_pdf_text(data: bytes) -> tuple[str, int]:
+    pages, page_count = _extract_pdf_pages(data)
+    return "\n".join(pages).strip(), page_count
+
+
+def _extract_pdf_pages(data: bytes) -> tuple[list[str], int]:
+    """Per-page text. Page boundaries are what let a leg be tied to its barcode."""
     try:
         import fitz
 
@@ -175,7 +200,7 @@ def _extract_pdf_text(data: bytes) -> tuple[str, int]:
         page_count = doc.page_count
         parts = [doc.load_page(index).get_text() for index in range(min(page_count, MAX_TEXT_PAGES))]
         doc.close()
-        return "\n".join(parts).strip(), max(page_count, 1)
+        return parts, max(page_count, 1)
     except Exception:
         logger.info("PyMuPDF text extraction failed", exc_info=True)
 
@@ -183,10 +208,10 @@ def _extract_pdf_text(data: bytes) -> tuple[str, int]:
         import PyPDF2
 
         reader = PyPDF2.PdfReader(io.BytesIO(data))
-        return "\n".join(page.extract_text() or "" for page in reader.pages).strip(), max(len(reader.pages), 1)
+        return [page.extract_text() or "" for page in reader.pages], max(len(reader.pages), 1)
     except Exception:
         logger.info("PyPDF2 text extraction failed", exc_info=True)
-        return "", 1
+        return [], 1
 
 
 def _render_pdf_pages(data: bytes) -> list[tuple[bytes, str]]:

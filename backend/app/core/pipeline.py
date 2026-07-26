@@ -75,7 +75,7 @@ class ConversionPipeline:
                 job_id,
                 artifacts,
                 [barcode.model_dump() for barcode in analysis.barcodes],
-                analysis.metadata.model_dump(exclude_none=True),
+                _job_metadata(analysis),
                 analysis.warnings,
             )
             job.progress = 90
@@ -96,3 +96,16 @@ class ConversionPipeline:
             from app.core.errors import ProcessingError
 
             raise ProcessingError("Could not create an Apple Wallet pass from this file") from exc
+
+
+def _job_metadata(analysis) -> dict:
+    """Document-level metadata plus the group identity the app needs to tie
+    related passes together (a five-leg itinerary is one booking)."""
+    data = analysis.metadata.model_dump(exclude_none=True)
+    if analysis.group_id:
+        data["group_id"] = analysis.group_id
+    if analysis.group_name:
+        data["group_name"] = analysis.group_name
+    if analysis.segments:
+        data["segments"] = [s.model_dump(exclude_none=True) for s in analysis.segments]
+    return data

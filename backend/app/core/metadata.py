@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from app.core.config import Settings
 from app.core.errors import UpstreamServiceError
-from app.core.models import DocumentKind, StructuredMetadata
+from app.core.models import DocumentKind, PassSegment, StructuredMetadata
 
 
 logger = logging.getLogger(__name__)
@@ -115,6 +115,120 @@ class MetadataExtractor:
         except Exception:
             logger.warning("OpenAI vision extraction failed; using fallback", exc_info=True)
             return fallback_metadata(fallback_text, filename, barcode_messages, self.settings.openai_model)
+
+
+    async def extract_segments(
+        self,
+        pages: list[str],
+        filename: str,
+    ) -> tuple[list[PassSegment], str | None, str | None]:
+        """Pull one segment per page from a multi-part document.
+
+        Returns (segments, group_id, group_name). Empty segments mean the
+        document is a single ticket and document-level metadata is enough.
+        """
+        usable = [(index, text) for index, text in enumerate(pages) if text and text.strip()]
+        if not self.client or len(usable) < 2:
+            return [], None, None
+
+        try:
+            response = await asyncio.to_thread(
+                self.client.chat.completions.create,
+                model=self.settings.openai_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Split multi-part travel and booking documents into their individual "
+                            "legs or segments. Return JSON only."
+                        ),
+                    },
+                    {"role": "user", "content": _segments_prompt(filename, usable)},
+                ],
+                temperature=0.1,
+                max_tokens=2000,
+            )
+            return _segments_from_json(response.choices[0].message.content or "")
+        except (AuthenticationError, RateLimitError, APIStatusError):
+            logger.info("Segment extraction unavailable", exc_info=True)
+            return [], None, None
+        except Exception:
+            logger.warning("Segment extraction failed; falling back to document metadata", exc_info=True)
+            return [], None, None
+
+
+def _segments_prompt(filename: str, pages: list[tuple[int, str]]) -> str:
+    body = "\n\n".join(f"--- PAGE {index} ---\n{text[:2500]}" for index, text in pages)
+    return f"""
+File: {filename}
+
+{body}
+
+This document may contain several separate tickets or bookings — for example a
+multi-leg journey where each page is one leg, or a booking covering several
+nights or sessions.
+
+Return JSON:
+{{
+  "group_id": "shared order/booking reference, or null",
+  "group_name": "short name for the whole trip or booking, or null",
+  "segments": [
+    {{
+      "page": <the PAGE number the segment came from>,
+      "label": "short human title, e.g. 'Train Bergen to Voss'",
+      "origin": "...", "destination": "...",
+      "depart_date": "YYYY-MM-DD", "depart_time": "HH:MM",
+      "arrive_date": "YYYY-MM-DD", "arrive_time": "HH:MM",
+      "carrier": "operator or provider",
+      "vehicle_info": "train/flight/line number or vessel",
+      "seat_info": "plain text, e.g. 'Car 1, Seats 9 and 10'",
+      "travel_class": "...",
+      "confirmation_number": "the reference for THIS segment",
+      "traveler": "...",
+      "notes": "practical info worth keeping, plain text"
+    }}
+  ]
+}}
+
+Only include pages that are an actual ticket or booking segment; skip cover
+pages, receipts, terms and payment summaries. If the document is a single
+ticket, return an empty segments array. Never output nested objects or arrays
+inside a segment field — every value must be a plain string or null.
+"""
+
+
+def _segments_from_json(raw: str) -> tuple[list[PassSegment], str | None, str | None]:
+    text = raw.strip()
+    if "```json" in text:
+        start = text.find("```json") + len("```json")
+        text = text[start : text.find("```", start)].strip()
+    elif "{" in text:
+        text = text[text.find("{") : text.rfind("}") + 1]
+
+    data = json.loads(text)
+    segments: list[PassSegment] = []
+    for item in data.get("segments") or []:
+        if not isinstance(item, dict):
+            continue
+        fields = {
+            key: value for key, value in item.items() if key in PassSegment.model_fields
+        }
+        page = fields.get("page")
+        fields["page"] = page if isinstance(page, int) else None
+        for key, value in list(fields.items()):
+            if key != "page" and value is not None and not isinstance(value, str):
+                fields[key] = _humanize(value)
+        try:
+            segments.append(PassSegment(**fields))
+        except ValidationError:
+            logger.warning("Skipping unusable segment: %s", fields)
+    group_id = data.get("group_id")
+    group_name = data.get("group_name")
+    return (
+        segments,
+        group_id if isinstance(group_id, str) else None,
+        group_name if isinstance(group_name, str) else None,
+    )
 
 
 def fallback_metadata(
@@ -222,11 +336,32 @@ def _coerce_to_schema(data: dict[str, Any]) -> dict[str, Any]:
             continue
 
         if base is str and not isinstance(value, str):
-            coerced[key] = str(value)
+            coerced[key] = _humanize(value)
             continue
 
         coerced[key] = value
     return coerced
+
+
+def _humanize(value: Any) -> str:
+    """Render a non-string value as text a person would want on a pass.
+
+    The model answers structured fields with objects — seat_info comes back as
+    {"car": 1, "seats": [9, 10]} — and a bare str() leaked the Python repr
+    ("{'car': 1, 'seats': [9, 10]}") straight onto the pass.
+    """
+    if isinstance(value, dict):
+        parts = [
+            f"{str(key).replace('_', ' ').strip().capitalize()} {_humanize(item)}"
+            for key, item in value.items()
+            if item not in (None, "", [], {})
+        ]
+        return ", ".join(parts)
+    if isinstance(value, (list, tuple, set)):
+        return ", ".join(_humanize(item) for item in value if item not in (None, ""))
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
+    return str(value)
 
 
 def _non_none_type(annotation: Any) -> Any:

@@ -29,6 +29,10 @@ class Barcode(BaseModel):
     message: str
     message_encoding: str = "iso-8859-1"
     confidence: int = 0
+    # 0-based page the code was found on. A multi-leg itinerary puts one leg
+    # per page, so this is what lets each pass carry its own segment's detail
+    # instead of the whole document's.
+    page: int | None = None
 
 
 class StructuredMetadata(BaseModel):
@@ -89,17 +93,56 @@ class StructuredMetadata(BaseModel):
     model_config = {"protected_namespaces": ()}
 
 
+class PassSegment(BaseModel):
+    """One leg of a multi-part document — a train ride, a night, a session.
+
+    A "Norway in a Nutshell" itinerary is five legs across five pages, each
+    with its own route, times, seats and provider reference. Extracting only
+    document-level metadata produced N near-identical passes and threw all of
+    that away.
+    """
+
+    page: int | None = None
+    label: str | None = None
+    origin: str | None = None
+    destination: str | None = None
+    depart_date: str | None = None
+    depart_time: str | None = None
+    arrive_date: str | None = None
+    arrive_time: str | None = None
+    carrier: str | None = None
+    vehicle_info: str | None = None
+    seat_info: str | None = None
+    travel_class: str | None = None
+    confirmation_number: str | None = None
+    traveler: str | None = None
+    notes: str | None = None
+
+    def route(self) -> str | None:
+        if self.origin and self.destination:
+            return f"{self.origin} → {self.destination}"
+        return self.origin or self.destination
+
+
 class AnalysisResult(BaseModel):
     text: str = ""
     page_count: int = 1
     metadata: StructuredMetadata
     barcodes: list[Barcode] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    # Per-leg detail, when the document describes several. Empty for a plain
+    # single-event ticket.
+    segments: list[PassSegment] = Field(default_factory=list)
+    # Shared booking/order reference, so related passes can be grouped.
+    group_id: str | None = None
+    group_name: str | None = None
 
 
 class ExtractedDocument(BaseModel):
     text: str = ""
     page_count: int = 1
+    # Text per page, index-aligned with Barcode.page.
+    pages: list[str] = Field(default_factory=list)
     vision_images: list[tuple[bytes, str]] = Field(default_factory=list)
     barcodes: list[Barcode] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
@@ -109,6 +152,9 @@ class ClassifiedDocument(BaseModel):
     metadata: StructuredMetadata
     barcodes: list[Barcode] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    segments: list[PassSegment] = Field(default_factory=list)
+    group_id: str | None = None
+    group_name: str | None = None
 
 
 class PassArtifact(BaseModel):

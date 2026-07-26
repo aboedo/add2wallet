@@ -168,10 +168,14 @@ def create_router() -> APIRouter:
     @router.get("/tickets/{job_id}")
     async def list_tickets(request: Request, job_id: str, authorization: Optional[str] = Header(None)) -> dict:
         job = _get_job(request, job_id)
+        job_metadata = job.ai_metadata or {}
         return {
             "job_id": job.job_id,
             "ticket_count": job.ticket_count,
             "barcode_count": job.barcode_count,
+            # Group identity so related passes can be shown together.
+            "group_id": job_metadata.get("group_id"),
+            "group_name": job_metadata.get("group_name"),
             "tickets": [
                 {
                     "ticket_number": ticket["ticket_number"],
@@ -180,6 +184,11 @@ def create_router() -> APIRouter:
                     "download_url": f"/pass/{job.job_id}?ticket_number={ticket['ticket_number']}",
                     "has_barcode": ticket.get("barcode") is not None,
                     "barcode_type": ticket["barcode"]["type"] if ticket.get("barcode") else None,
+                    # Per-leg detail: what makes one ticket of a booking
+                    # distinguishable from the next.
+                    "segment": (ticket.get("metadata") or {}).get("segment"),
+                    "route": (ticket.get("metadata") or {}).get("route"),
+                    "metadata": ticket.get("metadata"),
                 }
                 for ticket in job.ticket_info
             ],

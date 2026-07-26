@@ -390,7 +390,10 @@ class BarcodeExtractor:
                     'bbox': [x, y, w, h],
                     'area': w * h,
                     'source': 'zxing',
-                    'page': page_num,
+                    # 1-based, matching every other detection path. This used
+                    # to be 0-based, which silently broke both the cross-source
+                    # dedup below and any per-page grouping of results.
+                    'page': page_num + 1,
                 }
                 logger.info(f"🔍 zxing found {fmt_name} ({pk_format}): {data[:60]!r}")
                 barcodes.append(barcode_info)
