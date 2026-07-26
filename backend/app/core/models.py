@@ -38,6 +38,10 @@ class StructuredMetadata(BaseModel):
     description: str | None = None
     date: str | None = None
     time: str | None = None
+    # End of a multi-day stay/booking (hotel check-out, rental return). Drives
+    # the pass expiration so a reservation doesn't disappear mid-stay.
+    end_date: str | None = None
+    end_time: str | None = None
     duration: str | None = None
     venue_name: str | None = None
     venue_address: str | None = None

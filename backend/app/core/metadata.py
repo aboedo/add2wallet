@@ -246,7 +246,7 @@ Extracted text:
 {text}
 
 Return JSON matching these fields when present:
-event_type, event_name, title, description, date, time, duration, venue_name,
+event_type, event_name, title, description, date, time, end_date, end_time, duration, venue_name,
 venue_address, city, state_country, latitude, longitude, organizer,
 performer_artist, seat_info, barcode_data, price, confirmation_number,
 gate_info, event_description, venue_type, capacity, website, phone,
@@ -258,6 +258,13 @@ foreground_color, label_color.
 
 Use null for unknown values. Keep title under 30 characters. Use rgb(R, G, B)
 strings for colors with readable contrast.
+
+Dates must be YYYY-MM-DD and times HH:MM (24h). For a document that covers a
+range — a hotel stay, a car rental, a multi-day pass — put the start in
+date/time (check-in, pick-up) and the end in end_date/end_time (check-out,
+drop-off). A document without any barcode is still valid: it is a reservation
+or confirmation worth remembering, so extract every useful detail (address,
+phone, confirmation number, price, what is included, cancellation terms).
 """
 
 
