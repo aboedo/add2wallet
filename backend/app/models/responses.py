@@ -98,6 +98,8 @@ class EnhancedPassMetadata(BaseModel):
     has_assigned_seating: bool = False
     event_urls: Optional['EventURLs'] = None
 
+    model_config = {"protected_namespaces": ()}
+
 class UpcomingEvent(BaseModel):
     """iOS 26 upcoming event structure for multi-event tickets"""
     id: str

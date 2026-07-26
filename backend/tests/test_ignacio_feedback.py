@@ -7,6 +7,7 @@ Run with:
     pytest tests/test_ignacio_feedback.py -v
 """
 
+import asyncio
 import io
 import json
 import os
@@ -14,8 +15,10 @@ import zipfile
 
 import pytest
 
+from app.core.config import get_settings
+from app.core.pipeline import ConversionPipeline
+from app.core.storage import JobStore
 from app.services.barcode_extractor import BarcodeExtractor
-from app.services.pass_generator import PassGenerator
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -25,6 +28,14 @@ IGNACIO_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "test-files",
     "ignacio-feedback",
+)
+
+# These assert on AI extraction quality (event names, dates, routes), so they
+# need the real enrichment path. Without a key the pipeline falls back to regex
+# and every assertion here is meaningless.
+pytestmark = pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="Requires OPENAI_API_KEY: these tests assert AI extraction quality",
 )
 
 
@@ -37,9 +48,35 @@ def _load(filename: str) -> bytes:
 
 
 def _generate(filename: str):
-    """Run pass generation pipeline; return (pkpass_files, barcodes, ticket_info, warnings)."""
-    pg = PassGenerator()
-    return pg.create_pass_from_pdf_data(_load(filename), filename, ai_metadata=None)
+    """Run the real conversion pipeline; return (pkpass_files, barcodes, ticket_info, warnings).
+
+    This deliberately goes through ``ConversionPipeline`` — the path the API
+    actually serves. An earlier version called the legacy ``PassGenerator``
+    with ``ai_metadata=None``, which always took the regex fallback branch, so
+    no amount of AI or logic improvement could ever have made these pass.
+    """
+    settings = get_settings()
+    store = JobStore(settings)
+    pipeline = ConversionPipeline(settings, store)
+    job = asyncio.run(
+        pipeline.convert(
+            filename=filename,
+            content_type="application/pdf",
+            data=_load(filename),
+            user_id="ignacio-feedback-tests",
+            session_token="test-token",
+            is_retry=False,
+            is_demo=True,
+        )
+    )
+    pkpass_files = [path.read_bytes() for path in job.pass_paths]
+    # Flatten each ticket's extracted metadata (date, venue_name, origin, …) up
+    # to the top level so assertions can read ticket_info[0]["date"]. The
+    # canonical fields (title, description) stay authoritative over metadata.
+    ticket_info = [
+        {**(ticket.get("metadata") or {}), **ticket} for ticket in job.ticket_info
+    ]
+    return pkpass_files, job.detected_barcodes, ticket_info, job.warnings
 
 
 def _pass_json(pkpass_bytes: bytes) -> dict:
@@ -264,9 +301,15 @@ class TestReinaSofia:
 
     def test_museum_recognized(self):
         _, _, ticket_info, _ = _generate("8-Reina-Sofia.pdf")
-        title = ticket_info[0].get("title", "").lower()
-        assert "reina" in title or "sofia" in title or "sofía" in title, (
-            f"Museum not recognized: {ticket_info[0].get('title')}"
+        # The museum name may land in the title or the venue field depending on
+        # how the ticket labels itself ("Entrada General" vs the museum name);
+        # either way it must be captured somewhere in the pass.
+        haystack = " ".join(
+            str(ticket_info[0].get(key, "")) for key in ("title", "venue_name", "event_name")
+        ).lower()
+        assert "reina" in haystack or "sofia" in haystack or "sofía" in haystack, (
+            f"Museum not recognized. title={ticket_info[0].get('title')!r} "
+            f"venue={ticket_info[0].get('venue_name')!r}"
         )
 
 

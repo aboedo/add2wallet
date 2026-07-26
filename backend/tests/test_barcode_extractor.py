@@ -21,12 +21,17 @@ class TestBarcodeExtractor:
         self.test_files_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "test_files")
     
     def test_format_groups_initialization(self):
-        """Test that format groups are properly initialized."""
-        assert len(self.extractor.format_groups) == 4
+        """Test that format groups are properly initialized.
+
+        Order matters: matrix formats that pyzbar tends to misidentify as QR
+        are tried before QR, and 1D codes come last.
+        """
+        assert len(self.extractor.format_groups) == 5
         assert {'AZTEC'} == self.extractor.format_groups[0]
         assert {'DATAMATRIX'} == self.extractor.format_groups[1]
-        assert {'QRCODE'} == self.extractor.format_groups[2]
-        assert 'CODE128' in self.extractor.format_groups[3]
+        assert {'PDF417'} == self.extractor.format_groups[2]
+        assert {'QRCODE'} == self.extractor.format_groups[3]
+        assert 'CODE128' in self.extractor.format_groups[4]
     
     def test_decode_with_formats_empty_image(self):
         """Test decode_with_formats with empty image."""

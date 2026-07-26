@@ -40,6 +40,19 @@ import PyPDF2
 logger = logging.getLogger(__name__)
 
 
+def canonical_format_name(raw: Any) -> str:
+    """Normalize a barcode format name to the internal canonical spelling.
+
+    Different detectors spell the same format differently: pyzbar reports
+    ``QRCODE``/``CODE128``, while zxing-cpp reports display names such as
+    ``QR Code``, ``Code 128`` and ``Data Matrix``.  Everything downstream
+    (``supported_formats``, ``format_groups``, the ``DATAMATRIX`` guards in
+    ``pass_generator`` and the PKBarcodeFormat maps) keys on the compact
+    uppercase spelling, so normalize once at the source.
+    """
+    return re.sub(r'[^A-Z0-9]', '', str(raw or '').upper())
+
+
 class BarcodeExtractor:
     """Extract barcodes and QR codes from PDF files."""
     
@@ -317,13 +330,22 @@ class BarcodeExtractor:
         if not ZXING_AVAILABLE:
             return []
 
+        # Keyed on canonical_format_name() output: zxing-cpp reports display
+        # names ('QR Code', 'Code 128', 'Data Matrix'), not compact ones.
         zxing_format_map = {
             'PDF417': 'PKBarcodeFormatPDF417',
-            'QRCode': 'PKBarcodeFormatQR',
-            'Aztec': 'PKBarcodeFormatAztec',
-            'Code128': 'PKBarcodeFormatCode128',
-            'Code39': 'PKBarcodeFormatCode128',
-            'DataMatrix': 'PKBarcodeFormatQR',
+            'QRCODE': 'PKBarcodeFormatQR',
+            'AZTEC': 'PKBarcodeFormatAztec',
+            'CODE128': 'PKBarcodeFormatCode128',
+            'CODE39': 'PKBarcodeFormatCode128',
+            'CODE93': 'PKBarcodeFormatCode128',
+            'EAN13': 'PKBarcodeFormatCode128',
+            'EAN8': 'PKBarcodeFormatCode128',
+            'UPCA': 'PKBarcodeFormatCode128',
+            'UPCE': 'PKBarcodeFormatCode128',
+            'ITF': 'PKBarcodeFormatCode128',
+            'CODABAR': 'PKBarcodeFormatCode128',
+            'DATAMATRIX': 'PKBarcodeFormatQR',
         }
 
         barcodes = []
@@ -338,7 +360,7 @@ class BarcodeExtractor:
 
             results = zxingcpp.read_barcodes(img)
             for b in results:
-                fmt_name = str(b.format)  # e.g. "PDF417"
+                fmt_name = canonical_format_name(b.format)  # 'Data Matrix' → 'DATAMATRIX'
                 pk_format = zxing_format_map.get(fmt_name, 'PKBarcodeFormatQR')
 
                 # Use raw bytes — more reliable than .text for binary payloads
@@ -608,8 +630,11 @@ class BarcodeExtractor:
         # Base confidence on barcode quality indicators
         confidence = 70  # Base confidence
         
-        # Higher confidence for common, well-supported formats
-        if barcode.type in ['QRCODE', 'PDF417', 'CODE128']:
+        # Higher confidence for formats Apple Wallet supports natively.
+        # AZTEC belongs here: it is a first-class PKBarcodeFormat and sits at
+        # the top of format_groups, so scoring it below QR/PDF417 let a
+        # lower-precedence code win the primary-barcode pick.
+        if canonical_format_name(barcode.type) in {'QRCODE', 'PDF417', 'CODE128', 'AZTEC'}:
             confidence += 20
         
         # Higher confidence for longer data (usually more reliable)

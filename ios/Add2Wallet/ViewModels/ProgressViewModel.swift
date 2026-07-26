@@ -16,7 +16,7 @@ class ProgressViewModel: ObservableObject {
         "Teaching the pass to be classy 🧣",
         "Taming barcodes in the wild 🦓",
         "Politely asking pixels to line up 📐",
-        "Squeezing the PDF into your Wallet 💼",
+        "Squeezing the file into your Wallet 💼",
         "Convincing Apple to like this pass 🍏",
         "Adding just a pinch of magic ✨",
         "Enrolling pass in wallet etiquette school 🎓",
@@ -31,7 +31,7 @@ class ProgressViewModel: ObservableObject {
     ]
     
     private let progressSteps: [(progress: Double, message: String, minDuration: TimeInterval)] = [
-        (0.15, "Analyzing PDF...", 3.0),
+        (0.15, "Analyzing file...", 3.0),
         (0.40, "Extracting barcodes...", 7.0),
         (0.65, "Processing metadata...", 8.0),
         (0.85, "Generating pass...", 7.0),
@@ -41,7 +41,7 @@ class ProgressViewModel: ObservableObject {
     func startProgress() {
         print("🎯 ProgressViewModel: Starting progress animation")
         startTime = Date()
-        progressMessage = "Analyzing PDF..."
+        progressMessage = "Analyzing file..."
         funnyPhrase = phrases.randomElement() ?? "Getting things ready..."
         
         // Immediately show 3% progress for instant feedback
@@ -98,7 +98,7 @@ class ProgressViewModel: ObservableObject {
         guard newProgress != progress else { return }
         
         // Find current step message based on elapsed time
-        var currentMessage = "Analyzing PDF..."
+        var currentMessage = "Analyzing file..."
         var cumulativeTime: TimeInterval = 0
         
         for step in progressSteps {

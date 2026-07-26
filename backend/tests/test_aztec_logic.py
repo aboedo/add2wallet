@@ -42,15 +42,18 @@ class TestAztecLogic(unittest.TestCase):
         """Test that format groups are in correct order for Aztec precedence."""
         # Aztec should be first
         self.assertEqual(self.extractor.format_groups[0], {'AZTEC'})
-        
-        # QR should be second
-        self.assertEqual(self.extractor.format_groups[1], {'QRCODE'})
-        
-        # 1D codes should be third
-        one_d_group = self.extractor.format_groups[2]
+
+        # Data Matrix and PDF417 are tried before QR: pyzbar misidentifies
+        # both as QRCODE often enough that QR must not win first.
+        self.assertEqual(self.extractor.format_groups[1], {'DATAMATRIX'})
+        self.assertEqual(self.extractor.format_groups[2], {'PDF417'})
+        self.assertEqual(self.extractor.format_groups[3], {'QRCODE'})
+
+        # 1D codes last
+        one_d_group = self.extractor.format_groups[4]
         self.assertIn('CODE128', one_d_group)
-        self.assertIn('PDF417', one_d_group)
         self.assertIn('EAN13', one_d_group)
+        self.assertNotIn('PDF417', one_d_group)
     
     def test_mixed_aztec_qr_filename_hint(self):
         """Test mixed handling with filename hints."""

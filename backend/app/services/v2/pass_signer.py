@@ -16,6 +16,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.serialization import pkcs7
 from cryptography.x509.oid import NameOID
 
+from app.core.errors import ProcessingError
+
 
 class PassSigner:
     """Handles certificate loading, manifest creation and .pkpass signing."""
@@ -132,7 +134,7 @@ class PassSigner:
                 with open(sig_path, "wb") as f:
                     f.write(sig)
             else:
-                print("⚠️ Signing produced empty bytes — pass will be unsigned")
+                raise ProcessingError("Pass signing failed")
 
         return self.build_pkpass(pass_dir)
 

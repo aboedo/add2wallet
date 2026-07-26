@@ -1,23 +1,21 @@
 import SwiftUI
 
-struct CollapsiblePDFPreview: View {
+struct CollapsibleFilePreview: View {
     let url: URL
     @State private var isExpanded = false
     @State private var showingFullScreen = false
-    
+
     var body: some View {
         VStack(spacing: 0) {
             if isExpanded {
-                // Expanded view with PDF preview
                 VStack(spacing: ThemeManager.Spacing.sm) {
-                    // Header with collapse button
                     HStack {
-                        Text("Original PDF")
+                        Text("Original file")
                             .font(ThemeManager.Typography.bodySemibold)
                             .foregroundColor(ThemeManager.Colors.textPrimary)
-                        
+
                         Spacer()
-                        
+
                         Button {
                             ThemeManager.Haptics.selection()
                             withAnimation(ThemeManager.Animations.standard) {
@@ -29,9 +27,8 @@ struct CollapsiblePDFPreview: View {
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                         }
                     }
-                    
-                    // PDF Preview
-                    PDFPreviewView(url: url)
+
+                    FilePreviewView(url: url)
                         .frame(height: 250)
                         .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
                         .onTapGesture {
@@ -56,7 +53,6 @@ struct CollapsiblePDFPreview: View {
                 }
                 .themedCard()
             } else {
-                // Collapsed view - compact thumbnail row
                 Button {
                     ThemeManager.Haptics.light()
                     withAnimation(ThemeManager.Animations.standard) {
@@ -64,29 +60,27 @@ struct CollapsiblePDFPreview: View {
                     }
                 } label: {
                     HStack(spacing: ThemeManager.Spacing.sm) {
-                        // PDF thumbnail
-                        PDFPreviewView(url: url)
+                        FilePreviewView(url: url)
                             .frame(width: 60, height: 80)
                             .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.small))
                             .overlay(
                                 RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.small)
                                     .stroke(ThemeManager.Colors.textTertiary.opacity(0.3), lineWidth: 1)
                             )
-                        
-                        // Content
+
                         VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs) {
-                            Text("View original PDF")
+                            Text("View original file")
                                 .font(ThemeManager.Typography.bodySemibold)
                                 .foregroundColor(ThemeManager.Colors.textPrimary)
-                            
-                            Text("Tap to expand or view full screen")
+
+                            Text(url.lastPathComponent)
                                 .font(ThemeManager.Typography.caption)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
+                                .lineLimit(2)
                         }
-                        
+
                         Spacer()
-                        
-                        // Expand indicator
+
                         Image(systemName: "chevron.down")
                             .font(.caption)
                             .foregroundColor(ThemeManager.Colors.textSecondary)
@@ -100,23 +94,18 @@ struct CollapsiblePDFPreview: View {
             }
         }
         .fullScreenCover(isPresented: $showingFullScreen) {
-            FullScreenPDFView(url: url)
+            FullScreenFileView(url: url)
         }
     }
 }
 
+// Compatibility wrapper for existing source references.
+typealias CollapsiblePDFPreview = CollapsibleFilePreview
+
 #Preview {
-    // Create a sample PDF URL for preview
     if let sampleURL = Bundle.main.url(forResource: "sample", withExtension: "pdf") {
-        VStack(spacing: 20) {
-            CollapsiblePDFPreview(url: sampleURL)
-            
-            Text("Other content below...")
-                .font(.title2)
-                .foregroundColor(.secondary)
-        }
-        .background(Color(.systemGroupedBackground))
+        CollapsibleFilePreview(url: sampleURL)
     } else {
-        Text("No sample PDF found")
+        Text("No sample file found")
     }
 }

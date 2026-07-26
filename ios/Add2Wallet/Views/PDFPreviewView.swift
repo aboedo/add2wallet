@@ -1,7 +1,23 @@
 import SwiftUI
 import PDFKit
+import UIKit
 
-struct PDFPreviewView: UIViewRepresentable {
+struct FilePreviewView: View {
+    let url: URL
+
+    var body: some View {
+        Group {
+            if SupportedFile.isImage(url) {
+                ImageFilePreviewView(url: url)
+            } else {
+                PDFFilePreviewView(url: url)
+            }
+        }
+        .background(Color(.secondarySystemBackground))
+    }
+}
+
+private struct PDFFilePreviewView: UIViewRepresentable {
     let url: URL
 
     func makeUIView(context: Context) -> PDFView {
@@ -21,8 +37,34 @@ struct PDFPreviewView: UIViewRepresentable {
     }
 }
 
+private struct ImageFilePreviewView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> UIImageView {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.clipsToBounds = true
+        imageView.backgroundColor = .secondarySystemBackground
+        return imageView
+    }
+
+    func updateUIView(_ uiView: UIImageView, context: Context) {
+        uiView.image = UIImage(contentsOfFile: url.path)
+        uiView.accessibilityLabel = url.lastPathComponent
+    }
+}
+
+// Compatibility wrapper for older previews and call sites.
+struct PDFPreviewView: View {
+    let url: URL
+
+    var body: some View {
+        FilePreviewView(url: url)
+    }
+}
+
 #Preview {
-    PDFPreviewView(url: URL(fileURLWithPath: "/dev/null"))
+    FilePreviewView(url: URL(fileURLWithPath: "/dev/null"))
         .frame(height: 300)
         .padding()
 }

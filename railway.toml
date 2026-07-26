@@ -6,6 +6,3 @@ watchPatterns = ["**/*.py", "requirements.txt", "Dockerfile"]
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 300
-
-[environments.production]
-variables = { REVENUECAT_SECRET_KEY = "sk_xYDUixBpiCkUQiwlmeMlCvvFrGjNv" }

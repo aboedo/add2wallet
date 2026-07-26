@@ -135,7 +135,7 @@ struct Add2WalletApp: App {
                         await syncPurchasesOnFreshInstall()
                     }
 
-                    URLHandler.checkForSharedPDF()
+                    URLHandler.checkForSharedFile()
                     URLHandler.checkForPendingShareToken()
                 }
         }

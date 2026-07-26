@@ -2,19 +2,6 @@ import ProjectDescription
 
 let project = Project(
     name: "Add2Wallet",
-    schemes: [
-        .scheme(
-            name: "Add2Wallet",
-            shared: true,
-            buildAction: .buildAction(targets: [.target("Add2Wallet")]),
-            testAction: .targets([.testableTarget(target: .target("Add2WalletTests"))]),
-            runAction: .runAction(
-                configuration: .debug,
-                storeKitFilePath: "Storekit.storekit"
-            ),
-            archiveAction: .archiveAction(configuration: .release)
-        )
-    ],
     packages: [
         .remote(
             url: "https://github.com/RevenueCat/purchases-ios-spm.git",
@@ -40,7 +27,8 @@ let project = Project(
             entitlements: "Add2Wallet/Add2Wallet.entitlements",
             dependencies: [
                 .package(product: "RevenueCat"),
-                .package(product: "RevenueCatUI")
+                .package(product: "RevenueCatUI"),
+                .target(name: "Add2WalletShareExtension")
             ],
             settings: .settings(
                 base: [
@@ -48,12 +36,33 @@ let project = Project(
                     "CODE_SIGN_STYLE": "Automatic",
                     "ENABLE_PREVIEWS": "YES",
                     "MARKETING_VERSION": "1.0",
-                    "CURRENT_PROJECT_VERSION": "1",
+                    "CURRENT_PROJECT_VERSION": "42",
                     "SWIFT_VERSION": "5.0"
                 ]
             )
         ),
-        // Share Extension removed — using "Copy to App" (document types) only
+        .target(
+            name: "Add2WalletShareExtension",
+            destinations: .iOS,
+            product: .appExtension,
+            bundleId: "com.andresboedo.add2wallet.shareextension",
+            deploymentTargets: .iOS("17.0"),
+            infoPlist: .file(path: "Add2WalletShareExtension/Info.plist"),
+            sources: [
+                "Add2WalletShareExtension/**/*.swift"
+            ],
+            entitlements: "Add2WalletShareExtension/Add2WalletShareExtension.entitlements",
+            settings: .settings(
+                base: [
+                    "DEVELOPMENT_TEAM": "H9DPH4DQG7",
+                    "CODE_SIGN_STYLE": "Automatic",
+                    "MARKETING_VERSION": "1.0",
+                    "CURRENT_PROJECT_VERSION": "42",
+                    "SWIFT_VERSION": "5.0",
+                    "APPLICATION_EXTENSION_API_ONLY": "YES"
+                ]
+            )
+        ),
         .target(
             name: "Add2WalletTests",
             destinations: .iOS,
@@ -79,6 +88,34 @@ let project = Project(
                     "SWIFT_VERSION": "5.0"
                 ]
             )
+        )
+    ],
+    schemes: [
+        .scheme(
+            name: "Add2Wallet",
+            shared: true,
+            buildAction: .buildAction(targets: [.target("Add2Wallet")]),
+            testAction: .targets([.testableTarget(target: .target("Add2WalletTests"))]),
+            runAction: .runAction(
+                configuration: .debug,
+                options: .options(storeKitConfigurationPath: "Storekit.storekit")
+            ),
+            archiveAction: .archiveAction(configuration: .release)
+        ),
+        .scheme(
+            name: "Add2Wallet Screenshots",
+            shared: true,
+            buildAction: .buildAction(targets: [.target("Add2Wallet")]),
+            runAction: .runAction(
+                configuration: .debug,
+                arguments: .arguments(
+                    environmentVariables: [
+                        "SCREENSHOT_MODE": .environmentVariable(value: "1", isEnabled: true)
+                    ]
+                ),
+                options: .options(storeKitConfigurationPath: "Storekit.storekit")
+            ),
+            archiveAction: .archiveAction(configuration: .release)
         )
     ]
 )

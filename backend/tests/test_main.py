@@ -27,7 +27,8 @@ def test_upload_pdf_success():
     files = {"file": ("test.pdf", pdf_content, "application/pdf")}
     data = {
         "user_id": "test-user",
-        "session_token": "test-token"
+        "session_token": "test-token",
+        "is_demo": "true",
     }
     headers = {"X-API-Key": "development-api-key"}
     
@@ -58,7 +59,8 @@ def test_upload_data_matrix_pdf_integration():
     files = {"file": ("pass_with_data_matrix.pdf", pdf_content, "application/pdf")}
     data = {
         "user_id": "test-user-datamatrix",
-        "session_token": "test-token-datamatrix"
+        "session_token": "test-token-datamatrix",
+        "is_demo": "true",
     }
     headers = {"X-API-Key": "development-api-key"}
     
@@ -99,27 +101,29 @@ def test_upload_pdf_invalid_api_key():
     files = {"file": ("test.pdf", pdf_content, "application/pdf")}
     data = {
         "user_id": "test-user",
-        "session_token": "test-token"
+        "session_token": "test-token",
+        "is_demo": "true",
     }
     headers = {"X-API-Key": "invalid-key"}
     
     response = client.post("/upload", files=files, data=data, headers=headers)
     
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid API key"
+    assert response.json()["detail"]["message"] == "Invalid API key"
 
 def test_upload_non_pdf_file():
     files = {"file": ("test.txt", b"Not a PDF", "text/plain")}
     data = {
         "user_id": "test-user",
-        "session_token": "test-token"
+        "session_token": "test-token",
+        "is_demo": "true",
     }
     headers = {"X-API-Key": "development-api-key"}
     
     response = client.post("/upload", files=files, data=data, headers=headers)
     
     assert response.status_code == 400
-    assert "Only PDF files are allowed" in response.json()["detail"]
+    assert response.json()["detail"]["code"] == "unsupported_file"
 
 def test_get_status():
     # First upload a PDF
@@ -127,7 +131,8 @@ def test_get_status():
     files = {"file": ("test.pdf", pdf_content, "application/pdf")}
     data = {
         "user_id": "test-user",
-        "session_token": "test-token"
+        "session_token": "test-token",
+        "is_demo": "true",
     }
     headers = {"X-API-Key": "development-api-key"}
     
@@ -168,7 +173,8 @@ def test_upload_eticket_pdf_integration():
     files = {"file": ("eTicket.pdf", pdf_content, "application/pdf")}
     data = {
         "user_id": "test-user-eticket",
-        "session_token": "test-token-eticket"
+        "session_token": "test-token-eticket",
+        "is_demo": "true",
     }
     headers = {"X-API-Key": "development-api-key"}
     

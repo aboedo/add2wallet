@@ -30,15 +30,16 @@ class ContentViewModel: ObservableObject {
     @Published var isDemo = false
     @Published var purchaseCompletedPendingUpload = false
     
-    // Store PDF data for error reporting
-    private var currentPDFData: Data?
-    private var currentPDFFileName: String?
+    // Store source-file data for error reporting
+    private var currentSourceData: Data?
+    private var currentSourceFileName: String?
     
     // Background task to keep processing when app is backgrounded
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     
     private let networkService = NetworkService()
     private var cancellables = Set<AnyCancellable>()
+    private var notificationObservers: [NSObjectProtocol] = []
     private var modelContext: ModelContext?
     private let usageManager = PassUsageManager.shared
     
@@ -46,66 +47,80 @@ class ContentViewModel: ObservableObject {
     @Published var progressViewModel = ProgressViewModel()
     
     init() {
-        // Listen for shared PDFs from the Share Extension
-        NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("SharedPDFReceived"),
+        // Listen for files shared through the Share Extension or "Open in".
+        let sharedFileObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("SharedFileReceived"),
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            print("🟢 ContentViewModel: SharedPDFReceived notification received")
+            print("🟢 ContentViewModel: SharedFileReceived notification received")
             if let userInfo = notification.userInfo,
                let filename = userInfo["filename"] as? String,
                let data = userInfo["data"] as? Data {
-                print("🟢 ContentViewModel: Processing shared PDF: \(filename) (\(data.count) bytes)")
-                self?.handleSharedPDF(data: data, filename: filename)
+                print("🟢 ContentViewModel: Processing shared file: \(filename) (\(data.count) bytes)")
+                Task { @MainActor in
+                    self?.handleSharedFile(data: data, filename: filename)
+                }
             } else {
                 print("🔴 ContentViewModel: Invalid notification userInfo")
             }
         }
-        
-        // Pick up any PDF that arrived before we were ready (cold start race condition)
-        if let pending = URLHandler.dequeuePendingPDF() {
-            print("🟢 ContentViewModel: Found pending PDF from before init: \(pending.filename)")
-            handleSharedPDF(data: pending.data, filename: pending.filename)
+        notificationObservers.append(sharedFileObserver)
+
+        // Pick up any file that arrived before we were ready (cold start race condition).
+        if let pending = URLHandler.dequeuePendingFile() {
+            print("🟢 ContentViewModel: Found pending file from before init: \(pending.filename)")
+            handleSharedFile(data: pending.data, filename: pending.filename)
         }
         
         #if DEBUG
         // Listen for preview mock data notifications
-        NotificationCenter.default.addObserver(
+        let previewDataObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("PreviewMockData"),
             object: nil,
             queue: .main
         ) { [weak self] notification in
             if let userInfo = notification.userInfo,
                let metadata = userInfo["metadata"] as? EnhancedPassMetadata {
-                self?.setupPreviewState(with: metadata)
+                Task { @MainActor in
+                    self?.setupPreviewState(with: metadata)
+                }
             }
         }
+        notificationObservers.append(previewDataObserver)
         
-        NotificationCenter.default.addObserver(
+        let previewProcessingObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("PreviewProcessingState"),
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            self?.setupProcessingPreviewState()
+            Task { @MainActor in
+                self?.setupProcessingPreviewState()
+            }
         }
+        notificationObservers.append(previewProcessingObserver)
         #endif
     }
     
     deinit {
         // Clean up cancellables to prevent memory leaks
         cancellables.removeAll()
-        
-        NotificationCenter.default.removeObserver(self)
+        notificationObservers.forEach(NotificationCenter.default.removeObserver)
+        notificationObservers.removeAll()
     }
     
     func setModelContext(_ context: ModelContext) {
         self.modelContext = context
     }
     
-    func selectPDF() {
+    func selectFile() {
         showingDocumentPicker = true
         hasError = false
+    }
+
+    // Compatibility for older tests/call sites.
+    func selectPDF() {
+        selectFile()
     }
     
     @MainActor
@@ -146,7 +161,7 @@ class ContentViewModel: ObservableObject {
     }
     
     func handleSelectedDocument(url: URL) {
-        // Copy PDF into our sandbox for reliable preview/access
+        // Copy the file into our sandbox for reliable preview/access
         guard url.startAccessingSecurityScopedResource() else {
             errorMessage = "Unable to access selected file"
             hasError = true
@@ -170,7 +185,7 @@ class ContentViewModel: ObservableObject {
             errorMessage = nil
             hasError = false
         } catch {
-            errorMessage = "Error reading PDF: \(error.localizedDescription)"
+            errorMessage = "Error reading file: \(error.localizedDescription)"
             hasError = true
         }
         url.stopAccessingSecurityScopedResource()
@@ -188,9 +203,9 @@ class ContentViewModel: ObservableObject {
         
         do {
             let data = try Data(contentsOf: url)
-            processPDF(data: data, filename: url.lastPathComponent)
+            processFile(data: data, filename: url.lastPathComponent)
         } catch {
-            errorMessage = "Error reading PDF: \(error.localizedDescription)"
+            errorMessage = "Error reading file: \(error.localizedDescription)"
             hasError = true
         }
     }
@@ -234,8 +249,8 @@ class ContentViewModel: ObservableObject {
         NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
     }
     
-    private func handleSharedPDF(data: Data, filename: String) {
-        print("🟢 ContentViewModel: handleSharedPDF called with \(filename)")
+    private func handleSharedFile(data: Data, filename: String) {
+        print("🟢 ContentViewModel: handleSharedFile called with \(filename)")
         // Create a temporary file for preview
         do {
             let tempDir = FileManager.default.temporaryDirectory
@@ -256,11 +271,11 @@ class ContentViewModel: ObservableObject {
             errorMessage = nil
             hasError = false
             
-            print("🟢 ContentViewModel: PDF ready for preview and manual upload")
+            print("🟢 ContentViewModel: File ready for preview and manual upload")
             // Don't automatically process - let user hit "Create Pass" button
         } catch {
-            print("🔴 ContentViewModel: Error handling shared PDF: \(error)")
-            errorMessage = "Error handling shared PDF: \(error.localizedDescription)"
+            print("🔴 ContentViewModel: Error handling shared file: \(error)")
+            errorMessage = "Error handling shared file: \(error.localizedDescription)"
             hasError = true
         }
     }
@@ -273,7 +288,12 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    // Compatibility entry point retained for existing integrations.
     func processPDF(data: Data, filename: String) {
+        processFile(data: data, filename: filename)
+    }
+
+    func processFile(data: Data, filename: String) {
         isProcessing = true
         errorMessage = nil
         hasError = false
@@ -283,7 +303,7 @@ class ContentViewModel: ObservableObject {
         // Request background execution time (~30s) so processing
         // survives the user switching to another app
         endBackgroundTaskIfNeeded()
-        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "PDFProcessing") { [weak self] in
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "FileProcessing") { [weak self] in
             // Expiration handler — iOS is about to kill us
             print("⚠️ Background task expiring")
             self?.endBackgroundTaskIfNeeded()
@@ -293,9 +313,9 @@ class ContentViewModel: ObservableObject {
         // Start progress animation
         progressViewModel.startProgress()
         
-        // Store PDF data for potential error reporting
-        self.currentPDFData = data
-        self.currentPDFFileName = filename
+        // Store the original file for potential error reporting.
+        self.currentSourceData = data
+        self.currentSourceFileName = filename
         
         // Pass consumption is now handled server-side
         // The server will deduct 1 PASS via RevenueCat API
@@ -308,7 +328,7 @@ class ContentViewModel: ObservableObject {
             return
         }
 
-        networkService.uploadPDF(data: data, filename: filename, isRetry: isRetry, isDemo: isDemo)
+        networkService.uploadFile(data: data, filename: filename, isRetry: isRetry, isDemo: isDemo)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
@@ -525,48 +545,55 @@ class ContentViewModel: ObservableObject {
     }
 
     private func openPassesInWallet(passDatas: [Data]) {
-        do {
-            print("🎫 Creating PKPass objects from \(passDatas.count) data blobs")
-            // Save each pass to a temporary file (optional; PassKit can take Data directly)
-            let passes: [PKPass] = try passDatas.enumerated().compactMap { (index, data) in
-                do {
-                    let pass = try PKPass(data: data)
-                    print("  Pass \(index + 1): \(pass.passTypeIdentifier) - \(pass.serialNumber)")
-                    return pass
-                } catch {
-                    print("  ❌ Failed to create Pass \(index + 1): \(error.localizedDescription)")
-                    return nil
-                }
+        print("🎫 Creating PKPass objects from \(passDatas.count) data blobs")
+        // Save each pass to a temporary file (optional; PassKit can take Data directly)
+        let passes: [PKPass] = passDatas.enumerated().compactMap { (index, data) in
+            do {
+                let pass = try PKPass(data: data)
+                print("  Pass \(index + 1): \(pass.passTypeIdentifier) - \(pass.serialNumber)")
+                return pass
+            } catch {
+                print("  ❌ Failed to create Pass \(index + 1): \(error.localizedDescription)")
+                return nil
             }
+        }
 
-            guard PKPassLibrary.isPassLibraryAvailable() else {
-                errorMessage = "Apple Wallet is not available on this device"
-                hasError = true
-                return
-            }
-
-            // Save all passes as one SavedPass entry
-            saveMultiplePassesToPersistentStorage(passDatas: passDatas)
-
-            let passVC = PKAddPassesViewController(passes: passes)
-            print("🎫 Created PKAddPassesViewController with \(passes.count) passes")
-
-            errorMessage = nil
-            hasError = false
-
-            NotificationCenter.default.post(
-                name: NSNotification.Name("PassReadyToAdd"),
-                object: nil,
-                userInfo: ["passViewController": passVC!]
-            )
-            isProcessing = false
-            progressViewModel.completeProgress()
-        } catch {
+        guard !passes.isEmpty else {
             isProcessing = false
             progressViewModel.stopProgress()
-            errorMessage = "Error creating passes: \(error.localizedDescription)"
+            errorMessage = "Unable to read any generated pass files. Please try again or contact support."
             hasError = true
+            return
         }
+
+        guard PKPassLibrary.isPassLibraryAvailable() else {
+            errorMessage = "Apple Wallet is not available on this device"
+            hasError = true
+            return
+        }
+
+        // Save all passes as one SavedPass entry
+        saveMultiplePassesToPersistentStorage(passDatas: passDatas)
+
+        guard let passVC = PKAddPassesViewController(passes: passes) else {
+            isProcessing = false
+            progressViewModel.stopProgress()
+            errorMessage = "Unable to present these passes in Apple Wallet."
+            hasError = true
+            return
+        }
+        print("🎫 Created PKAddPassesViewController with \(passes.count) passes")
+
+        errorMessage = nil
+        hasError = false
+
+        NotificationCenter.default.post(
+            name: NSNotification.Name("PassReadyToAdd"),
+            object: nil,
+            userInfo: ["passViewController": passVC]
+        )
+        isProcessing = false
+        progressViewModel.completeProgress()
     }
 
     
@@ -593,7 +620,7 @@ class ContentViewModel: ObservableObject {
         try? pdfData.write(to: tempPDFURL)
         
         self.selectedFileURL = tempPDFURL
-        self.currentPDFFileName = "The_Weeknd_Tickets.pdf"
+        self.currentSourceFileName = "The_Weeknd_Tickets.pdf"
         
         // Simulate having a pass ready to add
         // Post notification to simulate pass ready
@@ -627,7 +654,7 @@ class ContentViewModel: ObservableObject {
         try? pdfData.write(to: tempPDFURL)
         
         self.selectedFileURL = tempPDFURL
-        self.currentPDFFileName = "Concert_Ticket.pdf"
+        self.currentSourceFileName = "Concert_Ticket.pdf"
     }
     #endif
     
@@ -638,11 +665,11 @@ class ContentViewModel: ObservableObject {
             return
         }
         
-        // Get the PDF data from the selected file
-        var pdfData: Data? = nil
-        if let pdfURL = selectedFileURL {
-            pdfData = try? Data(contentsOf: pdfURL)
-        }
+        // Preserve the original source bytes, filename, and type for later preview/support.
+        let sourceURL = selectedFileURL
+        let sourceData = sourceURL.flatMap { try? Data(contentsOf: $0) }
+        let sourceFilename = sourceURL?.lastPathComponent
+        let sourceTypeIdentifier = sourceFilename.flatMap { SupportedFile.contentType(for: $0)?.identifier }
         
         // Extract basic information for the SavedPass model
         let passType = metadata.eventType ?? "Pass"
@@ -659,7 +686,9 @@ class ContentViewModel: ObservableObject {
             venue: venue,
             city: city,
             passDatas: passDatas,
-            pdfData: pdfData,
+            pdfData: sourceData,
+            sourceFilename: sourceFilename,
+            sourceContentTypeIdentifier: sourceTypeIdentifier,
             metadata: metadata
         )
         
@@ -682,11 +711,11 @@ class ContentViewModel: ObservableObject {
             return
         }
         
-        // Get the PDF data from the selected file
-        var pdfData: Data? = nil
-        if let pdfURL = selectedFileURL {
-            pdfData = try? Data(contentsOf: pdfURL)
-        }
+        // Preserve the original source bytes, filename, and type for later preview/support.
+        let sourceURL = selectedFileURL
+        let sourceData = sourceURL.flatMap { try? Data(contentsOf: $0) }
+        let sourceFilename = sourceURL?.lastPathComponent
+        let sourceTypeIdentifier = sourceFilename.flatMap { SupportedFile.contentType(for: $0)?.identifier }
         
         // Extract basic information for the SavedPass model
         let passType = metadata.eventType ?? "Pass"
@@ -710,7 +739,9 @@ class ContentViewModel: ObservableObject {
             venue: venue,
             city: city,
             passDatas: [passData],
-            pdfData: pdfData,
+            pdfData: sourceData,
+            sourceFilename: sourceFilename,
+            sourceContentTypeIdentifier: sourceTypeIdentifier,
             metadata: metadata
         )
         
@@ -727,60 +758,60 @@ class ContentViewModel: ObservableObject {
     }
     
     func contactSupport() {
-        guard let errorCode = errorCode,
-              let pdfData = currentPDFData,
-              let fileName = currentPDFFileName else {
+        guard let errorCode,
+              let attachmentData = currentSourceData,
+              let fileName = currentSourceFileName else {
             print("Missing data for support email")
             return
         }
-        
-        // Get the user's app user ID from RevenueCat
+
         let appUserID = Purchases.shared.appUserID
-        
-        // Create email content
+        let mimeType = SupportedFile.mimeType(for: fileName)
         let subject = "Pass Generation Error - Code \(errorCode)"
         let body = """
 Hi Add2Wallet Support,
 
-I encountered an error while trying to generate a pass from a PDF. Here are the details:
+I encountered an error while trying to generate a pass from a file. Here are the details:
 
 Error Code: \(errorCode)
-PDF Filename: \(fileName)
+Filename: \(fileName)
 User ID: \(appUserID)
 App Version: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown")
 
-Please help me resolve this issue. The original PDF is attached to this email.
+Please help me resolve this issue. The original file is attached to this email.
 
 Thank you!
 """
-        
-        // Create temporary file for PDF attachment
-        let tempURL = createTempPDFFile(data: pdfData, fileName: fileName)
-        
-        // Open Mail app with pre-filled content
-        if let mailURL = createMailURL(to: "andresboedo@gmail.com", subject: subject, body: body) {
-            if UIApplication.shared.canOpenURL(mailURL) {
-                UIApplication.shared.open(mailURL)
-            }
+
+        _ = createTempFile(data: attachmentData, fileName: fileName)
+
+        if let mailURL = createMailURL(to: "andresboedo@gmail.com", subject: subject, body: body),
+           UIApplication.shared.canOpenURL(mailURL) {
+            UIApplication.shared.open(mailURL)
         }
-        
-        // Also trigger MFMailComposeViewController as fallback
-        sendSupportEmail(subject: subject, body: body, pdfData: pdfData, fileName: fileName)
+
+        sendSupportEmail(
+            subject: subject,
+            body: body,
+            attachmentData: attachmentData,
+            mimeType: mimeType,
+            fileName: fileName
+        )
     }
-    
-    private func createTempPDFFile(data: Data, fileName: String) -> URL? {
-        let tempDir = FileManager.default.temporaryDirectory
-        let tempURL = tempDir.appendingPathComponent(fileName)
-        
+
+    private func createTempFile(data: Data, fileName: String) -> URL? {
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(URL(fileURLWithPath: fileName).lastPathComponent)
+
         do {
             try data.write(to: tempURL)
             return tempURL
         } catch {
-            print("Error creating temp PDF file: \(error)")
+            print("Error creating temporary attachment: \(error)")
             return nil
         }
     }
-    
+
     private func createMailURL(to: String, subject: String, body: String) -> URL? {
         var components = URLComponents()
         components.scheme = "mailto"
@@ -791,13 +822,19 @@ Thank you!
         ]
         return components.url
     }
-    
-    private func sendSupportEmail(subject: String, body: String, pdfData: Data, fileName: String) {
-        // Post notification to trigger MFMailComposeViewController from the view
+
+    private func sendSupportEmail(
+        subject: String,
+        body: String,
+        attachmentData: Data,
+        mimeType: String,
+        fileName: String
+    ) {
         let userInfo: [AnyHashable: Any] = [
             "subject": subject,
             "body": body,
-            "pdfData": pdfData,
+            "attachmentData": attachmentData,
+            "attachmentMIMEType": mimeType,
             "fileName": fileName
         ]
         NotificationCenter.default.post(

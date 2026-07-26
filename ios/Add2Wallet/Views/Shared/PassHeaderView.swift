@@ -72,7 +72,7 @@ struct PassHeaderView: View {
         // ContentView style
         PassHeaderView(
             title: "Add2Wallet", 
-            subtitle: "Convert PDFs to Apple Wallet passes",
+            subtitle: "Convert PDFs and images to Apple Wallet passes",
             metadata: nil,
             passType: nil
         )

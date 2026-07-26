@@ -3,70 +3,57 @@ import Combine
 @testable import Add2Wallet
 
 @MainActor
-class ShareExtensionTests: XCTestCase {
-    var viewModel: ContentViewModel!
-    var cancellables: Set<AnyCancellable>!
-    
+final class ShareExtensionTests: XCTestCase {
+    private var viewModel: ContentViewModel!
+
     override func setUp() {
         super.setUp()
+        _ = URLHandler.dequeuePendingFile()
         viewModel = ContentViewModel()
-        cancellables = Set<AnyCancellable>()
     }
-    
+
     override func tearDown() {
-        cancellables = nil
+        viewModel.clearSelection()
         viewModel = nil
+        _ = URLHandler.dequeuePendingFile()
         super.tearDown()
     }
-    
-    func testSharedPDFNotification() async {
-        let expectation = XCTestExpectation(description: "Shared PDF notification")
-        let testData = "Test PDF Content".data(using: .utf8)!
-        let testFilename = "test.pdf"
-        
-        // Monitor for processing state change
-        viewModel.$isProcessing.sink { isProcessing in
-            if isProcessing {
-                expectation.fulfill()
-            }
-        }.store(in: &cancellables)
-        
-        // Simulate shared PDF notification using NotificationManager
-        NotificationManager.postSharedPDFReceived(filename: testFilename, data: testData)
-        
-        await fulfillment(of: [expectation], timeout: 10.0)
-        
-        XCTAssertTrue(viewModel.isProcessing)
+
+    func testSharedImageNotificationPreservesFilenameAndPreviewsBeforeUpload() async {
+        let testData = Data([0x89, 0x50, 0x4E, 0x47])
+        let testFilename = "mobile-ticket.png"
+
+        NotificationManager.postSharedFileReceived(filename: testFilename, data: testData)
+        await Task.yield()
+
+        XCTAssertEqual(viewModel.selectedFileURL?.lastPathComponent, testFilename)
+        XCTAssertEqual(try? Data(contentsOf: viewModel.selectedFileURL!), testData)
+        XCTAssertFalse(viewModel.isProcessing)
         XCTAssertFalse(viewModel.hasError)
     }
-    
-    func testSharedPDFWithInvalidData() {
-        // Test with missing filename - should not trigger processing
+
+    func testSharedFileWithInvalidNotificationDataIsIgnored() {
         NotificationCenter.default.post(
-            name: NSNotification.Name("SharedPDFReceived"),
+            name: NSNotification.Name("SharedFileReceived"),
             object: nil,
             userInfo: ["data": Data()]
         )
-        
-        XCTAssertFalse(viewModel.isProcessing)
-        
-        // Test with missing data - should not trigger processing
+        XCTAssertNil(viewModel.selectedFileURL)
+
         NotificationCenter.default.post(
-            name: NSNotification.Name("SharedPDFReceived"),
+            name: NSNotification.Name("SharedFileReceived"),
             object: nil,
-            userInfo: ["filename": "test.pdf"]
+            userInfo: ["filename": "test.heic"]
         )
-        
-        XCTAssertFalse(viewModel.isProcessing)
+        XCTAssertNil(viewModel.selectedFileURL)
     }
-    
-    func testSharedContainerPath() {
-        let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet")
-        
-        // The shared container should be accessible (though may be nil in simulator without proper provisioning)
-        // This test mainly checks that the API works
-        if let container = sharedContainer {
-            XCTAssertTrue(container.path.contains("group.com.andresboedo.add2wallet"))
-        }
+
+    func testPendingSharedImagePreservesExtension() {
+        let data = Data([0x00, 0x01])
+        URLHandler.enqueueFile(filename: "Boarding Pass.HEIC", data: data)
+
+        let pending = URLHandler.dequeuePendingFile()
+        XCTAssertEqual(pending?.filename, "Boarding Pass.HEIC")
+        XCTAssertEqual(pending?.data, data)
     }
 }

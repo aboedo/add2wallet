@@ -10,7 +10,7 @@ struct SavedPassDetailView: View {
     @State private var passViewController: PKAddPassesViewController?
     @State private var statusMessage: String?
     @State private var hasError = false
-    @State private var showingFullScreenPDF = false
+    @State private var showingFullScreenFile = false
     @State private var showingSuccessView = false
     @State private var passAddedSuccessfully = false
     @State private var showingSuccessToast = false
@@ -77,10 +77,10 @@ struct SavedPassDetailView: View {
                     
                 }
                 
-                // PDF Preview section if available (collapsed by default)
-                if let pdfData = savedPass.pdfData,
-                   let tempPDFURL = createTempPDFURL(from: pdfData) {
-                    CollapsiblePDFPreview(url: tempPDFURL)
+                // Original source preview if available (collapsed by default)
+                if let sourceData = savedPass.sourceData,
+                   let tempSourceURL = createTempSourceURL(from: sourceData) {
+                    CollapsibleFilePreview(url: tempSourceURL)
                         .padding(.bottom, ThemeManager.Spacing.md)
                     
                 }
@@ -165,10 +165,10 @@ struct SavedPassDetailView: View {
                 }
             )
         }
-        .fullScreenCover(isPresented: $showingFullScreenPDF) {
-            if let pdfData = savedPass.pdfData,
-               let tempPDFURL = createTempPDFURL(from: pdfData) {
-                FullScreenPDFView(url: tempPDFURL)
+        .fullScreenCover(isPresented: $showingFullScreenFile) {
+            if let sourceData = savedPass.sourceData,
+               let tempSourceURL = createTempSourceURL(from: sourceData) {
+                FullScreenFileView(url: tempSourceURL)
             }
         }
         .successToast(
@@ -177,15 +177,18 @@ struct SavedPassDetailView: View {
         )
     }
     
-    private func createTempPDFURL(from data: Data) -> URL? {
-        let tempDir = FileManager.default.temporaryDirectory
-        let tempURL = tempDir.appendingPathComponent("\(savedPass.id).pdf")
-        
+    private func createTempSourceURL(from data: Data) -> URL? {
+        let tempDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(savedPass.id, isDirectory: true)
+        let filename = URL(fileURLWithPath: savedPass.effectiveSourceFilename).lastPathComponent
+        let tempURL = tempDirectory.appendingPathComponent(filename)
+
         do {
-            try data.write(to: tempURL)
+            try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+            try data.write(to: tempURL, options: [.atomic])
             return tempURL
         } catch {
-            print("Error creating temporary PDF file: \(error)")
+            print("Error creating temporary source file: \(error)")
             return nil
         }
     }
@@ -252,8 +255,8 @@ struct SavedPassDetailView: View {
     }
     
     private func reportIssue() {
-        guard let pdfData = savedPass.pdfData else {
-            print("No PDF data available for issue report")
+        guard let sourceData = savedPass.sourceData else {
+            print("No source data available for issue report")
             return
         }
         
@@ -283,14 +286,14 @@ struct SavedPassDetailView: View {
         Pass Count: \(savedPass.passCount)
         """
         
-        // Generate a filename for the PDF attachment
-        let fileName = "\(savedPass.displayTitle.replacingOccurrences(of: " ", with: "_"))_report.pdf"
-        
+        let fileName = savedPass.effectiveSourceFilename
+
         // Send notification to show support email
         let userInfo: [String: Any] = [
             "subject": subject,
             "body": body,
-            "pdfData": pdfData,
+            "attachmentData": sourceData,
+            "attachmentMIMEType": savedPass.sourceMIMEType,
             "fileName": fileName
         ]
         NotificationCenter.default.post(

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import os
 import re
+import math
 from typing import Optional, Tuple
 
 RGBTuple = Tuple[int, int, int]
+MAX_THUMBNAIL_RENDER_PIXELS = 1_000_000
 
 
 def generate_assets(
@@ -78,17 +80,21 @@ def _render_thumbnail(pdf_bytes: bytes):
         from PIL import Image  # type: ignore
 
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        if doc.page_count:
-            pix = doc.load_page(0).get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
-            return Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        doc.close()
+        try:
+            if doc.page_count:
+                page = doc.load_page(0)
+                scale = _render_scale(page.rect.width, page.rect.height, 1.5)
+                pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+                return Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        finally:
+            doc.close()
     except Exception:
         pass
 
     try:
         from pdf2image import convert_from_bytes  # type: ignore
 
-        pages = convert_from_bytes(pdf_bytes, first_page=1, last_page=1)
+        pages = convert_from_bytes(pdf_bytes, first_page=1, last_page=1, size=(900, None))
         if pages:
             return pages[0].convert("RGB")
     except Exception:
@@ -142,3 +148,10 @@ def _parse_rgb(s: str) -> Optional[RGBTuple]:
     if not m:
         return None
     return int(m.group(1)), int(m.group(2)), int(m.group(3))
+
+
+def _render_scale(width: float, height: float, desired_scale: float) -> float:
+    pixels = max(width, 1) * max(height, 1) * desired_scale * desired_scale
+    if pixels <= MAX_THUMBNAIL_RENDER_PIXELS:
+        return desired_scale
+    return max(0.5, min(desired_scale, math.sqrt(MAX_THUMBNAIL_RENDER_PIXELS / (max(width, 1) * max(height, 1)))))

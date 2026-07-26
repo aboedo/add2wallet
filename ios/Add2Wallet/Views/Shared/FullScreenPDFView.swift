@@ -1,12 +1,13 @@
 import SwiftUI
 
-struct FullScreenPDFView: View {
+struct FullScreenFileView: View {
     let url: URL
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationView {
-            PDFPreviewView(url: url)
+            FilePreviewView(url: url)
+                .navigationTitle(url.lastPathComponent)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -20,3 +21,5 @@ struct FullScreenPDFView: View {
         }
     }
 }
+
+typealias FullScreenPDFView = FullScreenFileView

@@ -18,7 +18,7 @@ struct HeroCardStack: View {
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
-                Text("Convert PDFs to Apple Wallet passes")
+                Text("Convert PDFs and images to Apple Wallet passes")
                     .font(ThemeManager.Typography.body)
                     .foregroundColor(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
@@ -31,7 +31,7 @@ struct HeroCardStack: View {
                 onSelectPDF()
             }) {
                 Label(
-                    isProcessing ? "PDF uploaded, processing…" : "Select PDF",
+                    isProcessing ? "File uploaded, processing…" : "Select File",
                     systemImage: isProcessing ? "arrow.trianglehead.2.clockwise" : "doc.text.fill"
                 )
                     .font(ThemeManager.Typography.bodySemibold)

@@ -47,7 +47,7 @@ struct OnboardingView: View {
                         .foregroundColor(ThemeManager.Colors.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("Add2Wallet converts your PDF tickets, event passes, and boarding passes into Apple Wallet passes — so they're always one tap away.")
+                    Text("Add2Wallet converts ticket PDFs and images into Apple Wallet passes — so they're always one tap away.")
                         .font(ThemeManager.Typography.body)
                         .foregroundColor(ThemeManager.Colors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -91,7 +91,7 @@ struct OnboardingView: View {
                 methodCard(
                     icon: "arrow.up.doc.fill",
                     title: "Upload",
-                    description: "Tap + in the app and pick a PDF from Files",
+                    description: "Tap + in the app and pick a PDF or image from Files",
                     detail: nil
                 )
 

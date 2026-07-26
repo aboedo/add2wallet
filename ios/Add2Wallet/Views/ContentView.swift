@@ -61,7 +61,7 @@ struct ContentView: View {
                         isLoadingBalance: passUsageManager.isLoadingBalance,
                         passColor: nil,
                         isProcessing: viewModel.isProcessing,
-                        onSelectPDF: { viewModel.selectPDF() },
+                        onSelectPDF: { viewModel.selectFile() },
                         onSamplePDF: { viewModel.loadDemoFile() }
                     )
                     
@@ -82,8 +82,8 @@ struct ContentView: View {
                                     .transition(.opacity)
                             }
                             
-                            // Collapsed PDF preview at the bottom
-                            CollapsiblePDFPreview(url: url)
+                            // Collapsed source-file preview at the bottom
+                            CollapsibleFilePreview(url: url)
                                 .transition(.opacity)
                         }
                         .padding(.top, ThemeManager.Spacing.sm)
@@ -97,7 +97,7 @@ struct ContentView: View {
                                 .foregroundColor(ThemeManager.Colors.textTertiary)
                                 .padding(.top, ThemeManager.Spacing.xl)
                             
-                            Text("Open a PDF from Files to get started")
+                            Text("Open a PDF or image from Files to get started")
                                 .font(ThemeManager.Typography.body)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -353,12 +353,12 @@ struct ContentView: View {
             }
             .fullScreenCover(isPresented: $showingFullScreenPDF) {
                 if let url = viewModel.selectedFileURL {
-                    FullScreenPDFView(url: url)
+                    FullScreenFileView(url: url)
                 }
             }
             .fileImporter(
                 isPresented: $viewModel.showingDocumentPicker,
-                allowedContentTypes: [UTType.pdf],
+                allowedContentTypes: SupportedFile.contentTypes,
                 allowsMultipleSelection: false
             ) { result in
                 switch result {
@@ -367,7 +367,7 @@ struct ContentView: View {
                         viewModel.handleSelectedDocument(url: url)
                     }
                 case .failure(let error):
-                    viewModel.errorMessage = "Error selecting PDF: \(error.localizedDescription)"
+                    viewModel.errorMessage = "Error selecting file: \(error.localizedDescription)"
                     viewModel.hasError = true
                 }
             }
@@ -406,8 +406,9 @@ struct ContentView: View {
                     MailComposeView(
                         subject: data["subject"] as? String ?? "",
                         body: data["body"] as? String ?? "",
-                        pdfData: data["pdfData"] as? Data ?? Data(),
-                        fileName: data["fileName"] as? String ?? "document.pdf"
+                        attachmentData: data["attachmentData"] as? Data ?? data["pdfData"] as? Data ?? Data(),
+                        attachmentMIMEType: data["attachmentMIMEType"] as? String ?? "application/octet-stream",
+                        fileName: data["fileName"] as? String ?? "document"
                     )
                 }
             }

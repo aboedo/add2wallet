@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import UniformTypeIdentifiers
 
 @Model
 class SavedPass {
@@ -12,8 +13,13 @@ class SavedPass {
     var city: String?
     var passDatas: [Data] = []
     var passURL: String?
+
+    // Legacy property name retained for a lightweight SwiftData migration.
+    // It stores the original PDF or image bytes.
     var pdfData: Data?
-    
+    var sourceFilename: String?
+    var sourceContentTypeIdentifier: String?
+
     // Store the full metadata as JSON for complete preservation
     var metadataJSON: Data?
     
@@ -28,6 +34,8 @@ class SavedPass {
         passDatas: [Data] = [],
         passURL: String? = nil,
         pdfData: Data? = nil,
+        sourceFilename: String? = nil,
+        sourceContentTypeIdentifier: String? = nil,
         metadata: EnhancedPassMetadata? = nil
     ) {
         self.id = id
@@ -40,12 +48,27 @@ class SavedPass {
         self.passDatas = passDatas
         self.passURL = passURL
         self.pdfData = pdfData
-        
+        self.sourceFilename = sourceFilename
+        self.sourceContentTypeIdentifier = sourceContentTypeIdentifier
+
         if let metadata = metadata {
             self.metadataJSON = try? JSONEncoder().encode(metadata)
         }
     }
     
+    var sourceData: Data? { pdfData }
+
+    var effectiveSourceFilename: String {
+        sourceFilename ?? "\(id).pdf"
+    }
+
+    var sourceMIMEType: String {
+        SupportedFile.mimeType(
+            forContentTypeIdentifier: sourceContentTypeIdentifier,
+            filename: effectiveSourceFilename
+        )
+    }
+
     // Computed property to retrieve the full metadata
     var metadata: EnhancedPassMetadata? {
         guard let metadataJSON = metadataJSON else { return nil }

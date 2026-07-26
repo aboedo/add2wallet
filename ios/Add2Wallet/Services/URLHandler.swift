@@ -1,223 +1,229 @@
 import Foundation
-import UIKit
 
 // MARK: - URL Handler
 
 class URLHandler {
-    
-    // MARK: - Pending PDF Queue (survives race conditions)
-    
-    struct PendingPDF {
+    struct PendingFile {
         let filename: String
         let data: Data
+        let contentTypeIdentifier: String?
     }
-    
-    /// Pending PDF that hasn't been consumed by ContentViewModel yet
-    static var pendingPDF: PendingPDF?
-    
-    /// Store a PDF for pickup by ContentViewModel, AND post the notification as fallback
-    static func enqueuePDF(filename: String, data: Data) {
-        print("🟢 URLHandler: Enqueuing PDF: \(filename) (\(data.count) bytes)")
-        pendingPDF = PendingPDF(filename: filename, data: data)
-        NotificationManager.postSharedPDFReceived(filename: filename, data: data)
-        // Switch to Generate Pass tab if user is on another tab
+
+    private static var pendingFile: PendingFile?
+
+    static func enqueueFile(filename: String, data: Data, contentTypeIdentifier: String? = nil) {
+        let safeFilename = URL(fileURLWithPath: filename).lastPathComponent
+        let contentType = contentTypeIdentifier.flatMap(SupportedFile.contentType(forIdentifier:))
+            ?? SupportedFile.contentType(for: safeFilename)
+        guard let contentType else {
+            print("🔴 URLHandler: Unsupported file type: \(safeFilename)")
+            return
+        }
+
+        print("🟢 URLHandler: Enqueuing file: \(safeFilename) (\(data.count) bytes)")
+        pendingFile = PendingFile(filename: safeFilename, data: data, contentTypeIdentifier: contentType.identifier)
+        NotificationManager.postSharedFileReceived(
+            filename: safeFilename,
+            data: data,
+            contentTypeIdentifier: contentType.identifier
+        )
         NotificationCenter.default.post(name: NSNotification.Name("SwitchToGeneratePassTab"), object: nil)
     }
-    
-    /// Called by ContentViewModel on init to pick up any PDF that arrived before it was ready
-    static func dequeuePendingPDF() -> PendingPDF? {
-        guard let pdf = pendingPDF else { return nil }
-        pendingPDF = nil
-        print("🟢 URLHandler: Dequeued pending PDF: \(pdf.filename)")
-        return pdf
+
+    static func dequeuePendingFile() -> PendingFile? {
+        guard let file = pendingFile else { return nil }
+        pendingFile = nil
+        return file
     }
-    
-    // MARK: - URL Handling
-    
+
     static func handleURL(_ url: URL) {
-        print("🟢 URLHandler: handleURL called with: \(url)")
-        print("🟢 URLHandler: URL scheme: \(url.scheme ?? "nil"), host: \(url.host ?? "nil")")
-        print("🟢 URLHandler: URL path: \(url.path), isFileURL: \(url.isFileURL)")
-        
-        // Handle Universal Links for sharing (links.add2wallet.app/share/token)
-        if url.host == "links.add2wallet.app" && url.pathComponents.count >= 3 && url.pathComponents[1] == "share" {
-            let token = url.pathComponents[2]
-            print("🟢 URLHandler: Handling Universal Link with token: \(token)")
-            handleSharedPDFWithToken(token: token)
+        if url.host == "links.add2wallet.app",
+           url.pathComponents.count >= 3,
+           url.pathComponents[1] == "share" {
+            handleSharedFile(withToken: url.pathComponents[2])
             return
         }
-        
-        // Handle custom URL scheme sharing (add2wallet://share/token)
-        if url.scheme == "add2wallet" && url.host == "share" && url.pathComponents.count >= 2 {
-            let token = url.pathComponents[1]
-            print("🟢 URLHandler: Handling custom URL scheme with token: \(token)")
-            handleSharedPDFWithToken(token: token)
+
+        if url.scheme == "add2wallet",
+           url.host == "share",
+           url.pathComponents.count >= 2 {
+            handleSharedFile(withToken: url.pathComponents[1])
             return
         }
-        
-        // Legacy support for old share-pdf scheme
+
         if url.scheme == "add2wallet" && url.host == "share-pdf" {
-            print("🟢 URLHandler: Handling legacy share-pdf scheme")
-            checkForSharedPDF()
+            checkForSharedFile()
             return
         }
-        
-        // Handle files opened via "Open in Add2Wallet"
+
         if url.isFileURL {
-            print("🟢 URLHandler: Handling file URL: \(url)")
             handleFileURL(url)
-        } else {
-            print("🟡 URLHandler: URL not handled - not a file URL or recognized scheme")
         }
     }
-    
-    // MARK: - Private URL Handling Methods
-    
+
     private static func handleFileURL(_ url: URL) {
-        // Request access to security-scoped resource
         let hasAccess = url.startAccessingSecurityScopedResource()
-        print("🟢 URLHandler: Security scoped resource access: \(hasAccess)")
-        
         defer {
-            if hasAccess {
-                url.stopAccessingSecurityScopedResource()
-                print("🟢 URLHandler: Stopped accessing security scoped resource")
-            }
+            if hasAccess { url.stopAccessingSecurityScopedResource() }
         }
-        
+
         do {
-            let data = try Data(contentsOf: url)
-            let filename = url.lastPathComponent
-            print("🟢 URLHandler: Successfully loaded file data (\(data.count) bytes) for: \(filename)")
-            
-            enqueuePDF(filename: filename, data: data)
+            enqueueFile(filename: url.lastPathComponent, data: try Data(contentsOf: url))
         } catch {
             print("🔴 URLHandler: Error loading file: \(error)")
         }
     }
-    
-    static func handleSharedPDFWithToken(token: String) {
-        guard let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet") else {
+
+    static func handleSharedFile(withToken token: String) {
+        guard let sharedContainer = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet"
+        ) else {
             print("🔴 URLHandler: Failed to access app group container")
             return
         }
-        
-        // Look for token-specific directory
-        let tokenDir = sharedContainer.appendingPathComponent("shared").appendingPathComponent(token)
-        let metadataFile = tokenDir.appendingPathComponent("metadata.json")
-        let pdfFile = tokenDir.appendingPathComponent("document.pdf")
-        
-        if FileManager.default.fileExists(atPath: metadataFile.path),
-           FileManager.default.fileExists(atPath: pdfFile.path) {
-            do {
-                // Read metadata
-                let metadataData = try Data(contentsOf: metadataFile)
-                let metadata = try JSONSerialization.jsonObject(with: metadataData) as? [String: Any]
-                let filename = metadata?["filename"] as? String ?? "shared_document.pdf"
-                
-                // Read PDF data
-                let pdfData = try Data(contentsOf: pdfFile)
-                
-                print("🟢 URLHandler: Successfully processed shared PDF with token: \(token)")
-                
-                // Process the shared PDF
-                enqueuePDF(filename: filename, data: pdfData)
-                
-                // Clean up the token directory
-                try? FileManager.default.removeItem(at: tokenDir)
-                print("🟢 URLHandler: Cleaned up token directory")
-            } catch {
-                print("🔴 URLHandler: Error processing shared PDF with token \(token): \(error)")
-            }
-        } else {
-            print("🔴 URLHandler: Token directory or files not found for token: \(token)")
+
+        handleSharedFile(withToken: token, sharedContainer: sharedContainer)
+    }
+
+    static func handleSharedFile(withToken token: String, sharedContainer: URL) {
+        let tokenDirectory = sharedContainer
+            .appendingPathComponent("shared", isDirectory: true)
+            .appendingPathComponent(token, isDirectory: true)
+        let metadataURL = tokenDirectory.appendingPathComponent("metadata.json")
+
+        do {
+            let metadataData = try Data(contentsOf: metadataURL)
+            let metadata = try JSONSerialization.jsonObject(with: metadataData) as? [String: Any]
+            let originalFilename = metadata?["filename"] as? String
+            let storedFilename = metadata?["storedFilename"] as? String
+            let contentTypeIdentifier = metadata?["contentType"] as? String
+            let fileURL = try sharedFileURL(
+                in: tokenDirectory,
+                storedFilename: storedFilename,
+                originalFilename: originalFilename
+            )
+            let filename = originalFilename ?? fileURL.lastPathComponent
+            let data = try Data(contentsOf: fileURL)
+
+            enqueueFile(filename: filename, data: data, contentTypeIdentifier: contentTypeIdentifier)
+            try? FileManager.default.removeItem(at: tokenDirectory)
+        } catch {
+            print("🔴 URLHandler: Error processing shared file with token \(token): \(error)")
         }
     }
-    
+
+    private static func sharedFileURL(
+        in directory: URL,
+        storedFilename: String?,
+        originalFilename: String?
+    ) throws -> URL {
+        let candidates = [storedFilename, originalFilename]
+            .compactMap { $0 }
+            .map { directory.appendingPathComponent(URL(fileURLWithPath: $0).lastPathComponent) }
+
+        if let candidate = candidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) {
+            return candidate
+        }
+
+        // Backward compatibility with the former PDF-only handoff.
+        let legacyURL = directory.appendingPathComponent("document.pdf")
+        if FileManager.default.fileExists(atPath: legacyURL.path) {
+            return legacyURL
+        }
+
+        let files = try FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )
+        if let file = files.first(where: { $0.lastPathComponent != "metadata.json" }) {
+            return file
+        }
+
+        throw URLHandlerError.fileNotFound(originalFilename ?? "shared file")
+    }
+
     static func checkForPendingShareToken() {
         let appGroupID = "group.com.andresboedo.add2wallet"
         guard let defaults = UserDefaults(suiteName: appGroupID),
               let token = defaults.string(forKey: "pendingShareToken") else {
             return
         }
-        
-        // Clear immediately to avoid double-processing
+
         defaults.removeObject(forKey: "pendingShareToken")
         defaults.synchronize()
-        
-        print("🟢 URLHandler: Found pending share token: \(token)")
-        handleSharedPDFWithToken(token: token)
+        handleSharedFile(withToken: token)
     }
-    
-    static func checkForSharedPDF() {
-        // Legacy support for old file-based sharing
-        guard let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet") else {
-            print("🔴 URLHandler: Failed to access app group container for legacy sharing")
-            return
-        }
-        
-        let sharedFile = sharedContainer.appendingPathComponent("shared_pdf.json")
-        let pdfFile = sharedContainer.appendingPathComponent("shared.pdf")
 
-        if FileManager.default.fileExists(atPath: sharedFile.path),
-           FileManager.default.fileExists(atPath: pdfFile.path) {
-            do {
-                let jsonData = try Data(contentsOf: sharedFile)
-                if let sharedData = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-                   let filename = sharedData["filename"] as? String {
-                    let pdfData = try Data(contentsOf: pdfFile)
-                    
-                    print("🟢 URLHandler: Successfully processed legacy shared PDF")
-                    
-                    // Process the shared PDF
-                    enqueuePDF(filename: filename, data: pdfData)
-                    
-                    // Clean up the shared file
-                    try? FileManager.default.removeItem(at: sharedFile)
-                    try? FileManager.default.removeItem(at: pdfFile)
-                    print("🟢 URLHandler: Cleaned up legacy shared files")
-                }
-            } catch {
-                print("🔴 URLHandler: Error processing legacy shared PDF: \(error)")
+    static func checkForSharedFile() {
+        guard let sharedContainer = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: "group.com.andresboedo.add2wallet"
+        ) else { return }
+
+        checkForSharedFile(in: sharedContainer)
+    }
+
+    static func checkForSharedFile(in sharedContainer: URL) {
+        let metadataURL = sharedContainer.appendingPathComponent("shared_pdf.json")
+        guard FileManager.default.fileExists(atPath: metadataURL.path) else { return }
+
+        do {
+            let metadataData = try Data(contentsOf: metadataURL)
+            let metadata = try JSONSerialization.jsonObject(with: metadataData) as? [String: Any]
+            guard let filename = metadata?["filename"] as? String else {
+                throw URLHandlerError.dataCorrupted
             }
-        } else {
-            print("🟡 URLHandler: No legacy shared PDF files found")
+
+            let storedFilename = metadata?["storedFilename"] as? String
+            let candidates = [storedFilename, filename, "shared.pdf"]
+                .compactMap { $0 }
+                .map { sharedContainer.appendingPathComponent(URL(fileURLWithPath: $0).lastPathComponent) }
+            guard let fileURL = candidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) else {
+                throw URLHandlerError.fileNotFound(filename)
+            }
+
+            enqueueFile(
+                filename: filename,
+                data: try Data(contentsOf: fileURL),
+                contentTypeIdentifier: metadata?["contentType"] as? String
+            )
+            try? FileManager.default.removeItem(at: metadataURL)
+            try? FileManager.default.removeItem(at: fileURL)
+        } catch {
+            print("🔴 URLHandler: Error processing legacy shared file: \(error)")
         }
+    }
+
+    // Compatibility with the previous API name.
+    static func checkForSharedPDF() {
+        checkForSharedFile()
     }
 }
 
-// MARK: - URL Validation
-
 extension URLHandler {
-    
     static func isValidAdd2WalletURL(_ url: URL) -> Bool {
-        // Check if URL is a valid Add2Wallet URL
-        if url.host == "links.add2wallet.app" && url.pathComponents.count >= 3 && url.pathComponents[1] == "share" {
+        if url.host == "links.add2wallet.app",
+           url.pathComponents.count >= 3,
+           url.pathComponents[1] == "share" {
             return true
         }
-        
-        if url.scheme == "add2wallet" && (url.host == "share" || url.host == "share-pdf") {
-            return true
-        }
-        
-        return false
+        return url.scheme == "add2wallet" && (url.host == "share" || url.host == "share-pdf")
     }
-    
+
     static func extractTokenFromURL(_ url: URL) -> String? {
-        // Extract token from various URL formats
-        if url.host == "links.add2wallet.app" && url.pathComponents.count >= 3 && url.pathComponents[1] == "share" {
+        if url.host == "links.add2wallet.app",
+           url.pathComponents.count >= 3,
+           url.pathComponents[1] == "share" {
             return url.pathComponents[2]
         }
-        
-        if url.scheme == "add2wallet" && url.host == "share" && url.pathComponents.count >= 2 {
+        if url.scheme == "add2wallet",
+           url.host == "share",
+           url.pathComponents.count >= 2 {
             return url.pathComponents[1]
         }
-        
         return nil
     }
 }
-
-// MARK: - Error Types
 
 enum URLHandlerError: Error, LocalizedError {
     case invalidURL
@@ -225,7 +231,7 @@ enum URLHandlerError: Error, LocalizedError {
     case appGroupContainerNotFound
     case fileNotFound(String)
     case dataCorrupted
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:

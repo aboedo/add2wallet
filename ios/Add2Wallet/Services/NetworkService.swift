@@ -119,6 +119,106 @@ struct EnhancedPassMetadata: Codable {
         case hasAssignedSeating = "has_assigned_seating"
         case eventUrls = "event_urls"
     }
+
+    init(
+        eventType: String? = nil,
+        eventName: String? = nil,
+        title: String? = nil,
+        description: String? = nil,
+        date: String? = nil,
+        time: String? = nil,
+        duration: String? = nil,
+        venueName: String? = nil,
+        venueAddress: String? = nil,
+        city: String? = nil,
+        stateCountry: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        organizer: String? = nil,
+        performerArtist: String? = nil,
+        seatInfo: String? = nil,
+        barcodeData: String? = nil,
+        price: String? = nil,
+        confirmationNumber: String? = nil,
+        gateInfo: String? = nil,
+        eventDescription: String? = nil,
+        venueType: String? = nil,
+        capacity: String? = nil,
+        website: String? = nil,
+        phone: String? = nil,
+        nearbyLandmarks: [String]? = nil,
+        publicTransport: String? = nil,
+        parkingInfo: String? = nil,
+        ageRestriction: String? = nil,
+        dressCode: String? = nil,
+        weatherConsiderations: String? = nil,
+        amenities: [String]? = nil,
+        accessibility: String? = nil,
+        aiProcessed: Bool? = nil,
+        confidenceScore: Int? = nil,
+        processingTimestamp: String? = nil,
+        modelUsed: String? = nil,
+        enrichmentCompleted: Bool? = nil,
+        backgroundColor: String? = nil,
+        foregroundColor: String? = nil,
+        labelColor: String? = nil,
+        multipleEvents: Bool? = nil,
+        upcomingEvents: [UpcomingEvent]? = nil,
+        venuePlaceId: String? = nil,
+        performerNames: [String]? = nil,
+        exhibitName: String? = nil,
+        hasAssignedSeating: Bool? = nil,
+        eventUrls: EventURLs? = nil
+    ) {
+        self.eventType = eventType
+        self.eventName = eventName
+        self.title = title
+        self.description = description
+        self.date = date
+        self.time = time
+        self.duration = duration
+        self.venueName = venueName
+        self.venueAddress = venueAddress
+        self.city = city
+        self.stateCountry = stateCountry
+        self.latitude = latitude
+        self.longitude = longitude
+        self.organizer = organizer
+        self.performerArtist = performerArtist
+        self.seatInfo = seatInfo
+        self.barcodeData = barcodeData
+        self.price = price
+        self.confirmationNumber = confirmationNumber
+        self.gateInfo = gateInfo
+        self.eventDescription = eventDescription
+        self.venueType = venueType
+        self.capacity = capacity
+        self.website = website
+        self.phone = phone
+        self.nearbyLandmarks = nearbyLandmarks
+        self.publicTransport = publicTransport
+        self.parkingInfo = parkingInfo
+        self.ageRestriction = ageRestriction
+        self.dressCode = dressCode
+        self.weatherConsiderations = weatherConsiderations
+        self.amenities = amenities
+        self.accessibility = accessibility
+        self.aiProcessed = aiProcessed
+        self.confidenceScore = confidenceScore
+        self.processingTimestamp = processingTimestamp
+        self.modelUsed = modelUsed
+        self.enrichmentCompleted = enrichmentCompleted
+        self.backgroundColor = backgroundColor
+        self.foregroundColor = foregroundColor
+        self.labelColor = labelColor
+        self.multipleEvents = multipleEvents
+        self.upcomingEvents = upcomingEvents
+        self.venuePlaceId = venuePlaceId
+        self.performerNames = performerNames
+        self.exhibitName = exhibitName
+        self.hasAssignedSeating = hasAssignedSeating
+        self.eventUrls = eventUrls
+    }
 }
 
 // iOS 26 Upcoming Event structure
@@ -182,6 +282,24 @@ struct UploadResponse: Codable {
     let warnings: [String]?
     let remainingPasses: Int?
 
+    init(
+        jobId: String,
+        status: String,
+        passUrl: String?,
+        aiMetadata: EnhancedPassMetadata?,
+        ticketCount: Int?,
+        warnings: [String]?,
+        remainingPasses: Int? = nil
+    ) {
+        self.jobId = jobId
+        self.status = status
+        self.passUrl = passUrl
+        self.aiMetadata = aiMetadata
+        self.ticketCount = ticketCount
+        self.warnings = warnings
+        self.remainingPasses = remainingPasses
+    }
+
     enum CodingKeys: String, CodingKey {
         case jobId = "job_id"
         case status
@@ -230,14 +348,26 @@ enum NetworkError: Error, LocalizedError {
 }
 
 class NetworkService {
-    private let baseURL = "https://add2wallet-backend-production.up.railway.app"
+    private let baseURL: URL
     private let session: URLSession
-    
-    init() {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 60.0  // 60 seconds
-        config.timeoutIntervalForResource = 60.0 // 60 seconds
-        self.session = URLSession(configuration: config)
+    private let appUserIDProvider: () -> String
+
+    init(
+        baseURL: URL = URL(string: "https://add2wallet-backend-production.up.railway.app")!,
+        session: URLSession? = nil,
+        appUserIDProvider: @escaping () -> String = { Purchases.shared.appUserID }
+    ) {
+        self.baseURL = baseURL
+        self.appUserIDProvider = appUserIDProvider
+
+        if let session {
+            self.session = session
+        } else {
+            let config = URLSessionConfiguration.default
+            config.timeoutIntervalForRequest = 60.0
+            config.timeoutIntervalForResource = 60.0
+            self.session = URLSession(configuration: config)
+        }
     }
     
     private static let retryDelays: [TimeInterval] = [0.5, 1.0, 2.0]
@@ -250,7 +380,7 @@ class NetworkService {
         return statusCode >= 500
     }
 
-    func uploadPDF(data: Data, filename: String, isRetry: Bool = false, isDemo: Bool = false) -> AnyPublisher<UploadResponse, Error> {
+    func uploadFile(data: Data, filename: String, isRetry: Bool = false, isDemo: Bool = false) -> AnyPublisher<UploadResponse, Error> {
         func attempt(retryIndex: Int) -> AnyPublisher<UploadResponse, Error> {
             return makeUploadRequest(data: data, filename: filename, isRetry: isRetry, isDemo: isDemo)
                 .catch { error -> AnyPublisher<UploadResponse, Error> in
@@ -272,12 +402,13 @@ class NetworkService {
         return attempt(retryIndex: 0)
     }
 
-    private func makeUploadRequest(data: Data, filename: String, isRetry: Bool, isDemo: Bool) -> AnyPublisher<UploadResponse, Error> {
-        guard let url = URL(string: "\(baseURL)/upload") else {
-            return Fail(error: NetworkError.invalidURL)
-                .eraseToAnyPublisher()
-        }
+    // Kept for source compatibility with older call sites and tests.
+    func uploadPDF(data: Data, filename: String, isRetry: Bool = false, isDemo: Bool = false) -> AnyPublisher<UploadResponse, Error> {
+        uploadFile(data: data, filename: filename, isRetry: isRetry, isDemo: isDemo)
+    }
 
+    private func makeUploadRequest(data: Data, filename: String, isRetry: Bool, isDemo: Bool) -> AnyPublisher<UploadResponse, Error> {
+        let url = baseURL.appendingPathComponent("api/v1/conversions")
         let boundary = UUID().uuidString
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -289,12 +420,12 @@ class NetworkService {
         // Add file data
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: application/pdf\r\n\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(SupportedFile.mimeType(for: filename))\r\n\r\n".data(using: .utf8)!)
         body.append(data)
         body.append("\r\n".data(using: .utf8)!)
 
         // Add user_id (from RevenueCat)
-        let appUserId = Purchases.shared.appUserID
+        let appUserId = appUserIDProvider()
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"user_id\"\r\n\r\n".data(using: .utf8)!)
         body.append(appUserId.data(using: .utf8)!)
@@ -342,11 +473,11 @@ class NetworkService {
     }
     
     func downloadPass(from passUrl: String) -> AnyPublisher<Data, Error> {
-        guard let url = URL(string: "\(baseURL)\(passUrl)") else {
+        guard let url = URL(string: passUrl, relativeTo: baseURL)?.absoluteURL else {
             return Fail(error: NetworkError.invalidURL)
                 .eraseToAnyPublisher()
         }
-        
+
         var request = URLRequest(url: url)
         request.setValue("add2wallet-prod-4fafa87d63f30ecc38e1a156bcb240d6", forHTTPHeaderField: "X-API-Key")
         

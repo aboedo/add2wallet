@@ -36,9 +36,10 @@ if not os.getenv("OPENAI_API_KEY"):
     )
 
 try:
-    from app.services.ai_service import ai_service
+    from app.core.config import get_settings
+    from app.core.pipeline import ConversionPipeline
+    from app.core.storage import JobStore
     from app.services.barcode_extractor import BarcodeExtractor
-    from app.services.pass_generator import PassGenerator
 except Exception as e:  # noqa: BLE001
     pytest.skip(f"App imports failed: {e}", allow_module_level=True)
 
@@ -194,17 +195,38 @@ def _barcode_format(pkpass_bytes: bytes) -> Optional[str]:
 
 
 def _run_pipeline(filename: str):
-    """Run full pipeline with real AI. Returns (pkpass_files, barcodes, ticket_info, warnings)."""
-    pdf_data = _load(filename)
-    pg = PassGenerator()
+    """Run the shipping conversion pipeline with real AI.
 
-    # Extract text then call AI (same as main.py does)
-    pdf_text = pg._extract_pdf_text(pdf_data)
-    ai_metadata = asyncio.get_event_loop().run_until_complete(
-        ai_service.analyze_pdf_content(pdf_text, filename)
+    Returns ((pkpass_files, barcodes, ticket_info, warnings), ai_metadata).
+
+    This targets ``ConversionPipeline`` — the path the API actually serves.
+    It originally drove the legacy ``PassGenerator`` + ``ai_service``, which is
+    no longer in the request path (see tests/eval/compare_v1_v2.py to measure
+    that retired path). Evaluating the retired code produced failures that the
+    shipping pipeline does not have.
+    """
+    settings = get_settings()
+    store = JobStore(settings)
+    pipeline = ConversionPipeline(settings, store)
+    job = asyncio.run(
+        pipeline.convert(
+            filename=filename,
+            content_type="application/pdf",
+            data=_load(filename),
+            user_id="ignacio-eval",
+            session_token="test-token",
+            is_retry=False,
+            is_demo=True,
+        )
     )
-
-    return pg.create_pass_from_pdf_data(pdf_data, filename, ai_metadata), ai_metadata
+    pkpass_files = [path.read_bytes() for path in job.pass_paths]
+    # Surface each ticket's extracted metadata (date, venue, …) at the top
+    # level: the date lives in ticket_info[i]["metadata"], so ticket_info[0]
+    # ["date"] would otherwise be empty even when correctly extracted.
+    ticket_info = [
+        {**(ticket.get("metadata") or {}), **ticket} for ticket in job.ticket_info
+    ]
+    return (pkpass_files, job.detected_barcodes, ticket_info, job.warnings), job.ai_metadata
 
 
 # ---------------------------------------------------------------------------

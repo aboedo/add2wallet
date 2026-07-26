@@ -8,7 +8,7 @@ class NotificationManager {
     // MARK: - Notification Names
     
     enum NotificationName: String, CaseIterable {
-        case sharedPDFReceived = "SharedPDFReceived"
+        case sharedFileReceived = "SharedFileReceived"
         case passReadyToAdd = "PassReadyToAdd"
         case passGenerated = "PassGenerated"
         case resetPassUIState = "ResetPassUIState"
@@ -22,16 +22,25 @@ class NotificationManager {
     
     // MARK: - Posting Notifications
     
-    static func postSharedPDFReceived(filename: String, data: Data) {
+    static func postSharedFileReceived(
+        filename: String,
+        data: Data,
+        contentTypeIdentifier: String? = nil
+    ) {
+        var userInfo: [String: Any] = [
+            "filename": filename,
+            "data": data
+        ]
+        if let contentTypeIdentifier {
+            userInfo["contentTypeIdentifier"] = contentTypeIdentifier
+        }
+
         NotificationCenter.default.post(
-            name: NotificationName.sharedPDFReceived.notificationName,
+            name: NotificationName.sharedFileReceived.notificationName,
             object: nil,
-            userInfo: [
-                "filename": filename,
-                "data": data
-            ]
+            userInfo: userInfo
         )
-        print("📢 NotificationManager: Posted SharedPDFReceived - \(filename) (\(data.count) bytes)")
+        print("📢 NotificationManager: Posted SharedFileReceived - \(filename) (\(data.count) bytes)")
     }
     
     // MARK: - Observer Management
@@ -82,12 +91,12 @@ class NotificationManager {
     
     // MARK: - Convenience Methods for Common Patterns
     
-    static func observeSharedPDFReceived(using block: @escaping (String, Data) -> Void) -> NSObjectProtocol {
-        return addObserver(for: .sharedPDFReceived) { notification in
+    static func observeSharedFileReceived(using block: @escaping (String, Data) -> Void) -> NSObjectProtocol {
+        return addObserver(for: .sharedFileReceived) { notification in
             guard let userInfo = notification.userInfo,
                   let filename = userInfo["filename"] as? String,
                   let data = userInfo["data"] as? Data else {
-                print("🔴 NotificationManager: Invalid SharedPDFReceived notification userInfo")
+                print("🔴 NotificationManager: Invalid SharedFileReceived notification userInfo")
                 return
             }
             block(filename, data)
@@ -123,17 +132,18 @@ class NotificationManager {
         }
     }
     
-    static func observeShowSupportEmail(using block: @escaping (String, String, Data, String) -> Void) -> NSObjectProtocol {
+    static func observeShowSupportEmail(using block: @escaping (String, String, Data, String, String) -> Void) -> NSObjectProtocol {
         return addObserver(for: .showSupportEmail) { notification in
             guard let userInfo = notification.userInfo,
                   let subject = userInfo["subject"] as? String,
                   let body = userInfo["body"] as? String,
-                  let pdfData = userInfo["pdfData"] as? Data,
+                  let attachmentData = userInfo["attachmentData"] as? Data,
+                  let mimeType = userInfo["attachmentMIMEType"] as? String,
                   let fileName = userInfo["fileName"] as? String else {
                 print("🔴 NotificationManager: Invalid ShowSupportEmail notification userInfo")
                 return
             }
-            block(subject, body, pdfData, fileName)
+            block(subject, body, attachmentData, mimeType, fileName)
         }
     }
 }
