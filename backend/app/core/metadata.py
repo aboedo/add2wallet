@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Union, get_args, get_origin
 
-from openai import APIStatusError, AuthenticationError, OpenAI, RateLimitError
+from openai import APIStatusError, AuthenticationError, BadRequestError, OpenAI, RateLimitError
 from pydantic import ValidationError
 
 from app.core.config import Settings
@@ -18,6 +18,13 @@ from app.core.models import DocumentKind, PassSegment, StructuredMetadata
 
 logger = logging.getLogger(__name__)
 
+# Reasoning models spend completion tokens thinking before they emit a single
+# character of JSON, so these budgets cover reasoning + output, not output alone.
+# Too low and the answer is truncated into a parse failure that the fallback
+# silently swallows.
+METADATA_TOKEN_BUDGET = 6000
+SEGMENTS_TOKEN_BUDGET = 8000
+
 
 class MetadataExtractor:
     def __init__(self, settings: Settings) -> None:
@@ -26,6 +33,20 @@ class MetadataExtractor:
             OpenAI(api_key=settings.openai_api_key, timeout=30.0)
             if settings.openai_api_key
             else None
+        )
+
+    def _log_rejected_request(self) -> None:
+        """A 400 means OPENAI_MODEL and the request shape disagree.
+
+        That is a deploy-time misconfiguration, not a blip: every extraction
+        will quietly return heuristic metadata until someone notices. Log it
+        loudly enough to be seen rather than letting it pass as a warning.
+        """
+        logger.error(
+            "OpenAI rejected the request for model %r — falling back to heuristics "
+            "for every document until this is fixed",
+            self.settings.openai_model,
+            exc_info=True,
         )
 
     async def extract_from_text(
@@ -49,12 +70,15 @@ class MetadataExtractor:
                     },
                     {"role": "user", "content": prompt},
                 ],
-                temperature=0.1,
-                max_tokens=1200,
+                response_format={"type": "json_object"},
+                max_completion_tokens=METADATA_TOKEN_BUDGET,
             )
             return _metadata_from_json(response.choices[0].message.content or "", self.settings.openai_model)
         except (AuthenticationError, RateLimitError) as exc:
             raise UpstreamServiceError("OpenAI metadata extraction is unavailable") from exc
+        except BadRequestError:
+            self._log_rejected_request()
+            return fallback_metadata(text, filename, barcode_messages, self.settings.openai_model)
         except APIStatusError as exc:
             if exc.status_code in {401, 402, 429}:
                 raise UpstreamServiceError("OpenAI metadata extraction is unavailable") from exc
@@ -101,12 +125,15 @@ class MetadataExtractor:
                     },
                     {"role": "user", "content": content},
                 ],
-                temperature=0.1,
-                max_tokens=1200,
+                response_format={"type": "json_object"},
+                max_completion_tokens=METADATA_TOKEN_BUDGET,
             )
             return _metadata_from_json(response.choices[0].message.content or "", self.settings.openai_model)
         except (AuthenticationError, RateLimitError) as exc:
             raise UpstreamServiceError("OpenAI vision extraction is unavailable") from exc
+        except BadRequestError:
+            self._log_rejected_request()
+            return fallback_metadata(fallback_text, filename, barcode_messages, self.settings.openai_model)
         except APIStatusError as exc:
             if exc.status_code in {401, 402, 429}:
                 raise UpstreamServiceError("OpenAI vision extraction is unavailable") from exc
@@ -145,10 +172,13 @@ class MetadataExtractor:
                     },
                     {"role": "user", "content": _segments_prompt(filename, usable)},
                 ],
-                temperature=0.1,
-                max_tokens=2000,
+                response_format={"type": "json_object"},
+                max_completion_tokens=SEGMENTS_TOKEN_BUDGET,
             )
             return _segments_from_json(response.choices[0].message.content or "")
+        except BadRequestError:
+            self._log_rejected_request()
+            return [], None, None
         except (AuthenticationError, RateLimitError, APIStatusError):
             logger.info("Segment extraction unavailable", exc_info=True)
             return [], None, None
@@ -392,7 +422,9 @@ has_assigned_seating, event_urls, multiple_tickets, brand_color, background_colo
 foreground_color, label_color.
 
 Use null for unknown values. Keep title under 30 characters. Use rgb(R, G, B)
-strings for colors with readable contrast.
+strings for colors with readable contrast. confidence_score is an integer from
+0 to 100, not a fraction. event_urls is an object mapping a label to a URL,
+e.g. {{"tickets": "https://..."}}.
 
 brand_color is the one field you may reason about rather than copy: it becomes
 the background of the Wallet pass. Give it as hex #RRGGBB. Prefer the
@@ -404,7 +436,13 @@ reach for the whole spectrum. It must be a deep, saturated colour that white
 text can sit on: no greys, pastels, near-white or near-black. Use null only if
 the document gives you nothing to go on.
 
-Dates must be YYYY-MM-DD and times HH:MM (24h). For a document that covers a
+Dates must be YYYY-MM-DD and times HH:MM (24h). Boarding passes often print a
+day and month with no year ("18 Mar"): infer the year from any other date in
+the document, and otherwise from the booking or issue date. A pass with a
+complete date is far more useful than a null, so only give up if there is no
+day or month either.
+
+For a document that covers a
 range — a hotel stay, a car rental, a multi-day pass — put the start in
 date/time (check-in, pick-up) and the end in end_date/end_time (check-out,
 drop-off). A document without any barcode is still valid: it is a reservation

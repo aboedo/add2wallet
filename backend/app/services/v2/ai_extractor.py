@@ -13,6 +13,9 @@ from typing import Optional
 
 from app.services.v2.models import PDFExtraction
 
+# Covers reasoning + output on reasoning models, not output alone.
+_TOKEN_BUDGET = 6000
+
 _EXTRACTION_PROMPT = """\
 You are extracting information from a ticket or pass document to populate an Apple Wallet pass.
 
@@ -101,7 +104,7 @@ class AIExtractor:
             return _heuristic_extract(text, filename)
 
     def _call_openai(self, text: str, filename: str) -> PDFExtraction:
-        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        model = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
         prompt = _EXTRACTION_PROMPT.format(
             filename=filename,
             text=text[:4000],
@@ -123,8 +126,7 @@ class AIExtractor:
                     {"role": "user", "content": prompt},
                 ],
                 response_format=PDFExtraction,
-                temperature=0.0,
-                max_tokens=600,
+                max_completion_tokens=_TOKEN_BUDGET,
             )
             result: PDFExtraction = resp.choices[0].message.parsed  # type: ignore[union-attr]
             print(
@@ -158,8 +160,7 @@ class AIExtractor:
                     "strict": True,
                 },
             },
-            temperature=0.0,
-            max_tokens=600,
+            max_completion_tokens=_TOKEN_BUDGET,
         )
         raw = resp.choices[0].message.content or "{}"
         data = json.loads(raw)
