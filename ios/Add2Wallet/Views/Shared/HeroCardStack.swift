@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HeroCardStack: View {
     let remainingPasses: Int
@@ -7,8 +8,10 @@ struct HeroCardStack: View {
     var isProcessing: Bool = false
     let onSelectPDF: () -> Void
     let onSamplePDF: () -> Void
+    var onSelectPhoto: () -> Void = {}
+    var onPaste: ([NSItemProvider]) -> Void = { _ in }
     @State private var buttonBounce = 0
-    
+
     var body: some View {
         VStack(spacing: ThemeManager.Spacing.md) {
             // Top: App name + value prop
@@ -50,7 +53,33 @@ struct HeroCardStack: View {
             }
             .buttonStyle(.plain)
             .disabled(isProcessing)
-            
+            .accessibilityIdentifier("selectFileButton")
+
+            // Secondary sources — Photos and clipboard, so Files isn't the only way in
+            HStack(spacing: ThemeManager.Spacing.sm) {
+                Button(action: {
+                    ThemeManager.Haptics.light()
+                    onSelectPhoto()
+                }) {
+                    Label("Photos", systemImage: "photo.on.rectangle")
+                        .secondarySourceButton()
+                }
+                .buttonStyle(.plain)
+                .disabled(isProcessing)
+                .accessibilityIdentifier("selectFromPhotosButton")
+
+                PasteButton(supportedContentTypes: SupportedFile.contentTypes) { providers in
+                    ThemeManager.Haptics.light()
+                    onPaste(providers)
+                }
+                .labelStyle(.titleAndIcon)
+                .buttonBorderShape(.roundedRectangle(radius: ThemeManager.CornerRadius.medium))
+                .tint(.white.opacity(0.2))
+                .disabled(isProcessing)
+                .accessibilityIdentifier("pasteFileButton")
+            }
+            .font(ThemeManager.Typography.footnote)
+
             // Usage counter
             HStack {
                 Spacer()
@@ -88,6 +117,24 @@ struct HeroCardStack: View {
             )
         )
         .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.card))
+    }
+}
+
+private extension View {
+    /// Matches the translucent look of the hero card's primary button, one step quieter.
+    func secondarySourceButton() -> some View {
+        self
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, ThemeManager.Spacing.sm)
+            .background(
+                .white.opacity(0.15),
+                in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
+                    .stroke(.white.opacity(0.25), lineWidth: 1)
+            )
     }
 }
 

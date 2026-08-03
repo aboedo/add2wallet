@@ -59,3 +59,6 @@ backend/set_railway_env.sh
 .PLAN.mdios/release/*.ipa
 ios/release/Packaging.log
 ios/release/DistributionSummary.plist
+
+# Maestro regression artifacts (may contain imported personal documents)
+ios/maestro/regression/output/
