@@ -13,6 +13,9 @@ from typing import Optional
 
 from app.services.v2.models import PDFExtraction
 
+# Covers reasoning + output on reasoning models, not output alone.
+_TOKEN_BUDGET = 6000
+
 _EXTRACTION_PROMPT = """\
 You are extracting information from a ticket or pass document to populate an Apple Wallet pass.
 
@@ -25,6 +28,16 @@ RULES:
 - For time: HH:MM (24-hour)
 - document_type must be one of: event_ticket, boarding_pass, transit, hotel, generic
 - Set multiple_tickets=true ONLY when the document contains 3 or more clearly separate tickets/entries with distinct barcodes for different people in a group (e.g. 4 family entry tickets each with a unique QR code). If the PDF has only 1 or 2 entries/barcodes, ALWAYS set multiple_tickets=false — even if the text shows "1/2" and "2/2" or repeats the ticket info twice.
+
+BRAND COLOUR (the one field you may reason about rather than copy):
+- brand_color is the background colour of the resulting Wallet pass. Give it as hex #RRGGBB.
+- Prefer the well-known brand colour of the issuing organization, venue, team, airline or event
+  (e.g. a football club's kit colour, an airline's livery, a museum's identity).
+- If there is no recognisable brand, pick a colour that suits the subject matter — but stay
+  specific to this document rather than defaulting to a generic blue.
+- It must be a deep, saturated colour that white text can sit on: keep the total lightness low
+  and avoid greys, pastels, near-white and near-black.
+- Set brand_color to null only if the document gives you nothing to go on.
 
 DOCUMENT FILENAME: {filename}
 
@@ -53,6 +66,7 @@ _JSON_SCHEMA = {
         "price": {"type": ["string", "null"]},
         "confidence": {"type": "integer", "minimum": 0, "maximum": 100},
         "multiple_tickets": {"type": "boolean"},
+        "brand_color": {"type": ["string", "null"]},
     },
     "required": ["document_type", "title", "confidence"],
     "additionalProperties": False,
@@ -90,7 +104,7 @@ class AIExtractor:
             return _heuristic_extract(text, filename)
 
     def _call_openai(self, text: str, filename: str) -> PDFExtraction:
-        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        model = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
         prompt = _EXTRACTION_PROMPT.format(
             filename=filename,
             text=text[:4000],
@@ -105,14 +119,14 @@ class AIExtractor:
                         "role": "system",
                         "content": (
                             "You extract structured information from ticket and pass documents. "
-                            "Only return information explicitly present in the text."
+                            "Only return information explicitly present in the text — brand_color "
+                            "is the sole field you may infer from what the document is about."
                         ),
                     },
                     {"role": "user", "content": prompt},
                 ],
                 response_format=PDFExtraction,
-                temperature=0.0,
-                max_tokens=600,
+                max_completion_tokens=_TOKEN_BUDGET,
             )
             result: PDFExtraction = resp.choices[0].message.parsed  # type: ignore[union-attr]
             print(
@@ -131,7 +145,8 @@ class AIExtractor:
                     "role": "system",
                     "content": (
                         "You extract structured information from ticket and pass documents. "
-                        "Only return information explicitly present in the text. "
+                        "Only return information explicitly present in the text — brand_color "
+                        "is the sole field you may infer from what the document is about. "
                         "Return valid JSON matching the provided schema exactly."
                     ),
                 },
@@ -145,8 +160,7 @@ class AIExtractor:
                     "strict": True,
                 },
             },
-            temperature=0.0,
-            max_tokens=600,
+            max_completion_tokens=_TOKEN_BUDGET,
         )
         raw = resp.choices[0].message.content or "{}"
         data = json.loads(raw)

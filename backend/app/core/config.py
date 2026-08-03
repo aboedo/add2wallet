@@ -49,7 +49,7 @@ def get_settings() -> Settings:
         job_ttl_seconds=int(os.getenv("JOB_TTL_SECONDS", "1800")),
         cleanup_interval_seconds=int(os.getenv("CLEANUP_INTERVAL_SECONDS", "300")),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        openai_model=os.getenv("OPENAI_MODEL", "gpt-5.6-luna"),
         revenuecat_secret_key=os.getenv("REVENUECAT_SECRET_KEY"),
         revenuecat_project_id=os.getenv("REVENUECAT_PROJECT_ID", "projd85d45ec"),
         pass_type_identifier=os.getenv("PASS_TYPE_IDENTIFIER", "pass.com.andresboedo.add2wallet"),

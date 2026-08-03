@@ -132,6 +132,23 @@ class PDFExtraction(BaseModel):
     price: Optional[str] = Field(default=None, description="Ticket price if shown")
     confidence: int = Field(ge=0, le=100, description="Extraction confidence 0-100")
     multiple_tickets: bool = Field(default=False, description="True if PDF contains separate tickets for different people or entry slots")
+    brand_color: Optional[str] = Field(
+        default=None,
+        description="Hex #RRGGBB brand colour for the pass background, or null if unknown",
+    )
+
+    @field_validator("brand_color")
+    @classmethod
+    def sanitize_brand_color(cls, v: Optional[str]) -> Optional[str]:
+        """Accept #RGB / #RRGGBB (with or without the hash); drop anything else."""
+        if not v:
+            return None
+        candidate = v.strip().lstrip("#")
+        if len(candidate) == 3:
+            candidate = "".join(ch * 2 for ch in candidate)
+        if not re.fullmatch(r"[0-9a-fA-F]{6}", candidate):
+            return None
+        return f"#{candidate.lower()}"
 
     @field_validator("title")
     @classmethod

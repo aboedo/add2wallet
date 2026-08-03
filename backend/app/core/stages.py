@@ -173,12 +173,20 @@ def _consolidate_barcodes(barcodes: list, metadata: StructuredMetadata) -> list:
 
 
 def _apply_derived_colors(upload: ValidatedUpload, metadata: StructuredMetadata) -> None:
-    if upload.kind is not DocumentKind.pdf:
+    is_pdf = upload.kind is DocumentKind.pdf
+    # Pixel extraction only understands PDFs. For a screenshot we still want the
+    # brand colour, but with nothing to add we leave the model's own answer be.
+    if not is_pdf and not metadata.brand_color:
         return
     try:
         from app.services.v2.color_extractor import extract_colors
 
-        bg_color, fg_color, label_color = extract_colors(upload.data, metadata.event_type)
+        pdf_bytes = upload.data if is_pdf else b""
+        bg_color, fg_color, label_color = extract_colors(
+            pdf_bytes,
+            metadata.event_type,
+            brand_color=metadata.brand_color,
+        )
         metadata.background_color = bg_color or metadata.background_color
         metadata.foreground_color = fg_color or metadata.foreground_color
         metadata.label_color = label_color or metadata.label_color

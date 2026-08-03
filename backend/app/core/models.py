@@ -78,6 +78,10 @@ class StructuredMetadata(BaseModel):
     processing_timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     model_used: str | None = None
     enrichment_completed: bool = False
+    # Brand colour the model infers from what the document is about (a club's
+    # kit, an airline's livery). None means it had nothing to go on, which is
+    # what lets the pixel extractor take over instead of always winning.
+    brand_color: str | None = None
     background_color: str = "rgb(22, 82, 96)"
     foreground_color: str = "rgb(255, 255, 255)"
     label_color: str = "rgb(210, 235, 238)"
