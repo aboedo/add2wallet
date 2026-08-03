@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import PassKit
+import PhotosUI
 import RevenueCatUI
 import MessageUI
 
@@ -21,6 +22,8 @@ struct ContentView: View {
     @State private var successToastMessage = ""
     @State private var addToWalletBounce = 0
     @State private var createPassBounce = 0
+    @State private var showingPhotoPicker = false
+    @State private var selectedPhoto: PhotosPickerItem?
     @Environment(\.modelContext) private var modelContext
     
     #if DEBUG
@@ -62,7 +65,9 @@ struct ContentView: View {
                         passColor: nil,
                         isProcessing: viewModel.isProcessing,
                         onSelectPDF: { viewModel.selectFile() },
-                        onSamplePDF: { viewModel.loadDemoFile() }
+                        onSamplePDF: { viewModel.loadDemoFile() },
+                        onSelectPhoto: { showingPhotoPicker = true },
+                        onPaste: { viewModel.handlePastedProviders($0) }
                     )
                     
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
@@ -97,7 +102,7 @@ struct ContentView: View {
                                 .foregroundColor(ThemeManager.Colors.textTertiary)
                                 .padding(.top, ThemeManager.Spacing.xl)
                             
-                            Text("Open a PDF or image from Files to get started")
+                            Text("Pick a PDF or image from Files, Photos, or your clipboard to get started")
                                 .font(ThemeManager.Typography.body)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -371,6 +376,17 @@ struct ContentView: View {
                     viewModel.hasError = true
                 }
             }
+            .photosPicker(
+                isPresented: $showingPhotoPicker,
+                selection: $selectedPhoto,
+                matching: .images,
+                photoLibrary: .shared()
+            )
+            .onChange(of: selectedPhoto) { _, item in
+                guard let item else { return }
+                selectedPhoto = nil
+                Task { await importPhoto(item) }
+            }
             .sheet(isPresented: $viewModel.showingPurchaseAlert) {
                 PaywallView(displayCloseButton: true)
                     .onPurchaseCompleted { customerInfo in
@@ -432,7 +448,28 @@ struct ContentView: View {
             } // End of VStack
         } // End of ZStack
     }
-    
+
+    @MainActor
+    private func importPhoto(_ item: PhotosPickerItem) async {
+        // Keep the original bytes rather than re-encoding: HEIC/PNG/JPEG all go
+        // to the backend as-is, and the extension has to match what we send.
+        let type = item.supportedContentTypes.first { SupportedFile.isSupported($0) }
+            ?? .jpeg
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self), !data.isEmpty else {
+                viewModel.errorMessage = "Couldn't read that photo. Try a different one."
+                viewModel.hasError = true
+                return
+            }
+            viewModel.importFile(
+                data: data,
+                filename: SupportedFile.filename("photo", fallbackURL: nil, type: type)
+            )
+        } catch {
+            viewModel.errorMessage = "Error loading photo: \(error.localizedDescription)"
+            viewModel.hasError = true
+        }
+    }
 }
 
 

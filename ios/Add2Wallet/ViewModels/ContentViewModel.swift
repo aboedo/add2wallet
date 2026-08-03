@@ -191,6 +191,48 @@ class ContentViewModel: ObservableObject {
         url.stopAccessingSecurityScopedResource()
     }
 
+    /// Entry point for files that arrive as raw bytes rather than a URL —
+    /// the Photos picker and clipboard paste.
+    func importFile(data: Data, filename: String) {
+        handleSharedFile(data: data, filename: filename)
+    }
+
+    /// Pulls the first supported document off a paste (or drop) payload.
+    func handlePastedProviders(_ providers: [NSItemProvider]) {
+        guard let (provider, type) = firstSupportedItem(in: providers) else {
+            errorMessage = "Nothing to paste — copy a PDF or an image first."
+            hasError = true
+            return
+        }
+
+        let suggestedName = provider.suggestedName
+        provider.loadDataRepresentation(forTypeIdentifier: type.identifier) { [weak self] data, error in
+            Task { @MainActor in
+                guard let self else { return }
+                guard let data, !data.isEmpty else {
+                    self.errorMessage = "Couldn't read the pasted file: \(error?.localizedDescription ?? "unknown error")"
+                    self.hasError = true
+                    return
+                }
+                self.importFile(
+                    data: data,
+                    filename: SupportedFile.filename(suggestedName, fallbackURL: nil, type: type)
+                )
+            }
+        }
+    }
+
+    private func firstSupportedItem(in providers: [NSItemProvider]) -> (NSItemProvider, UTType)? {
+        let candidates = providers.flatMap { provider in
+            provider.registeredTypeIdentifiers.compactMap { identifier -> (NSItemProvider, UTType)? in
+                guard let type = SupportedFile.contentType(forIdentifier: identifier) else { return nil }
+                return (provider, type)
+            }
+        }
+        // A pasted PDF also advertises a preview image; the document wins.
+        return candidates.first { $0.1.conforms(to: .pdf) } ?? candidates.first
+    }
+
     @MainActor
     func uploadSelected() {
         guard let url = selectedFileURL else { return }

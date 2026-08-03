@@ -1,0 +1,42 @@
+appId: com.andresboedo.add2wallet
+---
+# Regression: a tall portrait screenshot must not blow out the layout when the
+# "View original file" preview is expanded.
+# See maestro/regression/README.md for the fixture setup (simctl addmedia).
+# Onboarding must already be done — run maestro/screenshots/00_setup.yaml first.
+# (A fresh install also raises a StoreKit "Sign in to Apple Account" system alert
+# that Maestro can't see in the hierarchy, so don't clear state here.)
+- launchApp:
+    clearState: false
+    arguments:
+      SCREENSHOT_MODE: "1"
+- extendedWaitUntil:
+    visible:
+      text: "or try a demo"
+    timeout: 20000
+
+# Import the tall screenshot straight from Photos
+- tapOn:
+    id: "selectFromPhotosButton"
+- waitForAnimationToEnd
+- tapOn:
+    point: "13%,22%"
+- extendedWaitUntil:
+    visible:
+      text: "View original file"
+    timeout: 15000
+- takeScreenshot: maestro/regression/output/regression_portrait_collapsed
+
+# Expanding the preview is what used to break the layout
+- tapOn:
+    text: "View original file"
+- waitForAnimationToEnd
+- takeScreenshot: maestro/regression/output/regression_portrait_expanded
+
+# The rest of the screen must still be laid out correctly
+- assertVisible:
+    text: "Add2Wallet"
+- assertVisible:
+    text: "Original file"
+- assertVisible:
+    text: "Create Pass"
