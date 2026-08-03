@@ -119,8 +119,8 @@ def test_enhanced_pass_with_backlinks():
         'event_type': 'concert'
     }
     
-    # Create an enhanced pass
-    pass_data = pg.create_enhanced_pass(
+    # Create an enhanced pass — returns (pkpass bytes, warnings)
+    pass_data, warnings = pg.create_enhanced_pass(
         title='Enhanced Test Pass',
         description='Testing enhanced pass with backlinks',
         pass_info=pass_info,
@@ -128,8 +128,8 @@ def test_enhanced_pass_with_backlinks():
         fg_color='rgb(255,255,255)',
         label_color='rgb(255,255,255)'
     )
-    
-    print(f"   Created enhanced pass with {len(pass_data)} bytes")
+
+    print(f"   Created enhanced pass with {len(pass_data)} bytes, warnings={warnings}")
     assert len(pass_data) > 0, "Pass data should not be empty"
     
     # Extract and verify the pass.json contains associatedStoreIdentifiers
