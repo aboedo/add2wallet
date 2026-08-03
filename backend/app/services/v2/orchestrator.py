@@ -69,7 +69,11 @@ def create_passes_v2(
     # ------------------------------------------------------------------
     # Step 4: Extract colors
     # ------------------------------------------------------------------
-    bg_color, fg_color, label_color = extract_colors(pdf_bytes, extraction.document_type)
+    bg_color, fg_color, label_color = extract_colors(
+        pdf_bytes,
+        extraction.document_type,
+        brand_color=extraction.brand_color,
+    )
 
     # ------------------------------------------------------------------
     # Step 5: Consolidate barcodes and determine ticket count

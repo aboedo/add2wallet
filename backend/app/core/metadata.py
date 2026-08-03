@@ -388,11 +388,21 @@ gate_info, event_description, venue_type, capacity, website, phone,
 nearby_landmarks, public_transport, parking_info, age_restriction, dress_code,
 weather_considerations, amenities, accessibility, confidence_score,
 multiple_events, upcoming_events, venue_place_id, performer_names, exhibit_name,
-has_assigned_seating, event_urls, multiple_tickets, background_color,
+has_assigned_seating, event_urls, multiple_tickets, brand_color, background_color,
 foreground_color, label_color.
 
 Use null for unknown values. Keep title under 30 characters. Use rgb(R, G, B)
 strings for colors with readable contrast.
+
+brand_color is the one field you may reason about rather than copy: it becomes
+the background of the Wallet pass. Give it as hex #RRGGBB. Prefer the
+well-known brand colour of the issuing organization, venue, team, airline or
+event (a club's kit, an airline's livery, a museum's identity); failing that, a
+colour that suits this specific subject matter. Two different documents should
+rarely land on the same colour, so do not fall back on a generic red or blue —
+reach for the whole spectrum. It must be a deep, saturated colour that white
+text can sit on: no greys, pastels, near-white or near-black. Use null only if
+the document gives you nothing to go on.
 
 Dates must be YYYY-MM-DD and times HH:MM (24h). For a document that covers a
 range — a hotel stay, a car rental, a multi-day pass — put the start in
