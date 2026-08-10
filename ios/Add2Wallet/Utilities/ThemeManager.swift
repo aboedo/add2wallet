@@ -64,8 +64,14 @@ struct ThemeManager {
     // MARK: - Color System
     enum Colors {
         // Primary Brand Color (Teal from app icon)
-        static let brandPrimary = Color(red: 0.125, green: 0.698, blue: 0.667) // #20B2AA equivalent
-        static let brandSecondary = Color(red: 0.098, green: 0.549, blue: 0.525) // Darker teal
+        // The app has no colour of its own. Every pass arrives carrying a
+        // brand colour the backend inferred from the document, and a teal app
+        // sitting next to a Benfica-crimson card was two brands competing for
+        // the same screen with no hierarchy between them. Ink is the absence of
+        // a choice, which is exactly what you want when the content brings its
+        // own — and nothing clashes with black.
+        static let brandPrimary = Color(.label)
+        static let brandSecondary = Color(.secondaryLabel)
         
         // Surface Colors
         static let surfaceDefault = Color(.systemBackground)

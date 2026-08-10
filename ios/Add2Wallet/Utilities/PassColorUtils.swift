@@ -4,8 +4,11 @@ import Foundation
 struct PassColorUtils {
     
     // MARK: - Brand Colors (matching app icon teal palette)
-    private static let brandTeal = Color(red: 0.125, green: 0.698, blue: 0.667) // #20B2AA
-    private static let brandTealSecondary = Color(red: 0.098, green: 0.549, blue: 0.525) // Darker teal
+    // Last-resort accent for a pass that arrived with no colour at all. Grey
+    // rather than a brand colour: an unknown pass should look unknown, not
+    // like it belongs to us.
+    private static let brandTeal = Color(.systemGray)
+    private static let brandTealSecondary = Color(.systemGray2)
     
     static func parseRGBColor(_ rgbString: String) -> Color? {
         // Clean and normalize the input string

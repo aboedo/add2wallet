@@ -106,11 +106,13 @@ struct HeroCardStack: View {
             }
         }
         .padding(ThemeManager.Spacing.cardPadding)
+        // Ink, not a brand gradient. When a pass has been picked its own
+        // colour takes over; until then the card stays out of the way.
         .background(
             LinearGradient(
                 colors: [
-                    passColor?.opacity(0.8) ?? ThemeManager.Colors.brandPrimary,
-                    passColor ?? ThemeManager.Colors.brandSecondary
+                    passColor?.opacity(0.85) ?? Color(.label),
+                    passColor ?? Color(.label).opacity(0.88)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
