@@ -106,12 +106,13 @@ struct Timeline {
     /// flight and a hotel are one journey.
     static func build(from passes: [SavedPass]) -> Timeline {
         var items: [TimelineItem] = []
+        let home = TripGrouping.inferHome(from: passes)
 
         for cluster in TripGrouping.cluster(passes) {
             if TripGrouping.isJourney(cluster) {
                 items.append(.trip(Trip(
                     id: TripGrouping.identifier(for: cluster),
-                    name: tripName(for: cluster),
+                    name: tripName(for: cluster, home: home),
                     passes: cluster
                 )))
             } else {
@@ -132,15 +133,17 @@ struct Timeline {
         return Timeline(next: future.first, upcoming: Array(future.dropFirst()), past: past)
     }
 
-    /// The backend's name for the booking, else the city and month it covers.
-    private static func tripName(for passes: [SavedPass]) -> String {
+    /// Where you went, not when you filed it: "Spain, UK and Norway".
+    /// Falls back to the backend's booking name, then to the month.
+    private static func tripName(for passes: [SavedPass], home: String?) -> String {
+        if let destinations = TripGrouping.destinationSummary(for: passes, home: home) {
+            return destinations
+        }
         if let name = passes.compactMap(\.groupName).first(where: { !$0.isEmpty }) {
             return name
         }
-        let city = passes.compactMap { $0.city?.isEmpty == false ? $0.city : nil }.first
         let date = passes.map(\.eventDateOrFallback).min() ?? Date()
-        let month = date.formatted(.dateTime.month(.wide).year())
-        return city.map { "\($0), \(month)" } ?? month
+        return date.formatted(.dateTime.month(.wide).year())
     }
 }
 

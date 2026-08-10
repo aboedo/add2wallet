@@ -89,13 +89,22 @@ final class TripTimelineTests: XCTestCase {
 
     // MARK: - Trip naming
 
-    func testTripFallsBackToCityAndMonthWithoutABackendName() {
+    func testTripIsNamedAfterWhereItWentNotWhenItHappened() {
         let timeline = Timeline.build(from: [
             pass("Leg 1", date: nearFuture, city: "Lisbon", groupId: "NONAME"),
             pass("Leg 2", date: nearFuture, city: "Lisbon", groupId: "NONAME")
         ])
         guard case .trip(let trip)? = timeline.next else { return XCTFail("expected a trip") }
-        XCTAssertTrue(trip.name.hasPrefix("Lisbon, "), "got \(trip.name)")
+        XCTAssertEqual(trip.name, "Lisbon")
+    }
+
+    func testTripFallsBackToTheMonthWhenNowhereIsNamed() {
+        let timeline = Timeline.build(from: [
+            pass("Leg 1", date: nearFuture, groupId: "NONAME"),
+            pass("Leg 2", date: nearFuture, groupId: "NONAME")
+        ])
+        guard case .trip(let trip)? = timeline.next else { return XCTFail("expected a trip") }
+        XCTAssertFalse(trip.name.isEmpty)
     }
 
     // MARK: - The spine
