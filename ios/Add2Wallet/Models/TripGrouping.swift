@@ -273,9 +273,13 @@ enum TripGrouping {
 
 extension SavedPass {
     /// Every place this pass touches, normalised for comparison.
+    ///
+    /// A venue is a building, not a place you travel between: counting it here
+    /// made two museums in the same city look like two places and promoted an
+    /// afternoon in Paris into a "trip".
     var places: Set<String> {
         var result = Set<String>()
-        for value in [city, venue, metadata?.stateCountry] {
+        for value in [city, metadata?.stateCountry] {
             if let normalised = TripGrouping.normalise(value) { result.insert(normalised) }
         }
         for segment in segments {

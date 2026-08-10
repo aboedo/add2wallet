@@ -271,6 +271,16 @@ final class TripGroupingTests: XCTestCase {
         XCTAssertNil(TripGrouping.sharedBookingReference(in: mixed))
     }
 
+    func testTwoVenuesInTheSameCityAreNotTwoPlaces() {
+        // A venue is a building, not a place you travel between. Counting them
+        // promoted an afternoon of museums in Paris into a "trip".
+        let journey = trips([
+            pass("Eiffel Tower", date: "Sep 14, 2027", city: "Paris", confirmation: "E"),
+            pass("Musée d'Orsay", date: "Sep 15, 2027", city: "Paris", confirmation: "O")
+        ])
+        XCTAssertTrue(journey.isEmpty, "same city, different venues — still not a journey")
+    }
+
     // MARK: - Normalisation
 
     func testPlacesMatchAcrossAccentsAndCasing() {

@@ -290,3 +290,38 @@ extension UIColor {
         return (lightest + 0.05) / (darkest + 0.05)
     }
 }
+extension PassColorUtils {
+    /// The SF Symbol for a pass, chosen from its event type.
+    ///
+    /// Lifted out of `PassRowView` so every surface that draws a pass — the
+    /// timeline, a trip's legs, the detail header — picks the same glyph.
+    static func iconName(for metadata: EnhancedPassMetadata?, passType: String) -> String {
+        let type = (metadata?.eventType ?? passType).lowercased()
+
+        let matches: [(needles: [String], symbol: String)] = [
+            (["museum", "gallery", "exhibition"], "building.columns"),
+            (["concert", "music", "band"], "music.note"),
+            (["festival"], "star.circle"),
+            (["basketball"], "basketball"),
+            (["football", "soccer"], "soccerball"),
+            (["baseball"], "baseball"),
+            (["sport", "match", "stadium"], "sportscourt"),
+            (["flight", "airline", "boarding"], "airplane"),
+            (["movie", "cinema", "film"], "tv"),
+            (["transit", "train", "railway", "rail"], "train.side.front.car"),
+            (["bus"], "bus"),
+            (["ferry", "boat"], "ferry"),
+            (["theatre", "theater", "play", "broadway"], "theatermasks"),
+            (["parking"], "parkingsign"),
+            (["hotel", "accommodation"], "bed.double"),
+            (["restaurant", "dining"], "fork.knife"),
+            (["conference", "event"], "calendar"),
+            (["ticket"], "ticket")
+        ]
+
+        for match in matches where match.needles.contains(where: { type.contains($0) }) {
+            return match.symbol
+        }
+        return "wallet.pass"
+    }
+}

@@ -5,6 +5,10 @@ import MessageUI
 
 struct SavedPassDetailView: View {
     let savedPass: SavedPass
+    /// Pushed onto a stack rather than presented as a sheet. On iPad a sheet
+    /// meant a card floating over a mostly empty screen; pushing gives the
+    /// detail column something to hold.
+    var isPushed: Bool = false
     @Environment(\.dismiss) private var dismiss
     @State private var showingAddPassVC = false
     @State private var passViewController: PKAddPassesViewController?
@@ -24,8 +28,17 @@ struct SavedPassDetailView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ZStack {
+        Group {
+            if isPushed {
+                detailContent
+            } else {
+                NavigationView { detailContent }
+            }
+        }
+    }
+
+    private var detailContent: some View {
+        ZStack {
                 ScrollView {
                     VStack(spacing: 16) {
                         
@@ -105,13 +118,13 @@ struct SavedPassDetailView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(true)
+            .navigationBarBackButtonHidden(!isPushed)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        dismiss()
+                if !isPushed {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Done") { dismiss() }
+                            .fontWeight(.semibold)
                     }
-                    .fontWeight(.semibold)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -161,8 +174,6 @@ struct SavedPassDetailView: View {
                 .background(.thinMaterial)
             }
             .background(Color(.systemGroupedBackground))
-            
-        }
         .sheet(isPresented: $showingAddPassVC, onDismiss: {
             // Reset state after dismissal
             passAddedSuccessfully = false
