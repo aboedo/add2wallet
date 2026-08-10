@@ -183,14 +183,26 @@ struct TripLegCard: View {
 struct TripRouteStrip: View {
     let trip: Trip
 
+    /// One stop per place, not one per pass. Three nights and a museum in
+    /// Madrid is one dot on the route, not "Madrid → Madrid → Madrid".
     private var located: [(name: String, pass: SavedPass)] {
-        trip.passes
+        let stops = trip.passes
             .sorted { $0.eventDateOrFallback < $1.eventDateOrFallback }
-            .compactMap { pass in
+            .compactMap { pass -> (name: String, pass: SavedPass)? in
                 guard pass.metadata?.latitude != nil, pass.metadata?.longitude != nil else { return nil }
                 let name = pass.city ?? pass.displayVenue
                 return name.isEmpty ? nil : (name: name, pass: pass)
             }
+
+        return stops.reduce(into: [(name: String, pass: SavedPass)]()) { result, stop in
+            guard TripGrouping.normalise(result.last?.name) != TripGrouping.normalise(stop.name) else { return }
+            result.append(stop)
+        }
+    }
+
+    /// How many passes we could place, for the honest badge.
+    private var locatedPassCount: Int {
+        trip.passes.filter { $0.metadata?.latitude != nil && $0.metadata?.longitude != nil }.count
     }
 
     var body: some View {
@@ -217,8 +229,8 @@ struct TripRouteStrip: View {
                     .font(ThemeManager.Typography.caption)
                     .foregroundColor(ThemeManager.Colors.textSecondary)
 
-                if located.count < trip.passes.count {
-                    Text("\(located.count) of \(trip.passes.count) places located")
+                if locatedPassCount < trip.passes.count {
+                    Text("\(locatedPassCount) of \(trip.passes.count) places located")
                         .font(ThemeManager.Typography.caption)
                         .foregroundColor(ThemeManager.Colors.textTertiary)
                 }
