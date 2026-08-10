@@ -13,6 +13,7 @@
 		11226D19DF61F6D793216351 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3404A40820DCC113A4B8B9C9 /* Trip.swift */; };
 		12287767426EAE0AA86F27A0 /* FileUploadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B13712CA64237F9C753B7 /* FileUploadTests.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
+		169C4B8FC4BC3281C931C541 /* TripGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EE10D0EB30AA22928BF8ECD /* TripGrouping.swift */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
 		2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */; };
 		238A82DC3E4640EF5A13AFDA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 060631A1940D5F28CD477DAA /* RevenueCat */; };
@@ -51,6 +52,7 @@
 		AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */; };
 		B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
+		B8E901F173204438DA8858AF /* TripGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68794C33012813537B9B78E9 /* TripGroupingTests.swift */; };
 		BA3079A40A331D67B55E77CB /* TripTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */; };
 		C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */; };
 		D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2518CFE7B9502126499FA643 /* TestHelpers.swift */; };
@@ -169,8 +171,10 @@
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassColorUtils.swift; sourceTree = "<group>"; };
 		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		5EE10D0EB30AA22928BF8ECD /* TripGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGrouping.swift; sourceTree = "<group>"; };
 		5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_multi_ticket_response.json; sourceTree = "<group>"; };
 		6328294BD904F874321F4287 /* torre_ifel.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = torre_ifel.pdf; sourceTree = "<group>"; };
+		68794C33012813537B9B78E9 /* TripGroupingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGroupingTests.swift; sourceTree = "<group>"; };
 		6A622B26E336BBE5945AA0C9 /* PassKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassKitView.swift; sourceTree = "<group>"; };
 		71A33C0E1CF6C5AC9B3DCF49 /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
 		74CE070EB97417FF392D5060 /* PassGroupList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassGroupList.swift; sourceTree = "<group>"; };
@@ -240,6 +244,7 @@
 				5652AA292A42487F139B55E2 /* PassUsageManager.swift */,
 				54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */,
 				3404A40820DCC113A4B8B9C9 /* Trip.swift */,
+				5EE10D0EB30AA22928BF8ECD /* TripGrouping.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -437,6 +442,7 @@
 				4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */,
 				41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */,
 				2518CFE7B9502126499FA643 /* TestHelpers.swift */,
+				68794C33012813537B9B78E9 /* TripGroupingTests.swift */,
 				4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */,
 			);
 			path = Add2WalletTests;
@@ -601,6 +607,7 @@
 				79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */,
 				7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */,
 				11226D19DF61F6D793216351 /* Trip.swift in Sources */,
+				169C4B8FC4BC3281C931C541 /* TripGrouping.swift in Sources */,
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
 				E0849A5D57E3132B1E9683B3 /* NotificationManager.swift in Sources */,
 				EBBF5CD71B12D7962BE70965 /* PassManager.swift in Sources */,
@@ -659,6 +666,7 @@
 				AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */,
 				658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */,
 				D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */,
+				B8E901F173204438DA8858AF /* TripGroupingTests.swift in Sources */,
 				BA3079A40A331D67B55E77CB /* TripTimelineTests.swift in Sources */,
 				4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */,
 			);

@@ -101,29 +101,22 @@ struct Timeline {
 
     /// Groups passes into trips, then splits the result across the spine.
     ///
-    /// A trip needs two or more passes: a single pass that happens to carry a
-    /// booking reference is still just a pass, and wrapping it in a one-item
-    /// trip would add a tap without adding information.
+    /// Grouping is a client-side judgement (see `TripGrouping`): only the
+    /// device holds the whole library, so only the device can tell that a
+    /// flight and a hotel are one journey.
     static func build(from passes: [SavedPass]) -> Timeline {
-        var grouped: [String: [SavedPass]] = [:]
-        var standalone: [SavedPass] = []
+        var items: [TimelineItem] = []
 
-        for pass in passes {
-            if let tripId = pass.tripId {
-                grouped[tripId, default: []].append(pass)
+        for cluster in TripGrouping.cluster(passes) {
+            if TripGrouping.isJourney(cluster) {
+                items.append(.trip(Trip(
+                    id: TripGrouping.identifier(for: cluster),
+                    name: tripName(for: cluster),
+                    passes: cluster
+                )))
             } else {
-                standalone.append(pass)
+                items.append(contentsOf: cluster.map(TimelineItem.pass))
             }
-        }
-
-        var items: [TimelineItem] = standalone.map(TimelineItem.pass)
-
-        for (tripId, members) in grouped {
-            guard members.count > 1 else {
-                items.append(contentsOf: members.map(TimelineItem.pass))
-                continue
-            }
-            items.append(.trip(Trip(id: tripId, name: tripName(for: members), passes: members)))
         }
 
         let past = items.filter(\.isPast).sorted { $0.date > $1.date }
