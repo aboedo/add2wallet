@@ -8,9 +8,12 @@ import SwiftData
 /// broadcast, which was the tell that the split was never real. Importing is a
 /// modal act, not a place, so it became a sheet and the library became home.
 struct TimelineView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedPass.createdAt, order: .reverse) private var savedPasses: [SavedPass]
     @Binding var selection: TimelineItem?
     @State private var showingPast = false
+    /// Deleting a trip removes several passes at once, so it asks first.
+    @State private var pendingTripDeletion: Trip?
 
     private var timeline: Timeline { Timeline.build(from: savedPasses) }
 
@@ -23,6 +26,24 @@ struct TimelineView: View {
             }
         }
         .background(Color(.systemGroupedBackground))
+        .confirmationDialog(
+            "Delete this trip?",
+            isPresented: Binding(
+                get: { pendingTripDeletion != nil },
+                set: { if !$0 { pendingTripDeletion = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let trip = pendingTripDeletion {
+                Button("Delete \(trip.passCount) passes", role: .destructive) {
+                    delete(trip.passes)
+                    pendingTripDeletion = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { pendingTripDeletion = nil }
+        } message: {
+            Text("The passes already in Apple Wallet stay there. This only removes them from Add2Wallet.")
+        }
     }
 
     private var content: some View {
@@ -32,6 +53,7 @@ struct TimelineView: View {
                     section("NEXT UP") {
                         TimelineFeatureCard(item: next)
                             .onTapGesture { select(next) }
+                            .deletable(item: next, onDelete: requestDeletion)
                     }
                 }
 
@@ -41,6 +63,7 @@ struct TimelineView: View {
                             ForEach(timeline.upcoming) { item in
                                 TimelineRow(item: item)
                                     .onTapGesture { select(item) }
+                                    .deletable(item: item, onDelete: requestDeletion)
                             }
                         }
                     }
@@ -61,6 +84,7 @@ struct TimelineView: View {
                 ForEach(timeline.past) { item in
                     TimelineRow(item: item)
                         .onTapGesture { select(item) }
+                        .deletable(item: item, onDelete: requestDeletion)
                 }
             }
             .padding(.top, ThemeManager.Spacing.sm)
@@ -90,6 +114,28 @@ struct TimelineView: View {
                 .foregroundColor(ThemeManager.Colors.textSecondary)
             content()
         }
+    }
+
+    /// A single pass goes straight away; a trip asks first, because one tap
+    /// would otherwise take several passes with it.
+    private func requestDeletion(of item: TimelineItem) {
+        switch item {
+        case .pass(let pass):
+            delete([pass])
+        case .trip(let trip):
+            pendingTripDeletion = trip
+        }
+    }
+
+    private func delete(_ passes: [SavedPass]) {
+        ThemeManager.Haptics.medium()
+        withAnimation(ThemeManager.Animations.standard) {
+            for pass in passes {
+                if selection?.id.contains(pass.id) == true { selection = nil }
+                modelContext.delete(pass)
+            }
+        }
+        try? modelContext.save()
     }
 
     private func select(_ item: TimelineItem) {
@@ -391,5 +437,20 @@ enum TimelineFormatter {
             parts.append(pass.displayVenue)
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+}
+
+
+private extension View {
+    /// Long press to delete. `swipeActions` only works inside a `List`, and the
+    /// timeline is a LazyVStack, so a swipe here would be a no-op that looks
+    /// like a feature. A visible affordance in the detail screen is still owed.
+    func deletable(item: TimelineItem, onDelete: @escaping (TimelineItem) -> Void) -> some View {
+        contextMenu {
+            Button(role: .destructive) { onDelete(item) } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+
     }
 }
