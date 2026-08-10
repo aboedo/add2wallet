@@ -10,6 +10,8 @@ struct SavedPassDetailView: View {
     /// detail column something to hold.
     var isPushed: Bool = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var confirmingDelete = false
     @State private var showingAddPassVC = false
     @State private var passViewController: PKAddPassesViewController?
     @State private var statusMessage: String?
@@ -154,16 +156,29 @@ struct SavedPassDetailView: View {
                             }
                             .themedPrimaryButton()
                             
-                            // Report issue — subtle text link
-                            Button {
-                                ThemeManager.Haptics.selection()
-                                reportIssue()
-                            } label: {
-                                Text("Report an issue")
-                                    .font(ThemeManager.Typography.footnote)
-                                    .foregroundColor(ThemeManager.Colors.textTertiary)
+                            // Delete and report — visible, because a long press
+                            // is a hidden gesture and deleting must not be one.
+                            HStack(spacing: ThemeManager.Spacing.lg) {
+                                Button {
+                                    ThemeManager.Haptics.selection()
+                                    confirmingDelete = true
+                                } label: {
+                                    Label("Delete pass", systemImage: "trash")
+                                        .font(ThemeManager.Typography.footnote)
+                                        .foregroundColor(ThemeManager.Colors.error)
+                                }
+                                .buttonStyle(.plain)
+
+                                Button {
+                                    ThemeManager.Haptics.selection()
+                                    reportIssue()
+                                } label: {
+                                    Text("Report an issue")
+                                        .font(ThemeManager.Typography.footnote)
+                                        .foregroundColor(ThemeManager.Colors.textTertiary)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -174,6 +189,17 @@ struct SavedPassDetailView: View {
                 .background(.thinMaterial)
             }
             .background(Color(.systemGroupedBackground))
+        .confirmationDialog("Delete this pass?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                ThemeManager.Haptics.medium()
+                modelContext.delete(savedPass)
+                try? modelContext.save()
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("If it is already in Apple Wallet it stays there. This only removes it from Add2Wallet.")
+        }
         .sheet(isPresented: $showingAddPassVC, onDismiss: {
             // Reset state after dismissal
             passAddedSuccessfully = false
