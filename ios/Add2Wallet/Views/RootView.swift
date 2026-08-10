@@ -120,7 +120,9 @@ struct RootView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, ThemeManager.Spacing.md)
         .padding(.bottom, ThemeManager.Spacing.sm)
-        .background(.bar)
+        // The one true navigation layer in this app: a control floating over
+        // content. Real Liquid Glass where the OS has it, a material below.
+        .modifier(FloatingBarBackground())
     }
 
     @ViewBuilder
@@ -148,5 +150,23 @@ struct DetailPlaceholder: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
+    }
+}
+
+
+/// Liquid Glass on the floating action bar.
+///
+/// Apple reserves glass for the navigation layer above content, which is
+/// exactly what this bar is. The deployment target is iOS 17, so the real API
+/// is used where it exists and a bar material stands in below it — the system
+/// handles Reduce Transparency in both cases, so there is no hand-rolled
+/// accessibility fallback here.
+struct FloatingBarBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: .rect(cornerRadius: 0))
+        } else {
+            content.background(.bar)
+        }
     }
 }

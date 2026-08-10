@@ -126,6 +126,17 @@ struct ThemeManager {
     }
     
     // MARK: - Glass Effects (iOS 26 Liquid Glass)
+    ///
+    /// Apple's rules, and where we stand against them:
+    /// 1. Glass is for the navigation layer floating above content — never for
+    ///    the content itself. Content cards are opaque (see `sectionCard`).
+    /// 2. Never stack glass on glass, so nothing inside a sheet gets it.
+    /// 3. Tint only primary actions.
+    /// 4. Accessibility (Reduce Transparency) is handled by the system; do not
+    ///    hand-roll fallbacks.
+    ///
+    /// The deployment target is iOS 17, so the real `glassEffect` API is used
+    /// where it exists and a material stands in below that.
     enum GlassEffect {
         // Glass effect view modifier helper
         static func regular<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -186,10 +197,16 @@ struct ThemeManager {
         }
         
         // Section Card (iOS 26 Glass)
+        /// A content card. Deliberately **opaque**: Apple's guidance is that
+        /// Liquid Glass belongs to the navigation layer that floats above the
+        /// content, never to the content itself. Glass here also meant glass on
+        /// glass once a card sat inside a sheet, which is the other rule it
+        /// breaks. Solid keeps the hierarchy legible: content is the substrate,
+        /// controls float over it.
         static func sectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
             content()
                 .padding(Spacing.cardPadding)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.card))
+                .background(Colors.surfaceCard, in: RoundedRectangle(cornerRadius: CornerRadius.card))
         }
         
         // List Row with Color Stripe
