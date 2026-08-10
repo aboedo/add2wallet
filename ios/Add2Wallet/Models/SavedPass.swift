@@ -107,10 +107,29 @@ class SavedPass {
         )
     }
 
+    /// Decoded once per pass. `metadataJSON` is written at init and never
+    /// mutated, and the timeline asks for this dozens of times per pass while
+    /// grouping — a full decode of a fifty-field blob each time.
+    private static let decodedMetadata = NSCache<NSString, MetadataBox>()
+
+    private final class MetadataBox {
+        let value: EnhancedPassMetadata
+        init(_ value: EnhancedPassMetadata) { self.value = value }
+    }
+
     // Computed property to retrieve the full metadata
     var metadata: EnhancedPassMetadata? {
         guard let metadataJSON = metadataJSON else { return nil }
-        return try? JSONDecoder().decode(EnhancedPassMetadata.self, from: metadataJSON)
+
+        let key = id as NSString
+        if let cached = SavedPass.decodedMetadata.object(forKey: key) {
+            return cached.value
+        }
+        guard let decoded = try? JSONDecoder().decode(EnhancedPassMetadata.self, from: metadataJSON) else {
+            return nil
+        }
+        SavedPass.decodedMetadata.setObject(MetadataBox(decoded), forKey: key)
+        return decoded
     }
     
     // Convenience computed properties for display
@@ -183,41 +202,55 @@ class SavedPass {
         return Calendar.current.startOfDay(for: eventDay) < Calendar.current.startOfDay(for: Date())
     }
     
-    // Parse event date string or fallback to creation date for sorting/grouping
+    /// Built once. Creating a `DateFormatter` is expensive, and this list was
+    /// being rebuilt — seventeen of them — on *every* call.
+    private static let eventDateFormatters: [DateFormatter] = [
+        "MMM d, yyyy 'at' h:mm a",
+        "MMM d, yyyy h:mm a",
+        "MMMM d, yyyy 'at' h:mm a",
+        "MMMM d, yyyy h:mm a",
+        "M/d/yy, h:mm a",
+        "M/d/yyyy, h:mm a",
+        "d/M/yy, h:mm a",
+        "yyyy-MM-dd'T'HH:mm:ss",
+        "yyyy-MM-dd HH:mm:ss",
+        "MMM d, yyyy",
+        "MMMM d, yyyy",
+        "MM/dd/yyyy",
+        "dd/MM/yyyy",
+        "yyyy-MM-dd",
+        "d MMMM yyyy",
+        "MMM d",
+        "MMMM d"
+    ].map { format in
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = format
+        return formatter
+    }
+
+    /// Parsing the same handful of strings over and over is the hot path: the
+    /// timeline sorts, groups and filters, and every comparison asks for this.
+    private static let parsedDates = NSCache<NSString, NSDate>()
+
+    /// Parse event date string or fallback to creation date for sorting/grouping.
     var eventDateOrFallback: Date {
-        if let eventDateString = eventDate, !eventDateString.isEmpty {
-            // Try common date formats — with time first (more specific), then date-only
-            let formatters = [
-                "MMM d, yyyy 'at' h:mm a",  // "Dec 15, 2024 at 8:00 PM"
-                "MMM d, yyyy h:mm a",        // "Dec 15, 2024 8:00 PM"
-                "MMMM d, yyyy 'at' h:mm a",  // "December 15, 2024 at 8:00 PM"
-                "MMMM d, yyyy h:mm a",       // "December 15, 2024 8:00 PM"
-                "M/d/yy, h:mm a",            // "4/4/26, 2:45 PM" (localized short format)
-                "M/d/yyyy, h:mm a",          // "4/4/2026, 2:45 PM"
-                "d/M/yy, h:mm a",            // "4/4/26, 2:45 PM" (EU)
-                "yyyy-MM-dd'T'HH:mm:ss",     // "2024-12-15T20:00:00"
-                "yyyy-MM-dd HH:mm:ss",       // "2024-12-15 20:00:00"
-                "MMM d, yyyy",               // "Dec 15, 2024"
-                "MMMM d, yyyy",              // "December 15, 2024"
-                "MM/dd/yyyy",                // "12/15/2024"
-                "dd/MM/yyyy",                // "15/12/2024"
-                "yyyy-MM-dd",                // "2024-12-15"
-                "d MMMM yyyy",               // "15 December 2024"
-                "MMM d",                     // "Dec 15" (current year assumed)
-                "MMMM d"                     // "December 15" (current year assumed)
-            ]
-            
-            for formatString in formatters {
-                let formatter = DateFormatter()
-                formatter.locale = Locale(identifier: "en_US_POSIX")
-                formatter.dateFormat = formatString
-                if let parsedDate = formatter.date(from: eventDateString) {
-                    return parsedDate
-                }
+        guard let eventDateString = eventDate, !eventDateString.isEmpty else {
+            return createdAt
+        }
+
+        let key = eventDateString as NSString
+        if let cached = SavedPass.parsedDates.object(forKey: key) {
+            return cached as Date
+        }
+
+        for formatter in SavedPass.eventDateFormatters {
+            if let parsed = formatter.date(from: eventDateString) {
+                SavedPass.parsedDates.setObject(parsed as NSDate, forKey: key)
+                return parsed
             }
         }
-        
-        // Fallback to creation date
+
         return createdAt
     }
 }

@@ -249,6 +249,29 @@ final class TripTimelineTests: XCTestCase {
         XCTAssertEqual(saved.groupName, "Summer in Iberia")
     }
 
+    /// The build that shipped as 45 was killed by the launch watchdog: the
+    /// timeline rebuilt seventeen DateFormatters and re-decoded the whole
+    /// metadata blob on every comparison, so a real library took the app past
+    /// the 10-second scene-create budget. This is the guard.
+    func testBuildingATimelineForAFullLibraryIsFast() {
+        var passes: [SavedPass] = []
+        for index in 0..<200 {
+            passes.append(pass(
+                "Pass \(index)",
+                date: "2027-0\((index % 9) + 1)-1\(index % 9)",
+                city: ["Madrid", "Lisbon", "Montevideo", "Paris"][index % 4],
+                groupId: index % 3 == 0 ? "G\(index / 3)" : nil
+            ))
+        }
+
+        let started = Date()
+        let timeline = Timeline.build(from: passes)
+        let elapsed = Date().timeIntervalSince(started)
+
+        XCTAssertFalse(timeline.isEmpty)
+        XCTAssertLessThan(elapsed, 1.0, "200 passes took \(elapsed)s — the launch watchdog allows 10s for everything")
+    }
+
     func testAPassImportedBeforeTripsShippedHasNoTrip() {
         // Existing rows migrate with nil group fields and must stay standalone.
         let legacy = SavedPass(passType: "Event", title: "Old pass", eventDate: nearFuture)
