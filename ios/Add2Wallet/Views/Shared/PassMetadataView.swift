@@ -16,12 +16,16 @@ struct PassMetadataView: View {
         self.ticketCount = ticketCount
     }
     
+    // `.detailView` used to paint white, from when it sat on the pass's own
+    // colour. It now renders inside a light card, so white text on a white
+    // background made the date and venue invisible — the detail screen looked
+    // empty when it was fully populated.
     private var primaryTextColor: Color {
         switch style {
         case .contentView:
             return .primary
         case .detailView:
-            return .white.opacity(0.9)
+            return ThemeManager.Colors.textPrimary
         }
     }
     
@@ -30,7 +34,7 @@ struct PassMetadataView: View {
         case .contentView:
             return .secondary
         case .detailView:
-            return .white.opacity(0.7)
+            return ThemeManager.Colors.textSecondary
         }
     }
     
@@ -39,7 +43,7 @@ struct PassMetadataView: View {
         case .contentView:
             return ThemeManager.Colors.brandPrimary
         case .detailView:
-            return .white.opacity(0.9)
+            return ThemeManager.Colors.brandPrimary
         }
     }
     

@@ -10,7 +10,6 @@ struct ContentView: View {
     @EnvironmentObject var passUsageManager: PassUsageManager
     @State private var passViewController: PKAddPassesViewController?
     @State private var showingAddPassVC = false
-    @State private var selectedTab = 0
     @State private var showingFullScreenPDF = false
     @State private var showingSuccessView = false
     @State private var passAddedSuccessfully = false
@@ -25,27 +24,18 @@ struct ContentView: View {
     @State private var showingPhotoPicker = false
     @State private var selectedPhoto: PhotosPickerItem?
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     
     #if DEBUG
     @StateObject private var debugDetector = DebugShakeDetector.shared
     #endif
     
+    /// The import flow. It used to be a tab that ended by ejecting you into
+    /// the other tab; it is a modal transaction, so it is presented as one.
     var body: some View {
-        TabView(selection: $selectedTab) {
-            generatePassView
-                .tabItem {
-                    Label("Generate Pass", systemImage: "plus.circle")
-                }
-                .tag(0)
-            
-            SavedPassesView()
-                .tabItem {
-                    Label("My Passes", systemImage: "wallet.pass")
-                }
-                .tag(1)
-        }
+        generatePassView
         #if DEBUG
-        .debugRevenueCatOverlay(isPresented: $debugDetector.isDebugOverlayPresented)
+            .debugRevenueCatOverlay(isPresented: $debugDetector.isDebugOverlayPresented)
         #endif
     }
     
@@ -146,9 +136,9 @@ struct ContentView: View {
                                     // Post-add state: pass was added to wallet
                                     Button {
                                         ThemeManager.Haptics.light()
-                                        selectedTab = 1
+                                        dismiss()
                                     } label: {
-                                        Label("View in My Passes", systemImage: "wallet.pass")
+                                        Label("Done", systemImage: "checkmark")
                                     }
                                     .themedPrimaryButton()
 
@@ -287,13 +277,6 @@ struct ContentView: View {
                 ) { _ in
                     self.passViewController = nil
                     self.showingAddPassVC = false
-                }
-                NotificationCenter.default.addObserver(
-                    forName: NSNotification.Name("SwitchToGeneratePassTab"),
-                    object: nil,
-                    queue: .main
-                ) { _ in
-                    self.selectedTab = 0
                 }
                 NotificationCenter.default.addObserver(
                     forName: NSNotification.Name("ShowSupportEmail"),

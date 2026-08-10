@@ -10,8 +10,11 @@
 		02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */; };
 		03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = C0628EC3E9565A946EC494F7 /* torre ifel.pdf */; };
 		0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */; };
+		11226D19DF61F6D793216351 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3404A40820DCC113A4B8B9C9 /* Trip.swift */; };
 		12287767426EAE0AA86F27A0 /* FileUploadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B13712CA64237F9C753B7 /* FileUploadTests.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
+		169C4B8FC4BC3281C931C541 /* TripGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EE10D0EB30AA22928BF8ECD /* TripGrouping.swift */; };
+		1A98B31F780D6C7A462145ED /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94B11E50C253EF801D05C46 /* TimelineView.swift */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
 		2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */; };
 		238A82DC3E4640EF5A13AFDA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 060631A1940D5F28CD477DAA /* RevenueCat */; };
@@ -27,6 +30,7 @@
 		4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */; };
 		4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */; };
 		4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */; };
+		512CCF786DC0A253CCF22972 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE748F2CC8B2B17A8556650 /* TripDetailView.swift */; };
 		54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */; };
 		5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */ = {isa = PBXBuildFile; fileRef = 5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */; };
 		60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */; };
@@ -48,8 +52,11 @@
 		A7BD8FAAAA7A47BEBE474014 /* ScreenshotModeSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2386722CE6A91621AA0C638E /* ScreenshotModeSeeder.swift */; };
 		AD3E9B86369A7493CB041239 /* ProgressViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A33C0E1CF6C5AC9B3DCF49 /* ProgressViewModel.swift */; };
 		AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */; };
+		AF1F3CC7D2DE7BD59BA0BF56 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486E5BA67114879A00D77A8B /* RootView.swift */; };
 		B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
+		B8E901F173204438DA8858AF /* TripGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68794C33012813537B9B78E9 /* TripGroupingTests.swift */; };
+		BA3079A40A331D67B55E77CB /* TripTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */; };
 		C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */; };
 		D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2518CFE7B9502126499FA643 /* TestHelpers.swift */; };
 		DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */; };
@@ -141,6 +148,7 @@
 		14163BCA5715B9BC2F933391 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		169E5D42997400CE2FC8E0A8 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		17084492D3D54D54EB5C4FDF /* MailComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailComposeView.swift; sourceTree = "<group>"; };
+		1BE748F2CC8B2B17A8556650 /* TripDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailView.swift; sourceTree = "<group>"; };
 		1CE7FC42ECD8EB77B1730666 /* mock_upload_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_upload_response.json; sourceTree = "<group>"; };
 		20402F2F51A6E2826F18CF35 /* PassManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassManager.swift; sourceTree = "<group>"; };
 		231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatterTests.swift; sourceTree = "<group>"; };
@@ -152,11 +160,14 @@
 		2A325F414CB4D737F46E1705 /* eTicket.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = eTicket.pdf; sourceTree = "<group>"; };
 		2AC034AAF4C174BE855348E0 /* SupportedFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedFile.swift; sourceTree = "<group>"; };
 		2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatter.swift; sourceTree = "<group>"; };
+		3404A40820DCC113A4B8B9C9 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2WalletTests.swift"; sourceTree = "<group>"; };
 		40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = pass_with_data_matrix.pdf; sourceTree = "<group>"; };
 		413E059A05815E3BF7D737BC /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtensionTests.swift; sourceTree = "<group>"; };
+		486E5BA67114879A00D77A8B /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Add2WalletShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimelineTests.swift; sourceTree = "<group>"; };
 		4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassUsageManagerTests.swift; sourceTree = "<group>"; };
 		50AEC1A177FC2937D94926BA /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		54837C8CBF4AA918D1214C04 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
@@ -165,8 +176,10 @@
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassColorUtils.swift; sourceTree = "<group>"; };
 		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		5EE10D0EB30AA22928BF8ECD /* TripGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGrouping.swift; sourceTree = "<group>"; };
 		5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_multi_ticket_response.json; sourceTree = "<group>"; };
 		6328294BD904F874321F4287 /* torre_ifel.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = torre_ifel.pdf; sourceTree = "<group>"; };
+		68794C33012813537B9B78E9 /* TripGroupingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGroupingTests.swift; sourceTree = "<group>"; };
 		6A622B26E336BBE5945AA0C9 /* PassKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassKitView.swift; sourceTree = "<group>"; };
 		71A33C0E1CF6C5AC9B3DCF49 /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
 		74CE070EB97417FF392D5060 /* PassGroupList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassGroupList.swift; sourceTree = "<group>"; };
@@ -189,6 +202,7 @@
 		C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassAddedSuccessView.swift; sourceTree = "<group>"; };
 		C7287DB2FC0F76437E783DEA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPreviewView.swift; sourceTree = "<group>"; };
+		D94B11E50C253EF801D05C46 /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
 		D95DDDEA770B4ED9E33B7BB8 /* Storekit.storekit */ = {isa = PBXFileReference; path = Storekit.storekit; sourceTree = "<group>"; };
 		E4007BE507E682A88BCC8519 /* Add2WalletShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2WalletShareExtension.entitlements; sourceTree = "<group>"; };
 		E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPassesView.swift; sourceTree = "<group>"; };
@@ -235,6 +249,8 @@
 				9882D480F39DC0E9DBF042D4 /* PassTicketInfo.swift */,
 				5652AA292A42487F139B55E2 /* PassUsageManager.swift */,
 				54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */,
+				3404A40820DCC113A4B8B9C9 /* Trip.swift */,
+				5EE10D0EB30AA22928BF8ECD /* TripGrouping.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -351,8 +367,11 @@
 				284B8475DB1A77104B35E3FF /* OnboardingView.swift */,
 				C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */,
 				CC4FE34EBD7F78BDA23C5DD0 /* PDFPreviewView.swift */,
+				486E5BA67114879A00D77A8B /* RootView.swift */,
 				EE9C0529545E7360F1E998D1 /* SavedPassDetailView.swift */,
 				E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */,
+				D94B11E50C253EF801D05C46 /* TimelineView.swift */,
+				1BE748F2CC8B2B17A8556650 /* TripDetailView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -432,6 +451,8 @@
 				4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */,
 				41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */,
 				2518CFE7B9502126499FA643 /* TestHelpers.swift */,
+				68794C33012813537B9B78E9 /* TripGroupingTests.swift */,
+				4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */,
 			);
 			path = Add2WalletTests;
 			sourceTree = "<group>";
@@ -594,6 +615,8 @@
 				EE4462794A4F0F4574C3FE5A /* PassTicketInfo.swift in Sources */,
 				79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */,
 				7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */,
+				11226D19DF61F6D793216351 /* Trip.swift in Sources */,
+				169C4B8FC4BC3281C931C541 /* TripGrouping.swift in Sources */,
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
 				E0849A5D57E3132B1E9683B3 /* NotificationManager.swift in Sources */,
 				EBBF5CD71B12D7962BE70965 /* PassManager.swift in Sources */,
@@ -612,6 +635,7 @@
 				DB1CF464CA38D4B3978177DA /* OnboardingView.swift in Sources */,
 				DF4F69EF51DBD270C2310945 /* PDFPreviewView.swift in Sources */,
 				E2F6FF5D4CBF46C13774A890 /* PassAddedSuccessView.swift in Sources */,
+				AF1F3CC7D2DE7BD59BA0BF56 /* RootView.swift in Sources */,
 				9309C751C99049EC4196C546 /* SavedPassDetailView.swift in Sources */,
 				54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */,
 				6D9DD850B7184921D72245FE /* AsyncMapView.swift in Sources */,
@@ -625,6 +649,8 @@
 				ED5B8B52313A45DFA5CC67A4 /* ProgressView.swift in Sources */,
 				B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */,
 				6B309F80230F2242AD209547 /* WarningsView.swift in Sources */,
+				1A98B31F780D6C7A462145ED /* TimelineView.swift in Sources */,
+				512CCF786DC0A253CCF22972 /* TripDetailView.swift in Sources */,
 				3463F9625CB4E00D2BD042B1 /* TuistAssets+Add2Wallet.swift in Sources */,
 				83279241905BE6DC89A5470A /* TuistBundle+Add2Wallet.swift in Sources */,
 			);
@@ -652,6 +678,8 @@
 				AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */,
 				658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */,
 				D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */,
+				B8E901F173204438DA8858AF /* TripGroupingTests.swift in Sources */,
+				BA3079A40A331D67B55E77CB /* TripTimelineTests.swift in Sources */,
 				4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

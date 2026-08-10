@@ -69,6 +69,14 @@ struct EnhancedPassMetadata: Codable {
     let hasAssignedSeating: Bool?
     let eventUrls: EventURLs?
 
+    // Trip identity and per-leg detail. A five-leg booking arrives as five
+    // passes sharing one groupId, each carrying its own segment.
+    let groupId: String?
+    let groupName: String?
+    let route: String?
+    let segment: PassSegment?
+    let segments: [PassSegment]?
+
     enum CodingKeys: String, CodingKey {
         case eventType = "event_type"
         case eventName = "event_name"
@@ -118,6 +126,11 @@ struct EnhancedPassMetadata: Codable {
         case exhibitName = "exhibit_name"
         case hasAssignedSeating = "has_assigned_seating"
         case eventUrls = "event_urls"
+        case groupId = "group_id"
+        case groupName = "group_name"
+        case route
+        case segment
+        case segments
     }
 
     init(
@@ -168,7 +181,12 @@ struct EnhancedPassMetadata: Codable {
         performerNames: [String]? = nil,
         exhibitName: String? = nil,
         hasAssignedSeating: Bool? = nil,
-        eventUrls: EventURLs? = nil
+        eventUrls: EventURLs? = nil,
+        groupId: String? = nil,
+        groupName: String? = nil,
+        route: String? = nil,
+        segment: PassSegment? = nil,
+        segments: [PassSegment]? = nil
     ) {
         self.eventType = eventType
         self.eventName = eventName
@@ -213,6 +231,11 @@ struct EnhancedPassMetadata: Codable {
         self.labelColor = labelColor
         self.multipleEvents = multipleEvents
         self.upcomingEvents = upcomingEvents
+        self.groupId = groupId
+        self.groupName = groupName
+        self.route = route
+        self.segment = segment
+        self.segments = segments
         self.venuePlaceId = venuePlaceId
         self.performerNames = performerNames
         self.exhibitName = exhibitName
@@ -253,6 +276,54 @@ struct UpcomingEvent: Codable {
         case isActive = "is_active"
         case headerImageUrl = "header_image_url"
         case venueMapUrl = "venue_map_url"
+    }
+}
+
+/// One leg of a multi-part booking — a train ride, a flight, a night.
+/// Mirrors the backend's `PassSegment`.
+struct PassSegment: Codable, Hashable {
+    let page: Int?
+    let label: String?
+    let origin: String?
+    let destination: String?
+    let departDate: String?
+    let departTime: String?
+    let arriveDate: String?
+    let arriveTime: String?
+    let carrier: String?
+    let vehicleInfo: String?
+    let seatInfo: String?
+    let travelClass: String?
+    let confirmationNumber: String?
+    let traveler: String?
+    let notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case page
+        case label
+        case origin
+        case destination
+        case departDate = "depart_date"
+        case departTime = "depart_time"
+        case arriveDate = "arrive_date"
+        case arriveTime = "arrive_time"
+        case carrier
+        case vehicleInfo = "vehicle_info"
+        case seatInfo = "seat_info"
+        case travelClass = "travel_class"
+        case confirmationNumber = "confirmation_number"
+        case traveler
+        case notes
+    }
+
+    /// "Málaga → Madrid", or whichever end we know. Nil when neither is present.
+    var routeDescription: String? {
+        switch (origin, destination) {
+        case let (origin?, destination?): return "\(origin) → \(destination)"
+        case let (origin?, nil): return origin
+        case let (nil, destination?): return destination
+        default: return nil
+        }
     }
 }
 

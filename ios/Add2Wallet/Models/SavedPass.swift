@@ -22,7 +22,18 @@ class SavedPass {
 
     // Store the full metadata as JSON for complete preservation
     var metadataJSON: Data?
-    
+
+    // Trip identity, denormalised out of the metadata blob so passes can be
+    // grouped without decoding every record. Optional with a default, so
+    // SwiftData migrates existing stores automatically — passes imported
+    // before this shipped simply have no trip and stay standalone.
+    var groupId: String?
+    var groupName: String?
+
+    /// Trip assigned by the user rather than by the booking reference. Takes
+    /// precedence over `groupId` so "Move to trip…" can override the backend.
+    var manualTripId: String?
+
     init(
         id: String = UUID().uuidString,
         createdAt: Date = Date(),
@@ -36,7 +47,8 @@ class SavedPass {
         pdfData: Data? = nil,
         sourceFilename: String? = nil,
         sourceContentTypeIdentifier: String? = nil,
-        metadata: EnhancedPassMetadata? = nil
+        metadata: EnhancedPassMetadata? = nil,
+        manualTripId: String? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -51,9 +63,35 @@ class SavedPass {
         self.sourceFilename = sourceFilename
         self.sourceContentTypeIdentifier = sourceContentTypeIdentifier
 
+        self.manualTripId = manualTripId
+
         if let metadata = metadata {
             self.metadataJSON = try? JSONEncoder().encode(metadata)
+            self.groupId = metadata.groupId
+            self.groupName = metadata.groupName
         }
+    }
+
+    /// The trip this pass belongs to, or nil when it stands alone.
+    /// A user's manual assignment beats the booking reference.
+    var tripId: String? {
+        if let manualTripId, !manualTripId.isEmpty { return manualTripId }
+        guard let groupId, !groupId.isEmpty else { return nil }
+        return groupId
+    }
+
+    /// Legs of a multi-part booking. A pass split out of an itinerary carries
+    /// its own single leg; an unsplit booking carries the whole list.
+    var segments: [PassSegment] {
+        guard let metadata else { return [] }
+        if let segment = metadata.segment { return [segment] }
+        return metadata.segments ?? []
+    }
+
+    /// "Málaga → Madrid" when this pass represents a journey.
+    var routeDescription: String? {
+        if let route = metadata?.route, !route.isEmpty { return route }
+        return segments.first?.routeDescription
     }
     
     var sourceData: Data? { pdfData }

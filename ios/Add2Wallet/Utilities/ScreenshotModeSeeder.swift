@@ -44,7 +44,10 @@ struct ScreenshotModeSeeder {
         let now = Date()
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
+        // The backend sends ISO dates and `PassDateTimeFormatter` only parses
+        // those. Seeding "Aug 25, 2026" made every seeded pass silently lose
+        // its date, so the screenshots lied about what the app renders.
+        formatter.dateFormat = "yyyy-MM-dd"
 
         struct FakePassData {
             let title: String
@@ -53,6 +56,15 @@ struct ScreenshotModeSeeder {
             let passType: String
             let daysFromNow: Int
             let color: String  // rgb() string
+            // A journey's legs. Without these the seeded library has no travel
+            // in it, so grouping never fires and the trip screens cannot be
+            // seen at all — which is how they went unverified.
+            var origin: String? = nil
+            var destination: String? = nil
+            var departTime: String? = nil
+            var seat: String? = nil
+            var latitude: Double? = nil
+            var longitude: Double? = nil
         }
 
         let fakeData: [FakePassData] = [
@@ -62,6 +74,19 @@ struct ScreenshotModeSeeder {
             FakePassData(title: "Eiffel Tower",              venue: "Champ de Mars",               city: "Paris",     passType: "attraction", daysFromNow: 35, color: "rgb(255,196,0)"),
             FakePassData(title: "Musée d'Orsay",            venue: "Rue de la Légion d'Honneur",  city: "Paris",     passType: "museum",     daysFromNow: 36, color: "rgb(255,140,0)"),
             FakePassData(title: "JFK → CDG",                venue: "John F. Kennedy Intl.",       city: "New York",  passType: "flight",     daysFromNow: 50, color: "rgb(0,122,255)"),
+
+            // One real journey: out of Montevideo, three days in Madrid, home
+            // again. The return is what closes the trip.
+            FakePassData(title: "Air Europa UX046", venue: "Carrasco Intl.", city: "Montevideo", passType: "flight", daysFromNow: 60, color: "rgb(0,94,184)",
+                         origin: "Montevideo", destination: "Madrid", departTime: "23:55", seat: "14A",
+                         latitude: -34.838, longitude: -56.030),
+            FakePassData(title: "Hotel Riu Plaza España", venue: "Gran Vía 84", city: "Madrid", passType: "hotel", daysFromNow: 61, color: "rgb(140,90,20)",
+                         latitude: 40.423, longitude: -3.712),
+            FakePassData(title: "Museo Reina Sofía", venue: "Calle de Santa Isabel 52", city: "Madrid", passType: "museum", daysFromNow: 62, color: "rgb(165,0,0)",
+                         latitude: 40.408, longitude: -3.694),
+            FakePassData(title: "Air Europa UX045", venue: "Madrid–Barajas", city: "Madrid", passType: "flight", daysFromNow: 64, color: "rgb(0,94,184)",
+                         origin: "Madrid", destination: "Montevideo", departTime: "12:10", seat: "9C",
+                         latitude: 40.472, longitude: -3.561),
         ]
 
         for (index, data) in fakeData.enumerated() {
@@ -78,8 +103,8 @@ struct ScreenshotModeSeeder {
                 venueAddress: nil,
                 city: data.city,
                 stateCountry: nil,
-                latitude: nil,
-                longitude: nil,
+                latitude: data.latitude,
+                longitude: data.longitude,
                 organizer: nil,
                 performerArtist: nil,
                 seatInfo: nil,
@@ -114,7 +139,13 @@ struct ScreenshotModeSeeder {
                 performerNames: nil,
                 exhibitName: nil,
                 hasAssignedSeating: nil,
-                eventUrls: nil
+                eventUrls: nil,
+                segment: data.origin == nil && data.destination == nil ? nil : PassSegment(
+                    page: nil, label: nil, origin: data.origin, destination: data.destination,
+                    departDate: nil, departTime: data.departTime, arriveDate: nil, arriveTime: nil,
+                    carrier: nil, vehicleInfo: nil, seatInfo: data.seat, travelClass: nil,
+                    confirmationNumber: nil, traveler: nil, notes: nil
+                )
             )
             let pass = SavedPass(
                 id: "screenshot-\(index)",

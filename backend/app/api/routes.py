@@ -62,9 +62,17 @@ ENHANCED_METADATA_FIELDS = {
     "exhibit_name",
     "has_assigned_seating",
     "event_urls",
+    # Trip identity and per-leg detail. The pipeline has produced these for a
+    # while, but they were filtered out here, so the client only ever saw them
+    # via /tickets/{job_id} — never on the upload that creates the pass.
+    "group_id",
+    "group_name",
+    "segment",
+    "segments",
+    "route",
 }
 
-LIST_FIELDS = {"nearby_landmarks", "amenities", "upcoming_events", "performer_names"}
+LIST_FIELDS = {"nearby_landmarks", "amenities", "upcoming_events", "performer_names", "segments"}
 
 
 def create_router() -> APIRouter:
@@ -318,9 +326,21 @@ def _upload_response(job: StoredJob) -> UploadResponse:
 
 
 def _metadata_for_job(job: StoredJob) -> dict | None:
-    if job.ticket_info:
-        return job.ticket_info[0].get("metadata") or job.ai_metadata
-    return job.ai_metadata
+    if not job.ticket_info:
+        return job.ai_metadata
+
+    metadata = job.ticket_info[0].get("metadata") or job.ai_metadata
+    if metadata is None:
+        return None
+
+    # Group identity lives on the job, per-leg detail lives on the ticket.
+    # The client needs both in one payload to file a new pass into a trip.
+    document = job.ai_metadata or {}
+    merged = dict(metadata)
+    for key in ("group_id", "group_name", "segments"):
+        if merged.get(key) is None and document.get(key) is not None:
+            merged[key] = document[key]
+    return merged
 
 
 def _sanitize_metadata(raw: dict | None) -> dict | None:
