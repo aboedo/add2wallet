@@ -10,6 +10,7 @@
 		02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */; };
 		03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = C0628EC3E9565A946EC494F7 /* torre ifel.pdf */; };
 		0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */; };
+		11226D19DF61F6D793216351 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3404A40820DCC113A4B8B9C9 /* Trip.swift */; };
 		12287767426EAE0AA86F27A0 /* FileUploadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B13712CA64237F9C753B7 /* FileUploadTests.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
 		20F6E405C0188CF648975C29 /* PassColorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */; };
@@ -50,6 +51,7 @@
 		AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */; };
 		B3DBF2EE01A03F6B2B77882F /* SuccessToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC59619C86EF5E22F6D9A7D9 /* SuccessToast.swift */; };
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
+		BA3079A40A331D67B55E77CB /* TripTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */; };
 		C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */; };
 		D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2518CFE7B9502126499FA643 /* TestHelpers.swift */; };
 		DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */; };
@@ -152,11 +154,13 @@
 		2A325F414CB4D737F46E1705 /* eTicket.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = eTicket.pdf; sourceTree = "<group>"; };
 		2AC034AAF4C174BE855348E0 /* SupportedFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedFile.swift; sourceTree = "<group>"; };
 		2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatter.swift; sourceTree = "<group>"; };
+		3404A40820DCC113A4B8B9C9 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2WalletTests.swift"; sourceTree = "<group>"; };
 		40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = pass_with_data_matrix.pdf; sourceTree = "<group>"; };
 		413E059A05815E3BF7D737BC /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtensionTests.swift; sourceTree = "<group>"; };
 		4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Add2WalletShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimelineTests.swift; sourceTree = "<group>"; };
 		4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassUsageManagerTests.swift; sourceTree = "<group>"; };
 		50AEC1A177FC2937D94926BA /* ActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionViewController.swift; sourceTree = "<group>"; };
 		54837C8CBF4AA918D1214C04 /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
@@ -235,6 +239,7 @@
 				9882D480F39DC0E9DBF042D4 /* PassTicketInfo.swift */,
 				5652AA292A42487F139B55E2 /* PassUsageManager.swift */,
 				54CF0DE8DB7CC7621840B0E8 /* SavedPass.swift */,
+				3404A40820DCC113A4B8B9C9 /* Trip.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -432,6 +437,7 @@
 				4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */,
 				41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */,
 				2518CFE7B9502126499FA643 /* TestHelpers.swift */,
+				4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */,
 			);
 			path = Add2WalletTests;
 			sourceTree = "<group>";
@@ -594,6 +600,7 @@
 				EE4462794A4F0F4574C3FE5A /* PassTicketInfo.swift in Sources */,
 				79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */,
 				7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */,
+				11226D19DF61F6D793216351 /* Trip.swift in Sources */,
 				3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */,
 				E0849A5D57E3132B1E9683B3 /* NotificationManager.swift in Sources */,
 				EBBF5CD71B12D7962BE70965 /* PassManager.swift in Sources */,
@@ -652,6 +659,7 @@
 				AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */,
 				658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */,
 				D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */,
+				BA3079A40A331D67B55E77CB /* TripTimelineTests.swift in Sources */,
 				4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
