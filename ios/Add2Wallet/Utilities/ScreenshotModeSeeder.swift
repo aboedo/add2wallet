@@ -44,7 +44,10 @@ struct ScreenshotModeSeeder {
         let now = Date()
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
+        // The backend sends ISO dates and `PassDateTimeFormatter` only parses
+        // those. Seeding "Aug 25, 2026" made every seeded pass silently lose
+        // its date, so the screenshots lied about what the app renders.
+        formatter.dateFormat = "yyyy-MM-dd"
 
         struct FakePassData {
             let title: String
