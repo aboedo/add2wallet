@@ -24,6 +24,8 @@ final class LayoverTests: XCTestCase {
             departTime: departs,
             arriveDate: nil,
             arriveTime: arrives,
+            departTimezone: nil,
+            arriveTimezone: nil,
             carrier: nil,
             vehicleInfo: nil,
             seatInfo: nil,

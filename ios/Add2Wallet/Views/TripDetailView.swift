@@ -84,6 +84,11 @@ struct TripDetailView: View {
     /// two legs in different day groups, and the honest fix for that is to walk
     /// the whole itinerary rather than each day in isolation — worth doing when
     /// something needs it, not worth guessing at now.
+    ///
+    /// The subtraction ignores timezones on purpose, and is safe for exactly
+    /// one reason: a layover happens at a single airport, so the arrival and
+    /// the next departure are read off the same clock by construction. That is
+    /// what `outbound.origin == airport` guarantees.
     static func layover(from arriving: SavedPass, to departing: SavedPass?) -> String? {
         guard let departing,
               let inbound = arriving.segments.first,
@@ -254,20 +259,35 @@ struct TripLegCard: View {
     private var times: some View {
         if let depart = segment?.departTime {
             VStack(alignment: .trailing, spacing: 2) {
-                Text(depart)
-                    .font(ThemeManager.Typography.bodyMonospaced)
-                    .foregroundColor(ThemeManager.Colors.textPrimary)
+                HStack(spacing: 4) {
+                    Text(depart)
+                        .font(ThemeManager.Typography.bodyMonospaced)
+                        .foregroundColor(ThemeManager.Colors.textPrimary)
+                    if let zone = departZoneLabel {
+                        Text(zone)
+                            .font(ThemeManager.Typography.caption)
+                            .foregroundColor(ThemeManager.Colors.textTertiary)
+                    }
+                }
 
                 if let arrive = segment?.arriveTime {
-                    HStack(spacing: 2) {
-                        Text("→ \(arrive)")
-                        if let overnight = overnightSuffix {
-                            Text(overnight)
+                    HStack(spacing: 4) {
+                        HStack(spacing: 2) {
+                            Text("→ \(arrive)")
+                            if let overnight = overnightSuffix {
+                                Text(overnight)
+                                    .foregroundColor(ThemeManager.Colors.textTertiary)
+                            }
+                        }
+                        .font(ThemeManager.Typography.footnoteMonospaced)
+                        .foregroundColor(ThemeManager.Colors.textSecondary)
+
+                        if let zone = arriveZoneLabel {
+                            Text(zone)
+                                .font(ThemeManager.Typography.caption)
                                 .foregroundColor(ThemeManager.Colors.textTertiary)
                         }
                     }
-                    .font(ThemeManager.Typography.footnoteMonospaced)
-                    .foregroundColor(ThemeManager.Colors.textSecondary)
                 }
             }
         } else {
@@ -280,7 +300,7 @@ struct TripLegCard: View {
     /// The backend sends segment dates as ISO days and nothing else, so this
     /// only needs to read that one shape. Built once — `DateFormatter` is
     /// expensive and this runs per row.
-    private static let isoDay: DateFormatter = {
+    static let isoDay: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -301,6 +321,50 @@ struct TripLegCard: View {
             to: Calendar.current.startOfDay(for: arrive)
         ).day ?? 0
         return days > 0 ? "+\(days)" : nil
+    }
+
+    /// Zone labels appear only when the two ends of the leg are in *different*
+    /// zones. That is the only time the bare numbers mislead — "08:15 → 11:40"
+    /// is a three-hour hop or an eight-hour one depending on where each clock
+    /// is, and you cannot tell. On a domestic leg both labels would say the
+    /// same thing twice and earn nothing.
+    /// Compares the *offsets*, not the zone names. Montevideo and São Paulo are
+    /// two different zones that both read GMT−3 in October, and labelling that
+    /// leg "GMT−3 → GMT−3" is noise dressed up as information. What matters is
+    /// whether the two clocks disagree on the day of the flight.
+    private var showsZones: Bool {
+        guard let segment,
+              let depart = TimeZone(identifier: segment.departTimezone ?? ""),
+              let arrive = TimeZone(identifier: segment.arriveTimezone ?? "") else { return false }
+        let departOn = segment.departDate.flatMap { Self.isoDay.date(from: $0) } ?? Date()
+        let arriveOn = segment.arriveDate.flatMap { Self.isoDay.date(from: $0) } ?? departOn
+        return depart.secondsFromGMT(for: departOn) != arrive.secondsFromGMT(for: arriveOn)
+    }
+
+    private var departZoneLabel: String? {
+        showsZones ? Self.zoneLabel(segment?.departTimezone, on: segment?.departDate) : nil
+    }
+
+    private var arriveZoneLabel: String? {
+        showsZones ? Self.zoneLabel(segment?.arriveTimezone, on: segment?.arriveDate) : nil
+    }
+
+    /// "GMT-3" for the day the leg actually happens.
+    ///
+    /// Resolved against the date rather than today, because that is the whole
+    /// reason the zone is stored as `Europe/Madrid` instead of `+02:00`: the
+    /// offset moves twice a year and a pass bought in winter may fly in summer.
+    static func zoneLabel(_ identifier: String?, on date: String?) -> String? {
+        guard let identifier, let zone = TimeZone(identifier: identifier) else { return nil }
+        let when = date.flatMap { isoDay.date(from: $0) } ?? Date()
+        let hours = Double(zone.secondsFromGMT(for: when)) / 3600
+        if hours == 0 { return "GMT" }
+        let sign = hours > 0 ? "+" : "−"
+        let magnitude = abs(hours)
+        let rendered = magnitude == magnitude.rounded()
+            ? String(Int(magnitude))
+            : String(format: "%.1f", magnitude)
+        return "GMT\(sign)\(rendered)"
     }
 
     /// "IB 6825 · Iberia", or whichever half the ticket gave us.

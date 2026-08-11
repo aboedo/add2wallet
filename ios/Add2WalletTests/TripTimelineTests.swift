@@ -175,6 +175,7 @@ final class TripTimelineTests: XCTestCase {
         let leg = PassSegment(
             page: nil, label: nil, origin: "Málaga", destination: "Madrid",
             departDate: nil, departTime: "07:20", arriveDate: nil, arriveTime: "09:50",
+            departTimezone: nil, arriveTimezone: nil,
             carrier: "AVLO", vehicleInfo: nil, seatInfo: "7A", travelClass: "Básico",
             confirmationNumber: nil, traveler: nil, notes: nil
         )
@@ -189,6 +190,7 @@ final class TripTimelineTests: XCTestCase {
         let leg = PassSegment(
             page: nil, label: nil, origin: "Málaga", destination: nil,
             departDate: nil, departTime: nil, arriveDate: nil, arriveTime: nil,
+            departTimezone: nil, arriveTimezone: nil,
             carrier: nil, vehicleInfo: nil, seatInfo: nil, travelClass: nil,
             confirmationNumber: nil, traveler: nil, notes: nil
         )
@@ -203,12 +205,14 @@ final class TripTimelineTests: XCTestCase {
         let lisbonToMalaga = PassSegment(
             page: nil, label: nil, origin: "Lisbon", destination: "Málaga",
             departDate: nil, departTime: nil, arriveDate: nil, arriveTime: nil,
+            departTimezone: nil, arriveTimezone: nil,
             carrier: nil, vehicleInfo: nil, seatInfo: nil, travelClass: nil,
             confirmationNumber: nil, traveler: nil, notes: nil
         )
         let malagaToMadrid = PassSegment(
             page: nil, label: nil, origin: "Málaga", destination: "Madrid",
             departDate: nil, departTime: nil, arriveDate: nil, arriveTime: nil,
+            departTimezone: nil, arriveTimezone: nil,
             carrier: nil, vehicleInfo: nil, seatInfo: nil, travelClass: nil,
             confirmationNumber: nil, traveler: nil, notes: nil
         )

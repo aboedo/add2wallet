@@ -290,6 +290,11 @@ struct PassSegment: Codable, Hashable {
     let departTime: String?
     let arriveDate: String?
     let arriveTime: String?
+    /// IANA zone names ("Europe/Madrid"), never offsets — an offset is only
+    /// true for half the year. The times above stay local and unconverted; a
+    /// boarding pass says 13:35 because that is what the airport clock says.
+    let departTimezone: String?
+    let arriveTimezone: String?
     let carrier: String?
     let vehicleInfo: String?
     let seatInfo: String?
@@ -307,6 +312,8 @@ struct PassSegment: Codable, Hashable {
         case departTime = "depart_time"
         case arriveDate = "arrive_date"
         case arriveTime = "arrive_time"
+        case departTimezone = "depart_timezone"
+        case arriveTimezone = "arrive_timezone"
         case carrier
         case vehicleInfo = "vehicle_info"
         case seatInfo = "seat_info"

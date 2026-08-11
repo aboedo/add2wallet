@@ -209,6 +209,8 @@ Return JSON:
       "origin": "...", "destination": "...",
       "depart_date": "YYYY-MM-DD", "depart_time": "HH:MM",
       "arrive_date": "YYYY-MM-DD", "arrive_time": "HH:MM",
+      "depart_timezone": "IANA zone of the ORIGIN, e.g. 'America/Montevideo', or null",
+      "arrive_timezone": "IANA zone of the DESTINATION, or null",
       "carrier": "operator or provider",
       "vehicle_info": "train/flight/line number or vessel",
       "seat_info": "plain text, e.g. 'Car 1, Seats 9 and 10'",
@@ -435,6 +437,17 @@ rarely land on the same colour, so do not fall back on a generic red or blue —
 reach for the whole spectrum. It must be a deep, saturated colour that white
 text can sit on: no greys, pastels, near-white or near-black. Use null only if
 the document gives you nothing to go on.
+
+Times on a ticket are local to the place they happen, so leave them exactly as
+printed and never convert them. Say where they are local to instead, in the
+timezone fields, as an IANA zone name like "Europe/Madrid" — never an offset
+like "+02:00", which is only true for half the year.
+
+Give a zone when the document states one, or when the place identifies it
+beyond doubt: an airport code, a station, a named city. A leg from MVD to MAD
+is America/Montevideo to Europe/Madrid whether or not the ticket says so. If
+the place is ambiguous or missing, use null. A wrong zone is worse than none —
+it silently moves every time on the itinerary — so do not guess.
 
 Dates must be YYYY-MM-DD and times HH:MM (24h). Boarding passes often print a
 day and month with no year ("18 Mar"): infer the year from any other date in

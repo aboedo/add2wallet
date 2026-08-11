@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from zoneinfo import available_timezones
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class DocumentKind(str, Enum):
@@ -114,6 +115,18 @@ class PassSegment(BaseModel):
     depart_time: str | None = None
     arrive_date: str | None = None
     arrive_time: str | None = None
+    # IANA zone names ("Europe/Madrid"), never fixed offsets.
+    #
+    # An offset is only true for a date: "+02:00" is Madrid in August and wrong
+    # in January, so storing what the document printed would quietly break
+    # every itinerary twice a year. The zone plus the departure date gives the
+    # offset back whenever it is needed; the reverse does not hold.
+    #
+    # Times themselves stay local and unconverted. A boarding pass says 13:35
+    # because that is what the airport clock will say, and a traveller checking
+    # this screen is standing under that clock.
+    depart_timezone: str | None = None
+    arrive_timezone: str | None = None
     carrier: str | None = None
     vehicle_info: str | None = None
     seat_info: str | None = None
@@ -121,6 +134,21 @@ class PassSegment(BaseModel):
     confirmation_number: str | None = None
     traveler: str | None = None
     notes: str | None = None
+
+    @field_validator("depart_timezone", "arrive_timezone", mode="after")
+    @classmethod
+    def _only_real_zones(cls, value: str | None) -> str | None:
+        """Drop anything that is not a zone the system actually knows.
+
+        The prompt asks for IANA names and forbids offsets, but the model is
+        not a parser and will occasionally answer "GMT-3", "CET", or a plausible
+        city that is not a zone. Every one of those would be read later as
+        authoritative and shift a departure time by hours. Verifying is one set
+        lookup, so there is no reason to take the model's word for it.
+        """
+        if not value:
+            return None
+        return value if value in available_timezones() else None
 
     def route(self) -> str | None:
         if self.origin and self.destination:

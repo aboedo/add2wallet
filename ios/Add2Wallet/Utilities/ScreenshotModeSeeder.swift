@@ -78,6 +78,8 @@ struct ScreenshotModeSeeder {
             var confirmation: String? = nil
             var gate: String? = nil
             var address: String? = nil
+            var departTz: String? = nil
+            var arriveTz: String? = nil
         }
 
         let fakeData: [FakePassData] = [
@@ -99,13 +101,15 @@ struct ScreenshotModeSeeder {
                          latitude: -34.838, longitude: -56.030,
                          arriveTime: "11:40", carrier: "LATAM", vehicleInfo: "LA 1425",
                          travelClass: "Economy", confirmation: "QJ7T2M", gate: "Gate 4",
-                         address: "Ruta 101 s/n, Ciudad de la Costa"),
+                         address: "Ruta 101 s/n, Ciudad de la Costa",
+                         departTz: "America/Montevideo", arriveTz: "America/Sao_Paulo"),
             FakePassData(title: "GRU → MAD", venue: "Guarulhos Intl.", city: "São Paulo", passType: "flight", daysFromNow: 60, color: "rgb(0,94,184)",
                          origin: "GRU", destination: "MAD", departTime: "13:35", seat: "22F",
                          latitude: -23.435, longitude: -46.473,
                          arriveTime: "05:50", arrivesDaysLater: 1, carrier: "Iberia", vehicleInfo: "IB 6825",
                          travelClass: "Economy", confirmation: "QJ7T2M", gate: "Terminal 3",
-                         address: "Rod. Hélio Smidt s/n, Guarulhos"),
+                         address: "Rod. Hélio Smidt s/n, Guarulhos",
+                         departTz: "America/Sao_Paulo", arriveTz: "Europe/Madrid"),
             FakePassData(title: "Hotel Riu Plaza España", venue: "Gran Vía 84", city: "Madrid", passType: "hotel", daysFromNow: 61, color: "rgb(140,90,20)",
                          latitude: 40.423, longitude: -3.712,
                          confirmation: "5677544862",
@@ -119,7 +123,8 @@ struct ScreenshotModeSeeder {
                          latitude: 40.472, longitude: -3.561,
                          arriveTime: "20:45", carrier: "Air Europa", vehicleInfo: "UX 045",
                          travelClass: "Economy", confirmation: "8KP44Q", gate: "Terminal 1",
-                         address: "Av. de la Hispanidad s/n, 28042 Madrid"),
+                         address: "Av. de la Hispanidad s/n, 28042 Madrid",
+                         departTz: "Europe/Madrid", arriveTz: "America/Montevideo"),
         ]
 
         for (index, data) in fakeData.enumerated() {
@@ -184,6 +189,8 @@ struct ScreenshotModeSeeder {
                         from: calendar.date(byAdding: .day, value: data.arrivesDaysLater, to: eventDate)!
                     ),
                     arriveTime: data.arriveTime,
+                    departTimezone: data.departTz,
+                    arriveTimezone: data.arriveTz,
                     carrier: data.carrier,
                     vehicleInfo: data.vehicleInfo,
                     seatInfo: data.seat,

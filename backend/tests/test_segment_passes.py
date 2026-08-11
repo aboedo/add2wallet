@@ -190,3 +190,47 @@ def test_document_without_segments_keeps_the_plain_layout():
 def test_structured_values_render_as_readable_text(value, expected):
     """seat_info came back as a dict and leaked "{'car': 1, 'seats': [9, 10]}"."""
     assert _humanize(value) == expected
+
+
+class TestSegmentTimezones:
+    """Zones are stored as IANA names so the offset can be recovered per date.
+
+    The prompt asks for that and forbids offsets, but a prompt is a request, not
+    a guarantee. A bogus zone read as authoritative later would shift a
+    departure by hours without anything looking broken, and checking is one set
+    lookup — so the model does not get the benefit of the doubt.
+    """
+
+    def test_iana_zone_is_kept(self):
+        segment = PassSegment(depart_timezone="Europe/Madrid")
+        assert segment.depart_timezone == "Europe/Madrid"
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "+02:00",   # an offset: only true for half the year
+            "GMT-3",    # an abbreviation, not a zone
+            "Mars/Olympus",
+            "Madrid",   # a city is not a zone name
+            "",
+        ],
+    )
+    def test_anything_that_is_not_a_real_zone_is_dropped(self, value):
+        segment = PassSegment(depart_timezone=value, arrive_timezone=value)
+        assert segment.depart_timezone is None
+        assert segment.arrive_timezone is None
+
+    def test_legacy_aliases_survive_because_they_still_resolve(self):
+        """"CET" is a real entry in the tz database, deprecated but resolvable.
+
+        Not worth rejecting: it carries the right offset and the right DST
+        rules, it is only missing a location. The validator exists to stop
+        values that would resolve to *nothing* or to a fixed offset, not to
+        enforce a house style.
+        """
+        assert PassSegment(depart_timezone="CET").depart_timezone == "CET"
+
+    def test_absent_zone_stays_absent(self):
+        segment = PassSegment()
+        assert segment.depart_timezone is None
+        assert segment.arrive_timezone is None

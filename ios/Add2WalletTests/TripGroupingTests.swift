@@ -15,6 +15,7 @@ final class TripGroupingTests: XCTestCase {
         PassSegment(
             page: nil, label: nil, origin: origin, destination: destination,
             departDate: nil, departTime: nil, arriveDate: nil, arriveTime: nil,
+            departTimezone: nil, arriveTimezone: nil,
             carrier: nil, vehicleInfo: nil, seatInfo: nil, travelClass: nil,
             confirmationNumber: nil, traveler: nil, notes: nil
         )
