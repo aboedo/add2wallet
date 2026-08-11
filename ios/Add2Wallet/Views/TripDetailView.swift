@@ -188,7 +188,7 @@ struct TripLegCard: View {
                 PassGlyph(pass: pass, size: Self.glyphSize)
 
                 VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs) {
-                    Text(pass.routeDescription ?? pass.displayTitle)
+                    Text(pass.routeDescription ?? pass.displayGroupTitle)
                         .font(ThemeManager.Typography.bodySemibold)
                         .foregroundColor(ThemeManager.Colors.textPrimary)
                         .lineLimit(2)

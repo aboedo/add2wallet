@@ -75,7 +75,7 @@ class ConversionPipeline:
                 job_id,
                 artifacts,
                 [barcode.model_dump() for barcode in analysis.barcodes],
-                _job_metadata(analysis),
+                _job_metadata(analysis, len(artifacts)),
                 analysis.warnings,
             )
             job.progress = 90
@@ -98,14 +98,37 @@ class ConversionPipeline:
             raise ProcessingError("Could not create an Apple Wallet pass from this file") from exc
 
 
-def _job_metadata(analysis) -> dict:
+def _job_metadata(analysis, pass_count: int = 1) -> dict:
     """Document-level metadata plus the group identity the app needs to tie
     related passes together (a five-leg itinerary is one booking)."""
     data = analysis.metadata.model_dump(exclude_none=True)
     if analysis.group_id:
         data["group_id"] = analysis.group_id
-    if analysis.group_name:
-        data["group_name"] = analysis.group_name
+    group_name = analysis.group_name or _derived_group_name(analysis.metadata, pass_count)
+    if group_name:
+        data["group_name"] = group_name
     if analysis.segments:
         data["segments"] = [s.model_dump(exclude_none=True) for s in analysis.segments]
     return data
+
+
+# Names that describe the document type rather than the event. Heading a group
+# with one of these says nothing the icon does not already say.
+GENERIC_TITLES = {"digital pass", "event ticket", "boarding pass", "ticket", "pass"}
+
+
+def _derived_group_name(metadata, pass_count: int) -> str | None:
+    """A heading for a set the model gave no name for.
+
+    Every ticket of a set is titled "<event> #2", so whichever one the client
+    picks to speak for the group is wrong by construction. The unnumbered event
+    name is the obvious right answer and needs no model to find it — which also
+    means a document processed without OpenAI still gets a usable heading.
+    """
+    if pass_count <= 1:
+        return None
+    for candidate in (metadata.event_name, metadata.title, metadata.venue_name, metadata.city):
+        name = (candidate or "").strip()
+        if name and name.lower() not in GENERIC_TITLES:
+            return name
+    return None

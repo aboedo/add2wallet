@@ -422,7 +422,7 @@ nearby_landmarks, public_transport, parking_info, age_restriction, dress_code,
 weather_considerations, amenities, accessibility, confidence_score,
 multiple_events, upcoming_events, venue_place_id, performer_names, exhibit_name,
 has_assigned_seating, event_urls, multiple_tickets, brand_color, background_color,
-foreground_color, label_color.
+foreground_color, label_color, group_name.
 
 Use null for unknown values. Keep title under 30 characters. Use rgb(R, G, B)
 strings for colors with readable contrast. confidence_score is an integer from
@@ -438,6 +438,13 @@ rarely land on the same colour, so do not fall back on a generic red or blue —
 reach for the whole spectrum. It must be a deep, saturated colour that white
 text can sit on: no greys, pastels, near-white or near-black. Use null only if
 the document gives you nothing to go on.
+
+"group_name" is what to call the document as a whole when it is worth several
+passes — several tickets to one show, the legs of one journey, the nights of
+one booking. Name the set, never one of its members: "Coldplay at Wembley", not
+"General Admission"; "Norway in a Nutshell", not "Train Bergen to Voss". Keep it
+under 40 characters, and use null for a single ticket or when the set has no
+name beyond what its members already say.
 
 "traveler_count" is the number of people on that leg, not the number of codes
 printed. A leg that says "2 x Adult" is two tickets whether it shows two

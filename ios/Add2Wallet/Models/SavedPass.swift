@@ -138,6 +138,20 @@ class SavedPass {
         return cleanTicketSuffix(from: baseTitle)
     }
     
+    /// What to call this record when it stands for several passes at once.
+    ///
+    /// A multi-ticket import stores the *first* ticket's title — "Coldplay #1",
+    /// or the opening leg of an itinerary — so using it for the set names the
+    /// whole after one of its parts. The backend sends a name for the booking
+    /// as a whole; that is the only one that can be right. Single passes are
+    /// untouched: there `groupName` is the trip's name, not this pass's.
+    var displayGroupTitle: String {
+        guard passCount > 1,
+              let name = groupName?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty else { return displayTitle }
+        return name
+    }
+
     // Helper function to remove "Ticket" suffix from titles
     private func cleanTicketSuffix(from title: String) -> String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)

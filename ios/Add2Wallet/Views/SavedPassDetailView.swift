@@ -49,14 +49,15 @@ struct SavedPassDetailView: View {
                             PassDetailPresentation(
                                 metadata: metadata,
                                 ticketCount: savedPass.passCount > 1 ? savedPass.passCount : nil,
-                                isEmbedded: false
+                                isEmbedded: false,
+                                groupTitle: savedPass.passCount > 1 ? savedPass.displayGroupTitle : nil
                             )
                     } else {
                         // Fallback for passes without metadata
                         VStack(spacing: ThemeManager.Spacing.md) {
                             // Header without metadata
                             VStack(spacing: ThemeManager.Spacing.sm) {
-                                Text(savedPass.displayTitle)
+                                Text(savedPass.displayGroupTitle)
                                     .font(ThemeManager.Typography.largeTitle)
                                     .fontWeight(.bold)
                                     .multilineTextAlignment(.center)
@@ -101,7 +102,7 @@ struct SavedPassDetailView: View {
                 if tickets.count > 1 {
                     PassGroupList(
                         tickets: tickets,
-                        groupName: savedPass.displayTitle,
+                        groupName: savedPass.displayGroupTitle,
                         onAdd: { addSingleTicketToWallet($0) }
                     )
                     .padding(.horizontal, ThemeManager.Spacing.md)

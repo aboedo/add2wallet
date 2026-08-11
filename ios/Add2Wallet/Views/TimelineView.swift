@@ -219,7 +219,7 @@ struct TimelineFeatureCard: View {
     private var title: String {
         switch item {
         case .trip(let trip): return trip.name
-        case .pass(let pass): return pass.displayTitle
+        case .pass(let pass): return pass.displayGroupTitle
         }
     }
 
@@ -256,7 +256,7 @@ struct TimelineLegRow: View {
             PassGlyph(pass: pass, size: 30)
 
             VStack(alignment: .leading, spacing: ThemeManager.Spacing.hairline) {
-                Text(pass.displayTitle)
+                Text(pass.displayGroupTitle)
                     .font(ThemeManager.Typography.footnote)
                     .foregroundColor(ThemeManager.Colors.textPrimary)
                     .lineLimit(1)
@@ -331,7 +331,7 @@ struct TimelineRow: View {
     private var title: String {
         switch item {
         case .trip(let trip): return trip.name
-        case .pass(let pass): return pass.displayTitle
+        case .pass(let pass): return pass.displayGroupTitle
         }
     }
 

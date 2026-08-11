@@ -21,6 +21,7 @@
 		238A82DC3E4640EF5A13AFDA /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 060631A1940D5F28CD477DAA /* RevenueCat */; };
 		254011287AA9D3BFA5F1E12D /* PassDetailPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */; };
 		264E2AA0EBFE6331FA88325B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C7287DB2FC0F76437E783DEA /* Assets.xcassets */; };
+		294113FCF46B0EABC474B8C7 /* PassGroupTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02DABAC11C45FB8BD57E786B /* PassGroupTitleTests.swift */; };
 		2C3D9D02BBA85D9711FE3408 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */; };
 		2F6228C32E7227E0349B3294 /* DebugShakeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F353078F405CB7DB90DC2599 /* DebugShakeDetector.swift */; };
 		3430A34FB8CECB28216ACB19 /* HeroCardStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */; };
@@ -147,6 +148,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		02DABAC11C45FB8BD57E786B /* PassGroupTitleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassGroupTitleTests.swift; sourceTree = "<group>"; };
 		04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailPresentation.swift; sourceTree = "<group>"; };
 		055B38BB17DEBC4C45467515 /* fjord-conversion-response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fjord-conversion-response.json"; sourceTree = "<group>"; };
 		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
@@ -470,6 +472,7 @@
 				056189355BE651B878F8CD19 /* MockRevenueCat.swift */,
 				9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */,
 				EBC32204616148833F8A5E01 /* PassColorUtilsTests.swift */,
+				02DABAC11C45FB8BD57E786B /* PassGroupTitleTests.swift */,
 				1205A8F3C1360C4FA78FFC03 /* PassKitAcceptanceTests.swift */,
 				4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */,
 				9D63B2AB2686178D1B81AE8D /* SegmentTimezoneTests.swift */,
@@ -705,6 +708,7 @@
 				429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */,
 				64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */,
 				3BFA31B85752B5F7CACFD04F /* PassColorUtilsTests.swift in Sources */,
+				294113FCF46B0EABC474B8C7 /* PassGroupTitleTests.swift in Sources */,
 				654A9E7162E7135D8CDD96B8 /* PassKitAcceptanceTests.swift in Sources */,
 				AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */,
 				B19FCE1630ACFAE707429E75 /* SegmentTimezoneTests.swift in Sources */,

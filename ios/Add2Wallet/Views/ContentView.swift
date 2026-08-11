@@ -140,7 +140,8 @@ struct ContentView: View {
                                 PassDetailPresentation(
                                     metadata: details,
                                     ticketCount: viewModel.ticketCount,
-                                    isEmbedded: true
+                                    isEmbedded: true,
+                                    groupTitle: (viewModel.ticketCount ?? 1) > 1 ? details.groupName : nil
                                 )
                                 .transition(.opacity)
                             }

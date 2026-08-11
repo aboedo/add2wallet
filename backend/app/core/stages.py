@@ -113,7 +113,10 @@ class ClassificationStage:
             warnings=extracted.warnings,
             segments=segments,
             group_id=group_id or metadata.confirmation_number,
-            group_name=group_name,
+            # Segment extraction only runs on documents with two or more pages
+            # of text, so a single page holding four tickets never reached it.
+            # The document-level pass sees every one of those documents.
+            group_name=group_name or metadata.group_name,
         )
 
 

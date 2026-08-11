@@ -94,6 +94,12 @@ class StructuredMetadata(BaseModel):
     has_assigned_seating: bool = False
     event_urls: dict[str, Any] | None = None
     multiple_tickets: bool = False
+    # What to call the whole set when this document is worth several passes.
+    # The client otherwise heads a group with its first member's title, which
+    # on a numbered set reads "Coldplay #1" — the one name that is wrong for
+    # the group. Null for a single ticket, and for a set with no better name
+    # than its members already carry.
+    group_name: str | None = None
 
     model_config = {"protected_namespaces": ()}
 

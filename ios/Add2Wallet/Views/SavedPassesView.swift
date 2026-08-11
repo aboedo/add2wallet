@@ -205,7 +205,7 @@ struct PassRowView: View {
                 
                 VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs) {
                     // Title row
-                    Text(pass.displayTitle)
+                    Text(pass.displayGroupTitle)
                         .font(ThemeManager.Typography.bodySemibold)
                         .foregroundColor(ThemeManager.Colors.textPrimary)
                         .lineLimit(1)

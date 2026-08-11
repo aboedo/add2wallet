@@ -4,7 +4,16 @@ struct PassDetailPresentation: View {
     let metadata: EnhancedPassMetadata
     let ticketCount: Int?
     let isEmbedded: Bool
-    
+    /// Heading for a record that stands for several passes. The metadata here
+    /// belongs to the first ticket of the set, so its title names one member
+    /// ("Coldplay #1") rather than the set.
+    var groupTitle: String?
+
+    private var heading: String {
+        if let groupTitle, !groupTitle.isEmpty { return groupTitle }
+        return metadata.title ?? metadata.eventName ?? "Untitled Pass"
+    }
+
     private var passColor: Color {
         PassColorUtils.getPassColor(metadata: metadata)
     }
@@ -20,7 +29,7 @@ struct PassDetailPresentation: View {
             VStack(alignment: .leading, spacing: ThemeManager.Spacing.lg) {
                 // Header: title + key info
                 VStack(alignment: .leading, spacing: ThemeManager.Spacing.sm) {
-                    Text(metadata.title ?? metadata.eventName ?? "Untitled Pass")
+                    Text(heading)
                         .font(ThemeManager.Typography.title2)
                         .fontWeight(.bold)
                         .foregroundColor(ThemeManager.Colors.textPrimary)
