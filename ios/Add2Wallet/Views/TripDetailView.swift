@@ -244,8 +244,81 @@ struct TripRouteStrip: View {
 }
 
 /// The import flow, presented as what it is: a transaction, not a place.
+///
+/// The old layout was a tab wearing a sheet: a hero card burning the top third
+/// to tell you the app's name and tagline, inside a sheet you opened on purpose
+/// and already know the name of. A modal has a job and a way out, so it gets a
+/// title, a Cancel, and the three ways in given equal weight — Files was
+/// primary only because it shipped first, not because it is the likeliest.
 struct ImportSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var passUsageManager: PassUsageManager
+
     var body: some View {
-        ContentView()
+        NavigationStack {
+            ContentView()
+                .navigationTitle("Add Ticket")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Cancel") { dismiss() }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        // The balance matters at exactly one moment: the moment
+                        // you are about to spend one.
+                        Text("\(passUsageManager.remainingPasses) left")
+                            .font(ThemeManager.Typography.footnoteMonospaced)
+                            .foregroundColor(ThemeManager.Colors.textSecondary)
+                    }
+                }
+        }
+    }
+}
+
+/// Files, Photos, Paste — the same size, because none of them is the obvious
+/// one. Which you reach for depends entirely on where the ticket happens to be.
+struct ImportSourcePicker: View {
+    let onFiles: () -> Void
+    let onPhotos: () -> Void
+    let onPaste: ([NSItemProvider]) -> Void
+
+    var body: some View {
+        HStack(spacing: ThemeManager.Spacing.sm) {
+            source("Files", icon: "folder", action: onFiles)
+                .accessibilityIdentifier("selectFileButton")
+            source("Photos", icon: "photo.on.rectangle", action: onPhotos)
+                .accessibilityIdentifier("selectFromPhotosButton")
+
+            PasteButton(supportedContentTypes: SupportedFile.contentTypes) { providers in
+                ThemeManager.Haptics.light()
+                onPaste(providers)
+            }
+            .labelStyle(.iconOnly)
+            .buttonBorderShape(.roundedRectangle(radius: ThemeManager.CornerRadius.medium))
+            .tint(ThemeManager.Colors.surfaceCard)
+            .frame(maxWidth: .infinity, minHeight: 84)
+            .accessibilityIdentifier("pasteFileButton")
+        }
+    }
+
+    private func source(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
+        Button {
+            ThemeManager.Haptics.light()
+            action()
+        } label: {
+            VStack(spacing: ThemeManager.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .regular))
+                Text(title)
+                    .font(ThemeManager.Typography.footnote)
+            }
+            .foregroundColor(ThemeManager.Colors.textPrimary)
+            .frame(maxWidth: .infinity, minHeight: 84)
+            .background(
+                ThemeManager.Colors.surfaceCard,
+                in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }

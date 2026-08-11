@@ -40,25 +40,22 @@ struct ContentView: View {
     }
     
     private var generatePassView: some View {
-        NavigationView {
-            ZStack {
+        ZStack {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     ScrollView {
                     VStack(spacing: ThemeManager.Spacing.md) {
-                    // Hero card — always visible
-                    HeroCardStack(
-                        remainingPasses: passUsageManager.remainingPasses,
-                        isLoadingBalance: passUsageManager.isLoadingBalance,
-                        passColor: nil,
-                        isProcessing: viewModel.isProcessing,
-                        onSelectPDF: { viewModel.selectFile() },
-                        onSamplePDF: { viewModel.loadDemoFile() },
-                        onSelectPhoto: { showingPhotoPicker = true },
-                        onPaste: { viewModel.handlePastedProviders($0) }
-                    )
+                    // Three ways in, given equal weight. No hero card: the
+                    // sheet already said what this is.
+                    if viewModel.selectedFileURL == nil && !viewModel.isProcessing {
+                        ImportSourcePicker(
+                            onFiles: { viewModel.selectFile() },
+                            onPhotos: { showingPhotoPicker = true },
+                            onPaste: { viewModel.handlePastedProviders($0) }
+                        )
+                    }
                     
                     if let url = viewModel.selectedFileURL, !viewModel.isProcessing {
                         VStack(alignment: .leading, spacing: ThemeManager.Spacing.md) {
@@ -92,8 +89,8 @@ struct ContentView: View {
                                 .foregroundColor(ThemeManager.Colors.textTertiary)
                                 .padding(.top, ThemeManager.Spacing.xl)
                             
-                            Text("Pick a PDF or image from Files, Photos, or your clipboard to get started")
-                                .font(ThemeManager.Typography.body)
+                            Text("A ticket becomes an Apple Wallet pass. One credit each.")
+                                .font(ThemeManager.Typography.footnote)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                                 .multilineTextAlignment(.center)
                             
@@ -115,7 +112,6 @@ struct ContentView: View {
                 }
 
             }
-            .navigationBarHidden(true)
             .safeAreaInset(edge: .bottom) {
                 // Sticky bottom CTA using ThemeManager design system
                 if (viewModel.selectedFileURL != nil && !viewModel.isProcessing) || (viewModel.errorMessage != nil && !viewModel.errorMessage!.isEmpty) {
@@ -428,7 +424,6 @@ struct ContentView: View {
                 isPresented: $showingSuccessToast,
                 message: successToastMessage
             )
-            } // End of VStack
         } // End of ZStack
     }
 
