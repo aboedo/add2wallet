@@ -266,9 +266,17 @@ struct ImportSheet: View {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         // The balance matters at exactly one moment: the moment
                         // you are about to spend one.
+                        //
+                        // The horizontal padding is doing real work. The bar
+                        // wraps a toolbar item in a capsule sized to its
+                        // content, and bare text gave it generous room above
+                        // and below and almost none at the sides, so the glyphs
+                        // sat against the curve. Padding the text is what pads
+                        // the capsule.
                         Text("\(passUsageManager.remainingPasses) left")
                             .font(ThemeManager.Typography.footnoteMonospaced)
                             .foregroundColor(ThemeManager.Colors.textSecondary)
+                            .padding(.horizontal, ThemeManager.Spacing.sm)
                     }
                 }
         }
