@@ -258,7 +258,7 @@ struct PassRowView: View {
     @ViewBuilder
     private var passIcon: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.glyph(for: 36))
                 .fill(passColor)
                 .frame(width: 36, height: 36)
             

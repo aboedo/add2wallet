@@ -91,7 +91,7 @@ struct SavedPassDetailView: View {
                             }
                             .padding()
                             .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.control))
                         }
                     }
                     

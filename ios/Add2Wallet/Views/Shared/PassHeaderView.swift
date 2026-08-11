@@ -63,7 +63,7 @@ struct PassHeaderView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.control))
     }
 }
 

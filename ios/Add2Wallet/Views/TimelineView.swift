@@ -290,7 +290,7 @@ struct TimelineRow: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white)
                     .frame(width: 36, height: 36)
-                    .background(accent, in: RoundedRectangle(cornerRadius: 10))
+                    .background(accent, in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.glyph(for: 36)))
             case .pass(let pass):
                 PassGlyph(pass: pass, size: 36)
             }
@@ -392,7 +392,7 @@ struct PassGlyph: View {
             .frame(width: size, height: size)
             .background(
                 PassColorUtils.getPassColor(metadata: pass.metadata, passType: pass.passType),
-                in: RoundedRectangle(cornerRadius: size * 0.28)
+                in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.glyph(for: size))
             )
     }
 }

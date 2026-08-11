@@ -80,9 +80,9 @@ struct AsyncMapView: View {
         .frame(height: 140)
         .frame(maxWidth: .infinity)
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.control))
         .overlay(
-            RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
+            RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.control).stroke(Color.secondary.opacity(0.3))
         )
     }
     
@@ -93,44 +93,48 @@ struct AsyncMapView: View {
         }
         .mapStyle(.standard)
         .frame(height: 140)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.control))
         .overlay(
-            RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3))
+            RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.control).stroke(Color.secondary.opacity(0.3))
         )
     }
     
+    /// Two buttons that do the same kind of thing, so they are the same size.
+    ///
+    /// They were not: "Open in Google Maps" is two characters longer than
+    /// "Open in Apple Maps", which was enough to wrap it onto a second line
+    /// inside half the card and leave one button visibly taller than the other.
+    /// Equal frames alone would not have fixed it — the copy had to lose the
+    /// words that were not doing anything. The arrow already says "opens
+    /// elsewhere", and both are obviously maps by the time you have read the
+    /// name, so "Apple Maps" and "Google Maps" carry the whole meaning.
     private var mapActionButtons: some View {
-        HStack(spacing: 8) {
-            Button {
+        HStack(spacing: ThemeManager.Spacing.sm) {
+            mapButton("Apple Maps") {
                 if let coord = finalCoordinate {
                     openInAppleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
                 }
-            } label: {
-                HStack {
-                    Spacer(minLength: 0)
-                    Label("Open in Apple Maps", systemImage: "map")
-                    Spacer(minLength: 0)
-                }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
 
-            Button {
+            mapButton("Google Maps") {
                 if let coord = finalCoordinate {
                     openInGoogleMaps(coordinate: coord, name: metadata.venueName ?? "Location")
                 }
-            } label: {
-                HStack {
-                    Spacer(minLength: 0)
-                    Label("Open in Google Maps", systemImage: "map.fill")
-                    Spacer(minLength: 0)
-                }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
         }
         .font(.footnote)
-        .padding(.top, 6)
+        .padding(.top, ThemeManager.Spacing.xs)
+    }
+
+    private func mapButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: "arrow.up.forward.app")
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.roundedRectangle(radius: ThemeManager.CornerRadius.control))
+        .accessibilityLabel("Open in \(title)")
     }
     
     private func geocodeAddressIfNeeded() {

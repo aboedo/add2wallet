@@ -133,7 +133,7 @@ struct PassMetadataView: View {
         .padding()
         .if(backgroundColor != nil) { view in
             view.background(backgroundColor!)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.control))
         }
     }
 }

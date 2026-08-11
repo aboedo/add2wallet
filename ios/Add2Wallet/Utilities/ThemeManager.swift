@@ -23,16 +23,52 @@ struct ThemeManager {
     }
     
     // MARK: - Corner Radius System (iOS 26 Liquid Glass)
+    ///
+    /// Three sizes, and a rule for nesting them.
+    ///
+    /// The rule is Apple's: a shape inside another shape should be
+    /// *concentric* — its radius is the parent's radius minus the padding
+    /// between them, so the two curves stay parallel instead of drifting. iOS
+    /// 26 ships `.rect(cornerRadius: .containerConcentric)` for this, but the
+    /// deployment target here is iOS 17, so `concentric(inside:inset:)` does
+    /// the same arithmetic by hand.
+    ///
+    /// Everything that draws a rounded corner should name one of these. Loose
+    /// literals had drifted to 10 and 12 in six different files, which is what
+    /// made surfaces of the same rank look unrelated: a radius-10 map sitting
+    /// inside a radius-20 card reads as square next to it.
     enum CornerRadius {
-        static let small: CGFloat = 12      // Increased from 8
-        static let medium: CGFloat = 16     // Standard Liquid Glass radius
-        static let large: CGFloat = 20      // Reduced from 24 for better harmony
-        
-        // Semantic corner radii (iOS 26 aligned)
-        static let button = medium          // 16pt standard
-        static let card = medium            // 16pt standard
-        static let sheet = large            // 20pt for sheets
-        static let circular = 999           // For fully circular elements
+        /// Small square-ish things: type glyphs, thumbnails.
+        static let small: CGFloat = 12
+        /// Standard Liquid Glass radius. Cards, rows, buttons.
+        static let medium: CGFloat = 16
+        /// Sheets and the top-level detail card.
+        static let large: CGFloat = 20
+
+        // Semantic aliases. Prefer these at call sites: they say what the
+        // shape is, so the scale can move without a find-and-replace.
+        static let button = medium
+        static let card = medium
+        static let sheet = large
+        /// Controls sitting *inside* a card — one step down from the card.
+        static let control = small
+        static let circular: CGFloat = 999
+
+        /// A rounded rect nested inside another, keeping the curves parallel.
+        ///
+        /// Floors at zero: once the padding exceeds the parent's radius the
+        /// concentric answer is a square corner, and forcing a curve there is
+        /// what makes nested shapes look like they belong to different apps.
+        static func concentric(inside parent: CGFloat, inset: CGFloat) -> CGFloat {
+            max(0, parent - inset)
+        }
+
+        /// iOS draws app-icon-shaped squircles at roughly 22–23% of their side.
+        /// Pass glyphs mimic app icons, so they follow the same ratio rather
+        /// than a fixed radius that only looks right at one size.
+        static func glyph(for size: CGFloat) -> CGFloat {
+            size * 0.28
+        }
     }
     
     // MARK: - Typography System

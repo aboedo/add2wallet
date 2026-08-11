@@ -46,7 +46,7 @@ struct PassAddedSuccessView: View {
                             .padding()
                             .background(Color.green)
                             .foregroundColor(.white)
-                            .cornerRadius(12)
+                            .cornerRadius(ThemeManager.CornerRadius.control)
                             .fontWeight(.semibold)
                     }
                     
@@ -59,7 +59,7 @@ struct PassAddedSuccessView: View {
                             .padding()
                             .background(Color(.systemGray5))
                             .foregroundColor(.primary)
-                            .cornerRadius(12)
+                            .cornerRadius(ThemeManager.CornerRadius.control)
                             .fontWeight(.medium)
                     }
                 }
