@@ -273,26 +273,24 @@ struct ImportSheet: View {
 /// Files, Photos, Paste — the same weight, because none of them is the obvious
 /// one. Which you reach for depends entirely on where the ticket happens to be.
 ///
-/// All three are **system buttons wearing the same modifiers**, and that is the
-/// whole trick. `PasteButton` is the one control here we do not draw: it is
-/// system-rendered because it is the only way to read the clipboard without iOS
-/// putting a "Allow Paste?" prompt in front of every single tap. Being
-/// system-rendered, it ignores the parts of a hand-rolled look you would try to
-/// force on it — the first version gave it `.frame(maxWidth: .infinity,
-/// minHeight: 84)` next to two custom 84pt cards, and a system control does not
-/// stretch to fill a frame. It drew itself at its intrinsic size, centred in the
-/// slot, unlabelled, and looked like a different app.
+/// Paste does not match the other two, and that is a deliberate trade rather
+/// than an oversight. `PasteButton` is system-rendered because it is the only
+/// way to read the clipboard *without* iOS showing "…would like to paste from…"
+/// on every single tap, and it ignores nearly everything you tell it: it will
+/// not stretch to fill a frame, it ignores `buttonStyle`, it ignores the corner
+/// radius, and it always draws a white label on whatever `.tint` it is given.
 ///
-/// So the un-stylable control sets the standard and the other two conform to it,
-/// rather than the other way round. Same control size, same border shape, same
-/// tint, all with a title and an icon — which makes them render identically by
-/// construction instead of by pixel-matching.
+/// ⚠️ Do not hide it behind a matching card. It works — an opaque card on top
+/// with `allowsHitTesting(false)` does pass the tap through, and it looks
+/// exactly right — but the privilege is tied to the control being genuinely
+/// visible and untransformed. Cover it or scale it and iOS quietly downgrades
+/// it to the consent prompt. Measured, not assumed: tapping the covered card
+/// produced "Add2Wallet would like to paste from…", while the bare control
+/// pasted the file straight through. If we ever accept that prompt, drop
+/// `PasteButton` altogether and read `UIPasteboard` from a card of our own —
+/// same cost, none of the fragility.
 ///
-/// `.borderedProminent` specifically, and not `.bordered`: `PasteButton` ignores
-/// `buttonStyle` altogether and always draws itself filled, treating `.tint` as
-/// the fill rather than as the label colour. Style the other two as `.bordered`
-/// and you get two tinted-label chips beside one solid pill. Prominent is the
-/// only style that agrees with what Paste is going to do regardless.
+/// So the mismatch stays until someone decides the prompt is worth paying for.
 struct ImportSourcePicker: View {
     let onFiles: () -> Void
     let onPhotos: () -> Void
@@ -300,34 +298,52 @@ struct ImportSourcePicker: View {
 
     var body: some View {
         HStack(spacing: ThemeManager.Spacing.sm) {
-            source("Files", icon: "folder", action: onFiles)
-                .accessibilityIdentifier("selectFileButton")
-            source("Photos", icon: "photo.on.rectangle", action: onPhotos)
-                .accessibilityIdentifier("selectFromPhotosButton")
+            Button {
+                ThemeManager.Haptics.light()
+                onFiles()
+            } label: {
+                card("Files", icon: "folder")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("selectFileButton")
 
+            Button {
+                ThemeManager.Haptics.light()
+                onPhotos()
+            } label: {
+                card("Photos", icon: "photo.on.rectangle")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("selectFromPhotosButton")
+
+            // Visible, unobstructed, untransformed — and it has to stay that
+            // way. See the note above: hiding it behind a matching card is what
+            // costs the prompt-free paste.
             PasteButton(supportedContentTypes: SupportedFile.contentTypes) { providers in
                 ThemeManager.Haptics.light()
                 onPaste(providers)
             }
+            .labelStyle(.titleAndIcon)
+            .controlSize(.large)
+            .buttonBorderShape(.roundedRectangle(radius: ThemeManager.CornerRadius.card))
+            .tint(ThemeManager.Colors.sourceChip)
+            .frame(maxWidth: .infinity, minHeight: 84)
             .accessibilityIdentifier("pasteFileButton")
         }
-        .labelStyle(.titleAndIcon)
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        // Capsule, not `.roundedRectangle(radius:)`: Paste ignores the radius
-        // and draws itself as a capsule anyway, so asking for 16pt corners just
-        // means two rounded rects sitting next to one pill.
-        .buttonBorderShape(.capsule)
-        .tint(ThemeManager.Colors.sourceChip)
     }
 
-    private func source(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
-        Button {
-            ThemeManager.Haptics.light()
-            action()
-        } label: {
-            Label(title, systemImage: icon)
+    private func card(_ title: String, icon: String) -> some View {
+        VStack(spacing: ThemeManager.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .regular))
+            Text(title)
                 .font(ThemeManager.Typography.footnote)
         }
+        .foregroundColor(ThemeManager.Colors.textPrimary)
+        .frame(maxWidth: .infinity, minHeight: 84)
+        .background(
+            ThemeManager.Colors.surfaceCardGrouped,
+            in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.card)
+        )
     }
 }
