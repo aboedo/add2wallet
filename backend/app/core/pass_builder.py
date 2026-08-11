@@ -4,7 +4,7 @@ import json
 import os
 import tempfile
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.core.config import Settings
@@ -415,7 +415,7 @@ def _expiration(metadata: StructuredMetadata) -> str:
         parsed = _parse_datetime(last_day, metadata.end_time if metadata.end_date else metadata.time)
         if parsed:
             return (parsed + timedelta(days=1)).strftime("%Y-%m-%dT03:00:00Z")
-    return (datetime.utcnow() + timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return (datetime.now(timezone.utc) + timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _relevant_date(metadata: StructuredMetadata) -> str | None:

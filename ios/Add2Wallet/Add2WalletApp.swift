@@ -4,8 +4,6 @@ import RevenueCat
 
 @main
 struct Add2WalletApp: App {
-    // UIApplicationDelegateAdaptor temporarily disabled; not required for URL
-    // @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     @StateObject private var passUsageManager = PassUsageManager.shared
     let container: ModelContainer

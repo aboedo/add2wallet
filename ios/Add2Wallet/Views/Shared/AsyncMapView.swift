@@ -2,12 +2,6 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-struct MapAnnotationItem: Identifiable {
-    let id = UUID()
-    let coordinate: CLLocationCoordinate2D
-    let title: String
-}
-
 struct AsyncMapView: View {
     let metadata: EnhancedPassMetadata
     @Environment(\.openURL) private var openURL
@@ -87,9 +81,11 @@ struct AsyncMapView: View {
     }
     
     private var mapView: some View {
-        Map(coordinateRegion: .constant(mapRegion), 
-            annotationItems: finalCoordinate != nil ? [MapAnnotationItem(coordinate: finalCoordinate!, title: metadata.venueName ?? "Location")] : []) { annotation in
-            MapPin(coordinate: annotation.coordinate, tint: .red)
+        Map(initialPosition: .region(mapRegion)) {
+            if let coordinate = finalCoordinate {
+                Marker(metadata.venueName ?? "Location", coordinate: coordinate)
+                    .tint(.red)
+            }
         }
         .mapStyle(.standard)
         .frame(height: 140)
@@ -156,10 +152,9 @@ struct AsyncMapView: View {
         }
     }
     
+    /// `MKGeocodingRequest` rather than `CLGeocoder`, which Apple deprecated in
+    /// iOS 26 in favour of MapKit doing its own geocoding.
     private func performGeocoding(for address: String) async {
-        let geocoder = CLGeocoder()
-        
-        // Build full address string
         var fullAddress = address
         if let city = metadata.city, !city.isEmpty {
             fullAddress += ", " + city
@@ -167,26 +162,16 @@ struct AsyncMapView: View {
         if let stateCountry = metadata.stateCountry, !stateCountry.isEmpty {
             fullAddress += ", " + stateCountry
         }
-        
+
+        defer { Task { @MainActor in isLoadingCoordinate = false } }
+
+        guard let request = MKGeocodingRequest(addressString: fullAddress) else { return }
         do {
-            let placemarks = try await geocoder.geocodeAddressString(fullAddress)
-            
-            if let placemark = placemarks.first,
-               let location = placemark.location {
-                await MainActor.run {
-                    coordinateFromAddress = location.coordinate
-                    isLoadingCoordinate = false
-                }
-            } else {
-                await MainActor.run {
-                    isLoadingCoordinate = false
-                }
-            }
+            let items = try await request.mapItems
+            guard let coordinate = items.first?.location.coordinate else { return }
+            await MainActor.run { coordinateFromAddress = coordinate }
         } catch {
             print("Geocoding error: \(error)")
-            await MainActor.run {
-                isLoadingCoordinate = false
-            }
         }
     }
 

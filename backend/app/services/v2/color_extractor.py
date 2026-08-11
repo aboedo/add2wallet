@@ -121,7 +121,7 @@ def _extract_from_pdf(pdf_bytes: bytes) -> Tuple[Optional[str], Optional[str], O
             img.thumbnail((400, 400))
             quantized = img.convert("P", palette=Image.ADAPTIVE, colors=16)
             palette = quantized.getpalette()
-            for pixel in quantized.getdata():
+            for pixel in quantized.get_flattened_data():
                 if palette and pixel * 3 + 2 < len(palette):
                     r = palette[pixel * 3]
                     g = palette[pixel * 3 + 1]

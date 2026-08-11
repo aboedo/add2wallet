@@ -34,7 +34,6 @@
 		512CCF786DC0A253CCF22972 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE748F2CC8B2B17A8556650 /* TripDetailView.swift */; };
 		54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */; };
 		5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */ = {isa = PBXBuildFile; fileRef = 5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */; };
-		60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */; };
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
 		654A9E7162E7135D8CDD96B8 /* PassKitAcceptanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1205A8F3C1360C4FA78FFC03 /* PassKitAcceptanceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
@@ -183,7 +182,6 @@
 		5652AA292A42487F139B55E2 /* PassUsageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassUsageManager.swift; sourceTree = "<group>"; };
 		565BA2A0CEADF77194EC8EF3 /* Add2WalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Add2WalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A0920C1F5FA6B860CC12755 /* PassColorUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassColorUtils.swift; sourceTree = "<group>"; };
-		5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		5EE10D0EB30AA22928BF8ECD /* TripGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGrouping.swift; sourceTree = "<group>"; };
 		5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mock_multi_ticket_response.json; sourceTree = "<group>"; };
 		6328294BD904F874321F4287 /* torre_ifel.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = torre_ifel.pdf; sourceTree = "<group>"; };
@@ -321,7 +319,6 @@
 				9502FAC6D87A2BCDD2579505 /* Views */,
 				91BE638A702EBF2E23F0C455 /* Add2Wallet.entitlements */,
 				EEDBBA6B61F4E390B9D1C27E /* Add2WalletApp.swift */,
-				5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */,
 				C7287DB2FC0F76437E783DEA /* Assets.xcassets */,
 				14163BCA5715B9BC2F933391 /* Info.plist */,
 			);
@@ -630,7 +627,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				2257AA60CC7CF7156F2D4340 /* Add2WalletApp.swift in Sources */,
-				60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */,
 				EE4462794A4F0F4574C3FE5A /* PassTicketInfo.swift in Sources */,
 				79B94EDDA1B3A7BD422A2192 /* PassUsageManager.swift in Sources */,
 				7EAB0DCC9CA734155C03BE43 /* SavedPass.swift in Sources */,

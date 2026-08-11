@@ -81,13 +81,11 @@ struct SavedPassesView: View {
                 .font(ThemeManager.Typography.title2)
                 .fontWeight(.semibold)
             
-            Group {
-                Text("Start by ")
-                    .foregroundColor(ThemeManager.Colors.textSecondary) +
-                Text("generating your first Pass")
-                    .foregroundColor(ThemeManager.Colors.brandPrimary)
-                    .underline()
-            }
+            // One `Text` with two runs rather than two `Text`s added together:
+            // `+` is deprecated, and concatenation was never able to wrap
+            // cleanly anyway — an `AttributedString` is one string as far as
+            // layout is concerned.
+            Text(startByAttributed)
             .font(ThemeManager.Typography.body)
             .multilineTextAlignment(.center)
             .padding(.horizontal)
@@ -180,6 +178,18 @@ struct SavedPassesView: View {
         } catch {
             print("Error deleting passes: \(error)")
         }
+    }
+    /// "Start by generating your first Pass", with the call to action carrying
+    /// the emphasis and the lead-in staying quiet.
+    private var startByAttributed: AttributedString {
+        var lead = AttributedString("Start by ")
+        lead.foregroundColor = ThemeManager.Colors.textSecondary
+
+        var action = AttributedString("generating your first Pass")
+        action.foregroundColor = ThemeManager.Colors.brandPrimary
+        action.underlineStyle = .single
+
+        return lead + action
     }
 }
 
