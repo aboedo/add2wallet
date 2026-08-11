@@ -29,6 +29,7 @@
 		429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056189355BE651B878F8CD19 /* MockRevenueCat.swift */; };
 		4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */; };
 		496588759476E2C35800D407 /* nutshell-leg.pkpass in Resources */ = {isa = PBXBuildFile; fileRef = 0D623735C56FCB1333DEBA9B /* nutshell-leg.pkpass */; };
+		4AFB20B8CC13842DAC7A7D05 /* ImportStatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D399B8FFB8B6F26A9FC8A3B /* ImportStatusPill.swift */; };
 		4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */; };
 		4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */; };
 		512CCF786DC0A253CCF22972 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE748F2CC8B2B17A8556650 /* TripDetailView.swift */; };
@@ -169,6 +170,7 @@
 		2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatter.swift; sourceTree = "<group>"; };
 		3404A40820DCC113A4B8B9C9 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2WalletTests.swift"; sourceTree = "<group>"; };
+		3D399B8FFB8B6F26A9FC8A3B /* ImportStatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportStatusPill.swift; sourceTree = "<group>"; };
 		40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = pass_with_data_matrix.pdf; sourceTree = "<group>"; };
 		413E059A05815E3BF7D737BC /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareExtensionTests.swift; sourceTree = "<group>"; };
@@ -357,6 +359,7 @@
 				E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */,
 				7B12CD04C3AC60CBEE72A360 /* FullScreenPDFView.swift */,
 				2700ACC16DFE44D7269C9E09 /* HeroCardStack.swift */,
+				3D399B8FFB8B6F26A9FC8A3B /* ImportStatusPill.swift */,
 				797CFFCC95DD642828FB976F /* JourneyStrip.swift */,
 				04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */,
 				74CE070EB97417FF392D5060 /* PassGroupList.swift */,
@@ -658,6 +661,7 @@
 				DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */,
 				98152283E0433D7A6B7CB0D1 /* FullScreenPDFView.swift in Sources */,
 				3430A34FB8CECB28216ACB19 /* HeroCardStack.swift in Sources */,
+				4AFB20B8CC13842DAC7A7D05 /* ImportStatusPill.swift in Sources */,
 				8D82FA9E714C36CC681012C0 /* JourneyStrip.swift in Sources */,
 				254011287AA9D3BFA5F1E12D /* PassDetailPresentation.swift in Sources */,
 				F259F9DAA153A41DC00D85C0 /* PassGroupList.swift in Sources */,

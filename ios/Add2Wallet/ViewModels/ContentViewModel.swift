@@ -45,8 +45,31 @@ class ContentViewModel: ObservableObject {
     
     // Progress handling - owned by ContentViewModel to persist across tab switches
     @Published var progressViewModel = ProgressViewModel()
+
+    /// The built pass, waiting to be handed to Wallet.
+    ///
+    /// This used to live only in `ContentView`'s `@State`, set from a
+    /// notification. That was survivable while the sheet could not be
+    /// dismissed mid-import — the view that received the notification was
+    /// always the view that used it. Now that the sheet closes and reopens,
+    /// a fresh `ContentView` would have missed the announcement and shown
+    /// "Create Pass" over an already-created pass, charging a second credit
+    /// for work already done.
+    @Published var pendingAddPassesController: PKAddPassesViewController?
     
     init() {
+        // Republish the progress model's changes as our own.
+        //
+        // A nested `ObservableObject` does not propagate: `@Published var
+        // progressViewModel` fires when the *reference* is replaced, never when
+        // the percentage inside it moves. `ContentView` got away with that by
+        // observing the inner object directly, but the status pill observes
+        // this one, and its counter would have sat frozen at whatever value it
+        // first rendered — the exact bug that looks like "the upload hung".
+        progressViewModel.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+
         // Listen for files shared through the Share Extension or "Open in".
         let sharedFileObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("SharedFileReceived"),
@@ -149,6 +172,7 @@ class ContentViewModel: ObservableObject {
             isDemo = true
             
             // Reset any previous state
+            pendingAddPassesController = nil
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
@@ -179,6 +203,7 @@ class ContentViewModel: ObservableObject {
             try data.write(to: tempURL, options: [.atomic])
             selectedFileURL = tempURL
             // Reset any previously generated pass UI state/metadata
+            pendingAddPassesController = nil
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
@@ -288,7 +313,8 @@ class ContentViewModel: ObservableObject {
         isRetry = false
         retryCount = 0
         isDemo = false
-        NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+        pendingAddPassesController = nil
+            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
     }
     
     private func handleSharedFile(data: Data, filename: String) {
@@ -307,6 +333,7 @@ class ContentViewModel: ObservableObject {
             selectedFileURL = tempURL
             
             // Reset any previous state
+            pendingAddPassesController = nil
             NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
             passMetadata = nil
             warnings = []
@@ -524,6 +551,7 @@ class ContentViewModel: ObservableObject {
             hasError = false
             
             // Store the pass data for the view to access
+            pendingAddPassesController = passVC
             NotificationCenter.default.post(
                 name: NSNotification.Name("PassReadyToAdd"),
                 object: nil,

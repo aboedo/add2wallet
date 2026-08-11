@@ -6,6 +6,16 @@ import RevenueCat
 struct Add2WalletApp: App {
 
     @StateObject private var passUsageManager = PassUsageManager.shared
+
+    /// The import lives here, above the sheet that starts it.
+    ///
+    /// It used to be a `@StateObject` private to `ContentView`, which lives
+    /// inside the Add Ticket sheet — so closing the sheet destroyed the model
+    /// and killed the upload with it. That is why the progress bar had to hold
+    /// the screen hostage: dismissing it was not "hide this", it was "cancel".
+    /// Owned up here, the work outlives the sheet and the rest of the app can
+    /// watch it.
+    @StateObject private var importViewModel = ContentViewModel()
     let container: ModelContainer
 
     init() {
@@ -116,6 +126,7 @@ struct Add2WalletApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(passUsageManager)
+                .environmentObject(importViewModel)
                 .modelContainer(container)
                 .tint(ThemeManager.Colors.brandPrimary)
                 .sheet(isPresented: .constant(!hasSeenOnboarding)) {

@@ -10,6 +10,7 @@ import RevenueCatUI
 /// container for the size class.
 struct RootView: View {
     @EnvironmentObject var passUsageManager: PassUsageManager
+    @EnvironmentObject var importViewModel: ContentViewModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
 
@@ -80,7 +81,18 @@ struct RootView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                addTicketButton
+                VStack(spacing: ThemeManager.Spacing.sm) {
+                    // Above the bar, not over the content: an import in flight
+                    // is a status, and a status that covers what you are
+                    // reading is just a modal with softer edges.
+                    if importStatus.isVisible {
+                        ImportStatusPill(state: importStatus) { showingImport = true }
+                            .padding(.horizontal, ThemeManager.Spacing.md)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    addTicketButton
+                }
+                .animation(ThemeManager.Animations.standard, value: importStatus)
             }
     }
 
@@ -123,6 +135,23 @@ struct RootView: View {
         // The one true navigation layer in this app: a control floating over
         // content, so it gets the glass.
         .modifier(FloatingBarBackground())
+    }
+
+    /// Read off the import model rather than tracked separately, so the pill
+    /// cannot claim something the sheet disagrees with.
+    private var importStatus: ImportStatus {
+        if importViewModel.isProcessing {
+            return .processing(percent: Int(importViewModel.progressViewModel.progress * 100))
+        }
+        if importViewModel.hasError {
+            return .failed
+        }
+        // A finished import is only worth announcing while the sheet is closed;
+        // once it is open you are looking at the thing itself.
+        if importViewModel.passMetadata != nil && !showingImport {
+            return .ready
+        }
+        return .idle
     }
 
     @ViewBuilder

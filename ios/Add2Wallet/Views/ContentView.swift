@@ -6,9 +6,15 @@ import RevenueCatUI
 import MessageUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = ContentViewModel()
+    // Owned by the app, not by this view: see `Add2WalletApp`. The sheet is a
+    // window onto an import that outlives it.
+    @EnvironmentObject var viewModel: ContentViewModel
     @EnvironmentObject var passUsageManager: PassUsageManager
-    @State private var passViewController: PKAddPassesViewController?
+    // Read from the model, not held here: a reopened sheet is a new view and
+    // would have missed the notification that announced the finished pass.
+    private var passViewController: PKAddPassesViewController? {
+        viewModel.pendingAddPassesController
+    }
     @State private var showingAddPassVC = false
     @State private var showingFullScreenPDF = false
     @State private var showingSuccessView = false
@@ -212,7 +218,7 @@ struct ContentView: View {
                                         ThemeManager.Haptics.selection()
                                         viewModel.clearSelection()
                                         passAddedSuccessfully = false
-                                        passViewController = nil
+                                        viewModel.pendingAddPassesController = nil
                                     } label: {
                                         Label("New Pass", systemImage: "doc.badge.plus")
                                             .frame(maxWidth: .infinity)
@@ -329,11 +335,10 @@ struct ContentView: View {
                        let passVC = userInfo["passViewController"] as? PKAddPassesViewController {
                         // Nil out old VC first so SwiftUI tears it down cleanly,
                         // then assign new one on next runloop tick
+                        // The model already holds it; this only has to reset the
+                        // presentation so SwiftUI tears the old one down.
+                        _ = passVC
                         self.showingAddPassVC = false
-                        self.passViewController = nil
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            self.passViewController = passVC
-                        }
                     }
                 }
                 NotificationCenter.default.addObserver(
@@ -341,7 +346,6 @@ struct ContentView: View {
                     object: nil,
                     queue: .main
                 ) { _ in
-                    self.passViewController = nil
                     self.showingAddPassVC = false
                 }
                 NotificationCenter.default.addObserver(
@@ -383,7 +387,7 @@ struct ContentView: View {
                 showingAddPassVC = false
                 // If pass was added successfully, keep the flag true so the UI shows post-add buttons
                 if !passAddedSuccessfully {
-                    passViewController = nil
+                    viewModel.pendingAddPassesController = nil
                 }
                 // Refresh balance when returning from Apple Wallet (sheet dismissal)
                 Task {
@@ -400,8 +404,8 @@ struct ContentView: View {
                     passCount: addedPassCount,
                     onDismiss: {
                         // Clear the current pass (like cancel button does)
+                        // `clearSelection` already drops the held controller.
                         viewModel.clearSelection()
-                        passViewController = nil
                     }
                 )
             }
