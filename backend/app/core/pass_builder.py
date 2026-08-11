@@ -20,6 +20,7 @@ from app.core.models import (
 from app.services.v2.asset_generator import generate_assets
 from app.services.v2.models import PKBarcode, PassField, PassJSON, PassStructure
 from app.services.v2.pass_signer import get_signer
+from app.core.pkpass_validation import validate_pkpass
 from app.services.v2.pass_validator import validate_pass
 
 
@@ -38,6 +39,15 @@ class WalletPassBuilder:
                 raise ProcessingError(f"Pass validation failed: {'; '.join(errors)}")
 
             data = self._package(upload, analysis, pass_json, metadata)
+            # The last gate before this leaves the building. `validate_pass`
+            # above checked the JSON we were about to write; this checks the
+            # archive we actually wrote, which is a different thing and the one
+            # PassKit judges. Failing here is a bug in us, and a loud 500 beats
+            # a file the device refuses with "the data format is invalid".
+            if problems := validate_pkpass(data):
+                raise ProcessingError(
+                    "Built an invalid pkpass: " + "; ".join(problems)
+                )
             artifacts.append(
                 PassArtifact(
                     ticket_number=index + 1,

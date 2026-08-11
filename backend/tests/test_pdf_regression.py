@@ -26,11 +26,16 @@ import pytest
 
 from app.core.config import get_settings
 from app.core.pipeline import ConversionPipeline
+from app.core.pkpass_validation import validate_pkpass
 from app.core.storage import JobStore
 
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
-SAMPLE_DIRS = [BACKEND_DIR / "test_files", BACKEND_DIR.parent / "test-files" / "ignacio-feedback"]
+SAMPLE_DIRS = [
+    BACKEND_DIR / "test_files",
+    BACKEND_DIR / "tests" / "fixtures",
+    BACKEND_DIR.parent / "test-files" / "ignacio-feedback",
+]
 
 VALID_PK_FORMATS = {
     "PKBarcodeFormatQR",
@@ -245,3 +250,18 @@ def test_serial_numbers_are_unique_within_a_document(converted, name):
     serials = [pass_json["serialNumber"] for pass_json in converted[name]["passes"]]
 
     assert len(serials) == len(set(serials)), f"{name}: duplicate serial numbers"
+
+
+@pytest.mark.parametrize("sample", [p.name for p in SAMPLES])
+def test_every_pass_is_something_passkit_would_accept(converted, sample):
+    """The invariant that matters most, over every document we have.
+
+    Not "the JSON looks right" — the archive itself, checked the way PassKit
+    checks it. This is the assertion that would have caught the shipped
+    "the data format is invalid" errors, and it now runs for every sample.
+    """
+    raw = converted[sample]["raw"]
+    assert raw, f"{sample} produced no passes at all"
+    for index, data in enumerate(raw):
+        problems = validate_pkpass(data)
+        assert not problems, f"{sample} pass {index + 1}: " + "; ".join(problems)
