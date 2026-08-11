@@ -32,6 +32,17 @@ struct PassDetailPresentation: View {
                     )
                 }
                 
+                // The leg itself, before anything else on the card.
+                //
+                // The itinerary row learned to show flight number, operator and
+                // both ends of the journey; opening the pass then showed less
+                // than the list you opened it from, because this view only ever
+                // read document-level metadata and never looked at the segment.
+                if let segment = metadata.segment, segment.routeDescription != nil {
+                    Divider()
+                    JourneyStrip(segment: segment, accent: passColor)
+                }
+
                 Divider()
                 
                 // Map
@@ -88,14 +99,24 @@ struct PassDetailPresentation: View {
     
     private func buildFields() -> [FieldItem] {
         var fields: [FieldItem] = []
-        
-        if let passenger = metadata.seatInfo, !passenger.isEmpty {
-            fields.append(FieldItem(label: "Seat", value: passenger))
+        let segment = metadata.segment
+
+        // The segment wins over the document wherever both have an answer. On a
+        // multi-leg booking the document-level seat and reference belong to the
+        // booking as a whole, and this pass is one leg of it.
+        if let seat = segment?.seatInfo ?? metadata.seatInfo, !seat.isEmpty {
+            fields.append(FieldItem(label: "Seat", value: seat))
+        }
+        if let travelClass = segment?.travelClass, !travelClass.isEmpty {
+            fields.append(FieldItem(label: "Class", value: travelClass))
+        }
+        if let traveller = segment?.traveler, !traveller.isEmpty {
+            fields.append(FieldItem(label: "Traveller", value: traveller))
         }
         if let price = metadata.price, !price.isEmpty {
             fields.append(FieldItem(label: "Price", value: price))
         }
-        if let conf = metadata.confirmationNumber, !conf.isEmpty {
+        if let conf = segment?.confirmationNumber ?? metadata.confirmationNumber, !conf.isEmpty {
             fields.append(FieldItem(label: "Confirmation", value: conf))
         }
         if let gate = metadata.gateInfo, !gate.isEmpty {
@@ -106,6 +127,9 @@ struct PassDetailPresentation: View {
         }
         if let exhibit = metadata.exhibitName, !exhibit.isEmpty {
             fields.append(FieldItem(label: "Exhibit", value: exhibit))
+        }
+        if let notes = segment?.notes, !notes.isEmpty {
+            fields.append(FieldItem(label: "Notes", value: notes))
         }
         
         return fields

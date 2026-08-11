@@ -11,27 +11,27 @@ final class SegmentTimezoneTests: XCTestCase {
         // Madrid is CEST in August and CET in January. Same zone, same code,
         // two different answers — which is the whole reason "+02:00" is not
         // what gets stored.
-        XCTAssertEqual(TripLegCard.zoneLabel("Europe/Madrid", on: "2026-08-11"), "GMT+2")
-        XCTAssertEqual(TripLegCard.zoneLabel("Europe/Madrid", on: "2026-01-11"), "GMT+1")
+        XCTAssertEqual(PassSegment.zoneLabel("Europe/Madrid", on: "2026-08-11"), "GMT+2")
+        XCTAssertEqual(PassSegment.zoneLabel("Europe/Madrid", on: "2026-01-11"), "GMT+1")
     }
 
     func testWesternOffsetsUseAMinusSign() {
-        XCTAssertEqual(TripLegCard.zoneLabel("America/Montevideo", on: "2026-10-10"), "GMT−3")
+        XCTAssertEqual(PassSegment.zoneLabel("America/Montevideo", on: "2026-10-10"), "GMT−3")
     }
 
     func testZeroOffsetIsJustGMT() {
-        XCTAssertEqual(TripLegCard.zoneLabel("Europe/London", on: "2026-01-11"), "GMT")
+        XCTAssertEqual(PassSegment.zoneLabel("Europe/London", on: "2026-01-11"), "GMT")
     }
 
     /// India is +5:30. An integer-only formatter would render that as "GMT+5"
     /// and be half an hour wrong.
     func testHalfHourOffsetKeepsItsHalfHour() {
-        XCTAssertEqual(TripLegCard.zoneLabel("Asia/Kolkata", on: "2026-08-11"), "GMT+5.5")
+        XCTAssertEqual(PassSegment.zoneLabel("Asia/Kolkata", on: "2026-08-11"), "GMT+5.5")
     }
 
     func testUnknownOrMissingZoneProducesNoLabel() {
-        XCTAssertNil(TripLegCard.zoneLabel("Mars/Olympus", on: "2026-08-11"))
-        XCTAssertNil(TripLegCard.zoneLabel(nil, on: "2026-08-11"))
+        XCTAssertNil(PassSegment.zoneLabel("Mars/Olympus", on: "2026-08-11"))
+        XCTAssertNil(PassSegment.zoneLabel(nil, on: "2026-08-11"))
     }
 
     /// Where the offset problem is actually solved, and where it is not.
@@ -43,7 +43,7 @@ final class SegmentTimezoneTests: XCTestCase {
     /// backend validator instead, on the way in. These assertions record that
     /// boundary rather than pretend the client is defending it.
     func testTheClientCannotBeTheOneRejectingOffsets() {
-        XCTAssertNil(TripLegCard.zoneLabel("+02:00", on: "2026-08-11"))
-        XCTAssertEqual(TripLegCard.zoneLabel("GMT-3", on: "2026-08-11"), "GMT−3")
+        XCTAssertNil(PassSegment.zoneLabel("+02:00", on: "2026-08-11"))
+        XCTAssertEqual(PassSegment.zoneLabel("GMT-3", on: "2026-08-11"), "GMT−3")
     }
 }

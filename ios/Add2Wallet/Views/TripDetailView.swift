@@ -196,7 +196,7 @@ struct TripLegCard: View {
                     // The service, the way a boarding pass says it: "IB 6825 ·
                     // Iberia". Falls back to the venue for anything that is not
                     // a journey, and to the street for what you have to find.
-                    if let service = serviceLine {
+                    if let service = segment?.serviceLine {
                         Text(service)
                             .font(ThemeManager.Typography.footnote)
                             .foregroundColor(ThemeManager.Colors.textSecondary)
@@ -263,7 +263,7 @@ struct TripLegCard: View {
                     Text(depart)
                         .font(ThemeManager.Typography.bodyMonospaced)
                         .foregroundColor(ThemeManager.Colors.textPrimary)
-                    if let zone = departZoneLabel {
+                    if let zone = segment?.departZoneLabel {
                         Text(zone)
                             .font(ThemeManager.Typography.caption)
                             .foregroundColor(ThemeManager.Colors.textTertiary)
@@ -274,7 +274,7 @@ struct TripLegCard: View {
                     HStack(spacing: 4) {
                         HStack(spacing: 2) {
                             Text("→ \(arrive)")
-                            if let overnight = overnightSuffix {
+                            if let overnight = segment?.overnightSuffix {
                                 Text(overnight)
                                     .foregroundColor(ThemeManager.Colors.textTertiary)
                             }
@@ -282,7 +282,7 @@ struct TripLegCard: View {
                         .font(ThemeManager.Typography.footnoteMonospaced)
                         .foregroundColor(ThemeManager.Colors.textSecondary)
 
-                        if let zone = arriveZoneLabel {
+                        if let zone = segment?.arriveZoneLabel {
                             Text(zone)
                                 .font(ThemeManager.Typography.caption)
                                 .foregroundColor(ThemeManager.Colors.textTertiary)
@@ -295,83 +295,6 @@ struct TripLegCard: View {
                 .font(ThemeManager.Typography.footnote)
                 .foregroundColor(ThemeManager.Colors.textSecondary)
         }
-    }
-
-    /// The backend sends segment dates as ISO days and nothing else, so this
-    /// only needs to read that one shape. Built once — `DateFormatter` is
-    /// expensive and this runs per row.
-    static let isoDay: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter
-    }()
-
-    /// "+1" when the arrival lands on a later day than the departure, so a
-    /// red-eye does not read as arriving before it left.
-    private var overnightSuffix: String? {
-        guard let segment,
-              let departDate = segment.departDate,
-              let arriveDate = segment.arriveDate,
-              let depart = Self.isoDay.date(from: departDate),
-              let arrive = Self.isoDay.date(from: arriveDate) else { return nil }
-        let days = Calendar.current.dateComponents(
-            [.day],
-            from: Calendar.current.startOfDay(for: depart),
-            to: Calendar.current.startOfDay(for: arrive)
-        ).day ?? 0
-        return days > 0 ? "+\(days)" : nil
-    }
-
-    /// Zone labels appear only when the two ends of the leg are in *different*
-    /// zones. That is the only time the bare numbers mislead — "08:15 → 11:40"
-    /// is a three-hour hop or an eight-hour one depending on where each clock
-    /// is, and you cannot tell. On a domestic leg both labels would say the
-    /// same thing twice and earn nothing.
-    /// Compares the *offsets*, not the zone names. Montevideo and São Paulo are
-    /// two different zones that both read GMT−3 in October, and labelling that
-    /// leg "GMT−3 → GMT−3" is noise dressed up as information. What matters is
-    /// whether the two clocks disagree on the day of the flight.
-    private var showsZones: Bool {
-        guard let segment,
-              let depart = TimeZone(identifier: segment.departTimezone ?? ""),
-              let arrive = TimeZone(identifier: segment.arriveTimezone ?? "") else { return false }
-        let departOn = segment.departDate.flatMap { Self.isoDay.date(from: $0) } ?? Date()
-        let arriveOn = segment.arriveDate.flatMap { Self.isoDay.date(from: $0) } ?? departOn
-        return depart.secondsFromGMT(for: departOn) != arrive.secondsFromGMT(for: arriveOn)
-    }
-
-    private var departZoneLabel: String? {
-        showsZones ? Self.zoneLabel(segment?.departTimezone, on: segment?.departDate) : nil
-    }
-
-    private var arriveZoneLabel: String? {
-        showsZones ? Self.zoneLabel(segment?.arriveTimezone, on: segment?.arriveDate) : nil
-    }
-
-    /// "GMT-3" for the day the leg actually happens.
-    ///
-    /// Resolved against the date rather than today, because that is the whole
-    /// reason the zone is stored as `Europe/Madrid` instead of `+02:00`: the
-    /// offset moves twice a year and a pass bought in winter may fly in summer.
-    static func zoneLabel(_ identifier: String?, on date: String?) -> String? {
-        guard let identifier, let zone = TimeZone(identifier: identifier) else { return nil }
-        let when = date.flatMap { isoDay.date(from: $0) } ?? Date()
-        let hours = Double(zone.secondsFromGMT(for: when)) / 3600
-        if hours == 0 { return "GMT" }
-        let sign = hours > 0 ? "+" : "−"
-        let magnitude = abs(hours)
-        let rendered = magnitude == magnitude.rounded()
-            ? String(Int(magnitude))
-            : String(format: "%.1f", magnitude)
-        return "GMT\(sign)\(rendered)"
-    }
-
-    /// "IB 6825 · Iberia", or whichever half the ticket gave us.
-    private var serviceLine: String? {
-        let parts = [segment?.vehicleInfo, segment?.carrier].compactMap { $0 }
-            .filter { !$0.isEmpty }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// The street, but only when it says something the venue line did not.
