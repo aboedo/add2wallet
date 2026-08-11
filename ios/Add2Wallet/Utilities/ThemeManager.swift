@@ -81,6 +81,16 @@ struct ThemeManager {
         // mode, light pill/dark text in dark mode.
         static let onBrandPrimary = Color(.systemBackground)
 
+        // Fill for a row of equal-weight chips that includes a `PasteButton`.
+        // It has to be dark in *both* appearances, which is not a style choice:
+        // `PasteButton` and `.borderedProminent` both draw a **white** label no
+        // matter what the tint is, so a light fill (`surfaceCard`) makes the
+        // label disappear in light mode. Dark in light mode, one step up from
+        // the sheet in dark mode, white label legible on both.
+        static let sourceChip = Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? .secondarySystemBackground : .label
+        })
+
         // Surface Colors
         static let surfaceDefault = Color(.systemBackground)
         static let surfaceCard = Color(.secondarySystemBackground)

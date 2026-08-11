@@ -275,8 +275,29 @@ struct ImportSheet: View {
     }
 }
 
-/// Files, Photos, Paste — the same size, because none of them is the obvious
+/// Files, Photos, Paste — the same weight, because none of them is the obvious
 /// one. Which you reach for depends entirely on where the ticket happens to be.
+///
+/// All three are **system buttons wearing the same modifiers**, and that is the
+/// whole trick. `PasteButton` is the one control here we do not draw: it is
+/// system-rendered because it is the only way to read the clipboard without iOS
+/// putting a "Allow Paste?" prompt in front of every single tap. Being
+/// system-rendered, it ignores the parts of a hand-rolled look you would try to
+/// force on it — the first version gave it `.frame(maxWidth: .infinity,
+/// minHeight: 84)` next to two custom 84pt cards, and a system control does not
+/// stretch to fill a frame. It drew itself at its intrinsic size, centred in the
+/// slot, unlabelled, and looked like a different app.
+///
+/// So the un-stylable control sets the standard and the other two conform to it,
+/// rather than the other way round. Same control size, same border shape, same
+/// tint, all with a title and an icon — which makes them render identically by
+/// construction instead of by pixel-matching.
+///
+/// `.borderedProminent` specifically, and not `.bordered`: `PasteButton` ignores
+/// `buttonStyle` altogether and always draws itself filled, treating `.tint` as
+/// the fill rather than as the label colour. Style the other two as `.bordered`
+/// and you get two tinted-label chips beside one solid pill. Prominent is the
+/// only style that agrees with what Paste is going to do regardless.
 struct ImportSourcePicker: View {
     let onFiles: () -> Void
     let onPhotos: () -> Void
@@ -293,12 +314,16 @@ struct ImportSourcePicker: View {
                 ThemeManager.Haptics.light()
                 onPaste(providers)
             }
-            .labelStyle(.iconOnly)
-            .buttonBorderShape(.roundedRectangle(radius: ThemeManager.CornerRadius.medium))
-            .tint(ThemeManager.Colors.surfaceCard)
-            .frame(maxWidth: .infinity, minHeight: 84)
             .accessibilityIdentifier("pasteFileButton")
         }
+        .labelStyle(.titleAndIcon)
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        // Capsule, not `.roundedRectangle(radius:)`: Paste ignores the radius
+        // and draws itself as a capsule anyway, so asking for 16pt corners just
+        // means two rounded rects sitting next to one pill.
+        .buttonBorderShape(.capsule)
+        .tint(ThemeManager.Colors.sourceChip)
     }
 
     private func source(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
@@ -306,19 +331,8 @@ struct ImportSourcePicker: View {
             ThemeManager.Haptics.light()
             action()
         } label: {
-            VStack(spacing: ThemeManager.Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 22, weight: .regular))
-                Text(title)
-                    .font(ThemeManager.Typography.footnote)
-            }
-            .foregroundColor(ThemeManager.Colors.textPrimary)
-            .frame(maxWidth: .infinity, minHeight: 84)
-            .background(
-                ThemeManager.Colors.surfaceCard,
-                in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
-            )
+            Label(title, systemImage: icon)
+                .font(ThemeManager.Typography.footnote)
         }
-        .buttonStyle(.plain)
     }
 }
