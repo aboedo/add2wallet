@@ -57,6 +57,7 @@
 		B4CACF8C3612D8825E750E00 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13372BE4DCB2183466AD3A53 /* ContentView.swift */; };
 		B8E901F173204438DA8858AF /* TripGroupingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68794C33012813537B9B78E9 /* TripGroupingTests.swift */; };
 		BA3079A40A331D67B55E77CB /* TripTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC82260C06A3A9859DD10BD /* TripTimelineTests.swift */; };
+		BB08F4502FE5A4AF3DFF4ED3 /* LayoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8550F64D7D0DBFA056EEE0FE /* LayoverTests.swift */; };
 		C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */; };
 		D86AB26B7308BC2D4AA58CFD /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2518CFE7B9502126499FA643 /* TestHelpers.swift */; };
 		DA5418230613407AAF888EFB /* CollapsiblePDFPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88CD100834280D6D108D513 /* CollapsiblePDFPreview.swift */; };
@@ -188,6 +189,7 @@
 		7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassHeaderView.swift; sourceTree = "<group>"; };
 		7FC71D584A7B19DA9210C098 /* AsyncMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncMapView.swift; sourceTree = "<group>"; };
 		8379EB966293400461957261 /* URLHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLHandler.swift; sourceTree = "<group>"; };
+		8550F64D7D0DBFA056EEE0FE /* LayoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoverTests.swift; sourceTree = "<group>"; };
 		857A7F3E0833D5533118E145 /* TuistAssets+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistAssets+Add2Wallet.swift"; sourceTree = "<group>"; };
 		91BE638A702EBF2E23F0C455 /* Add2Wallet.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Add2Wallet.entitlements; sourceTree = "<group>"; };
 		93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -444,6 +446,7 @@
 				B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */,
 				231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */,
 				F80B13712CA64237F9C753B7 /* FileUploadTests.swift */,
+				8550F64D7D0DBFA056EEE0FE /* LayoverTests.swift */,
 				BF82BD9C1A86CC59B78A265E /* MockNetworkService.swift */,
 				056189355BE651B878F8CD19 /* MockRevenueCat.swift */,
 				9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */,
@@ -671,6 +674,7 @@
 				FC1358C8D4ADD78243CEA248 /* ContentViewModelTests.swift in Sources */,
 				C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */,
 				12287767426EAE0AA86F27A0 /* FileUploadTests.swift in Sources */,
+				BB08F4502FE5A4AF3DFF4ED3 /* LayoverTests.swift in Sources */,
 				A0BA476BAF50473741E021BD /* MockNetworkService.swift in Sources */,
 				429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */,
 				64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */,

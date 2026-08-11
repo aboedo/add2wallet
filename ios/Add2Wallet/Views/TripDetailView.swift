@@ -50,17 +50,68 @@ struct TripDetailView: View {
                         .font(ThemeManager.Typography.sectionHeader)
                         .foregroundColor(ThemeManager.Colors.textSecondary)
 
-                    ForEach(day.passes) { pass in
+                    ForEach(Array(day.passes.enumerated()), id: \.element.id) { index, pass in
                         NavigationLink {
                             SavedPassDetailView(savedPass: pass, isPushed: true)
                         } label: {
                             TripLegCard(pass: pass)
                         }
                         .buttonStyle(.plain)
+
+                        // The gap between landing and taking off again. Nobody
+                        // prints it on a ticket, but it is the number you
+                        // actually want when you are deciding whether to leave
+                        // the terminal — and both halves of it are already
+                        // sitting in the two legs either side.
+                        let next = index + 1 < day.passes.count ? day.passes[index + 1] : nil
+                        if let layover = Self.layover(from: pass, to: next) {
+                            LayoverRow(text: layover)
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// "1 hr 55 min layover in GRU", when two legs genuinely connect.
+    ///
+    /// Deliberately strict about what counts as a connection: the first leg has
+    /// to land where the second one leaves from. Two unrelated flights on the
+    /// same day are not a layover, and calling them one would be worse than
+    /// staying quiet.
+    ///
+    /// Only within a single day. A connection that crosses midnight puts its
+    /// two legs in different day groups, and the honest fix for that is to walk
+    /// the whole itinerary rather than each day in isolation — worth doing when
+    /// something needs it, not worth guessing at now.
+    static func layover(from arriving: SavedPass, to departing: SavedPass?) -> String? {
+        guard let departing,
+              let inbound = arriving.segments.first,
+              let outbound = departing.segments.first,
+              let airport = inbound.destination,
+              outbound.origin == airport,
+              let landed = minutes(from: inbound.arriveTime),
+              let leaves = minutes(from: outbound.departTime),
+              leaves > landed else { return nil }
+
+        let gap = leaves - landed
+        let hours = gap / 60
+        let mins = gap % 60
+        let duration = [
+            hours > 0 ? "\(hours) hr" : nil,
+            mins > 0 ? "\(mins) min" : nil
+        ].compactMap { $0 }.joined(separator: " ")
+        return "\(duration) layover in \(airport)"
+    }
+
+    /// "13:35" as minutes past midnight. The backend writes 24-hour times.
+    private static func minutes(from time: String?) -> Int? {
+        guard let time else { return nil }
+        let parts = time.split(separator: ":")
+        guard parts.count == 2,
+              let hours = Int(parts[0]),
+              let mins = Int(parts[1]) else { return nil }
+        return hours * 60 + mins
     }
 
     /// Undated passes are listed rather than hidden, and say so.
@@ -113,66 +164,179 @@ struct TripDetailView: View {
     }
 }
 
-/// One leg: the route and the facts that distinguish it from the next.
+/// One leg, with what the ticket actually said on it.
+///
+/// The row used to show a title, a route and the departure time, and drop
+/// everything else on the floor — the flight number, the operator, the arrival
+/// time, the reference. All of it was already extracted and stored; none of it
+/// was ever displayed anywhere but the individual pass detail. This is the
+/// screen where you check whether you are in the right place at the right time,
+/// so it is the screen that should carry them.
 struct TripLegCard: View {
     let pass: SavedPass
 
+    private var segment: PassSegment? { pass.segments.first }
+
     var body: some View {
-        HStack(spacing: ThemeManager.Spacing.md) {
-            PassGlyph(pass: pass, size: 36)
+        VStack(alignment: .leading, spacing: ThemeManager.Spacing.sm) {
+            HStack(alignment: .top, spacing: ThemeManager.Spacing.md) {
+                PassGlyph(pass: pass, size: Self.glyphSize)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(pass.displayTitle)
-                    .font(ThemeManager.Typography.bodySemibold)
-                    .foregroundColor(ThemeManager.Colors.textPrimary)
-                    .lineLimit(2)
-
-                if let route = pass.routeDescription {
-                    Text(route)
-                        .font(ThemeManager.Typography.footnote)
-                        .foregroundColor(ThemeManager.Colors.textSecondary)
-                } else if !pass.displayVenue.isEmpty {
-                    Text(pass.displayVenue)
-                        .font(ThemeManager.Typography.footnote)
-                        .foregroundColor(ThemeManager.Colors.textSecondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(pass.routeDescription ?? pass.displayTitle)
+                        .font(ThemeManager.Typography.bodySemibold)
+                        .foregroundColor(ThemeManager.Colors.textPrimary)
                         .lineLimit(2)
-                }
 
-                if !chips.isEmpty {
-                    HStack(spacing: ThemeManager.Spacing.xs) {
-                        ForEach(chips, id: \.self) { chip in
-                            Text(chip)
-                                .font(ThemeManager.Typography.caption)
-                                .padding(.horizontal, ThemeManager.Spacing.sm)
-                                .padding(.vertical, 2)
-                                .background(ThemeManager.Colors.textTertiary.opacity(0.15), in: Capsule())
-                                .foregroundColor(ThemeManager.Colors.textSecondary)
-                        }
+                    // The service, the way a boarding pass says it: "IB 6825 ·
+                    // Iberia". Falls back to the venue for anything that is not
+                    // a journey, and to the street for what you have to find.
+                    if let service = serviceLine {
+                        Text(service)
+                            .font(ThemeManager.Typography.footnote)
+                            .foregroundColor(ThemeManager.Colors.textSecondary)
+                    } else if !pass.displayVenue.isEmpty {
+                        Text(pass.displayVenue)
+                            .font(ThemeManager.Typography.footnote)
+                            .foregroundColor(ThemeManager.Colors.textSecondary)
+                            .lineLimit(2)
+                    }
+
+                    if let address = streetAddress {
+                        Text(address)
+                            .font(ThemeManager.Typography.caption)
+                            .foregroundColor(ThemeManager.Colors.textTertiary)
+                            .lineLimit(2)
                     }
                 }
+
+                Spacer(minLength: ThemeManager.Spacing.sm)
+
+                // The clock wins any fight for width. Sharing a row with the
+                // chips, "13:35" started breaking across two lines, and a time
+                // is the one thing here that must never be ambiguous.
+                times
+                    .fixedSize()
+                    .layoutPriority(1)
             }
 
-            Spacer(minLength: ThemeManager.Spacing.sm)
-
-            Text(TimelineFormatter.shortDate(for: pass))
-                .font(ThemeManager.Typography.footnote)
-                .foregroundColor(ThemeManager.Colors.textSecondary)
+            // Full card width, not the leftover beside the clock. Squeezed into
+            // the text column these truncated to "Seat 1…" and "QJ7T2…", which
+            // is worse than not showing them: a half-shown seat number is not a
+            // seat number. Indented to line up under the title.
+            if !chips.isEmpty {
+                HStack(spacing: ThemeManager.Spacing.xs) {
+                    ForEach(chips, id: \.self) { chip in
+                        Text(chip)
+                            .font(ThemeManager.Typography.caption)
+                            .lineLimit(1)
+                            .padding(.horizontal, ThemeManager.Spacing.sm)
+                            .padding(.vertical, 2)
+                            .background(ThemeManager.Colors.textTertiary.opacity(0.15), in: Capsule())
+                            .foregroundColor(ThemeManager.Colors.textSecondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.leading, Self.glyphSize + ThemeManager.Spacing.md)
+            }
         }
         .padding(ThemeManager.Spacing.md)
         .background(ThemeManager.Colors.surfaceCard)
         .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium))
     }
 
-    /// Only what the ticket actually says.
+    private static let glyphSize: CGFloat = 36
+
+    /// Departure over arrival, monospaced so the digits line up down the
+    /// itinerary. A leg that lands on another day says so rather than showing a
+    /// time that appears to precede its own departure.
+    @ViewBuilder
+    private var times: some View {
+        if let depart = segment?.departTime {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(depart)
+                    .font(ThemeManager.Typography.bodyMonospaced)
+                    .foregroundColor(ThemeManager.Colors.textPrimary)
+
+                if let arrive = segment?.arriveTime {
+                    HStack(spacing: 2) {
+                        Text("→ \(arrive)")
+                        if let overnight = overnightSuffix {
+                            Text(overnight)
+                                .foregroundColor(ThemeManager.Colors.textTertiary)
+                        }
+                    }
+                    .font(ThemeManager.Typography.footnoteMonospaced)
+                    .foregroundColor(ThemeManager.Colors.textSecondary)
+                }
+            }
+        } else {
+            Text(TimelineFormatter.shortDate(for: pass))
+                .font(ThemeManager.Typography.footnote)
+                .foregroundColor(ThemeManager.Colors.textSecondary)
+        }
+    }
+
+    /// The backend sends segment dates as ISO days and nothing else, so this
+    /// only needs to read that one shape. Built once — `DateFormatter` is
+    /// expensive and this runs per row.
+    private static let isoDay: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+
+    /// "+1" when the arrival lands on a later day than the departure, so a
+    /// red-eye does not read as arriving before it left.
+    private var overnightSuffix: String? {
+        guard let segment,
+              let departDate = segment.departDate,
+              let arriveDate = segment.arriveDate,
+              let depart = Self.isoDay.date(from: departDate),
+              let arrive = Self.isoDay.date(from: arriveDate) else { return nil }
+        let days = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current.startOfDay(for: depart),
+            to: Calendar.current.startOfDay(for: arrive)
+        ).day ?? 0
+        return days > 0 ? "+\(days)" : nil
+    }
+
+    /// "IB 6825 · Iberia", or whichever half the ticket gave us.
+    private var serviceLine: String? {
+        let parts = [segment?.vehicleInfo, segment?.carrier].compactMap { $0 }
+            .filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// The street, but only when it says something the venue line did not.
+    /// A hotel whose venue is "Gran Vía 84" does not need "Gran Vía 84, 28013
+    /// Madrid" underneath it.
+    private var streetAddress: String? {
+        guard segment == nil,
+              let address = pass.metadata?.venueAddress,
+              !address.isEmpty else { return nil }
+        let venue = pass.displayVenue
+        guard !venue.isEmpty, address.hasPrefix(venue) else { return address }
+        let remainder = address.dropFirst(venue.count)
+            .trimmingCharacters(in: CharacterSet(charactersIn: " ,"))
+        return remainder.isEmpty ? nil : remainder
+    }
+
+    /// Only what the ticket actually says, ordered by how much it matters when
+    /// you are standing there holding it, and capped so they stay on one line.
     private var chips: [String] {
         var result: [String] = []
-        if let segment = pass.segments.first {
-            if let time = segment.departTime { result.append(time) }
-            if let seat = segment.seatInfo { result.append("Seat \(seat)") }
-            if let travelClass = segment.travelClass { result.append(travelClass) }
+        if let seat = segment?.seatInfo { result.append("Seat \(seat)") }
+        if let gate = pass.metadata?.gateInfo, !gate.isEmpty { result.append(gate) }
+        if let reference = segment?.confirmationNumber ?? pass.metadata?.confirmationNumber,
+           !reference.isEmpty {
+            result.append(reference)
         }
+        if let travelClass = segment?.travelClass { result.append(travelClass) }
         if pass.passCount > 1 { result.append("\(pass.passCount) tickets") }
-        return result
+        return Array(result.prefix(3))
     }
 }
 
@@ -363,5 +527,25 @@ struct ImportSourcePicker: View {
             ThemeManager.Colors.surfaceCardGrouped,
             in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.card)
         )
+    }
+}
+
+/// The wait between two connecting legs. Quiet on purpose — it is not a thing
+/// you own, it is the space between two things you own.
+struct LayoverRow: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: ThemeManager.Spacing.sm) {
+            Image(systemName: "clock")
+                .font(.system(size: 13))
+                .frame(width: 36)
+            Text(text)
+                .italic()
+            Spacer(minLength: 0)
+        }
+        .font(ThemeManager.Typography.footnote)
+        .foregroundColor(ThemeManager.Colors.textTertiary)
+        .padding(.leading, ThemeManager.Spacing.md)
     }
 }

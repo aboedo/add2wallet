@@ -65,6 +65,19 @@ struct ScreenshotModeSeeder {
             var seat: String? = nil
             var latitude: Double? = nil
             var longitude: Double? = nil
+            // The rest of what the backend actually extracts. It was all left
+            // nil here, so every seeded leg looked like a bare route and the
+            // itinerary row had nothing to show even when the parser had found
+            // it — which is why the row went years without using any of it.
+            var arriveTime: String? = nil
+            /// Days after `departTime` that the arrival lands on. Red-eyes exist.
+            var arrivesDaysLater: Int = 0
+            var carrier: String? = nil
+            var vehicleInfo: String? = nil
+            var travelClass: String? = nil
+            var confirmation: String? = nil
+            var gate: String? = nil
+            var address: String? = nil
         }
 
         let fakeData: [FakePassData] = [
@@ -77,16 +90,36 @@ struct ScreenshotModeSeeder {
 
             // One real journey: out of Montevideo, three days in Madrid, home
             // again. The return is what closes the trip.
-            FakePassData(title: "Air Europa UX046", venue: "Carrasco Intl.", city: "Montevideo", passType: "flight", daysFromNow: 60, color: "rgb(0,94,184)",
-                         origin: "Montevideo", destination: "Madrid", departTime: "23:55", seat: "14A",
-                         latitude: -34.838, longitude: -56.030),
+            //
+            // The outbound connects on purpose. A single direct flight never
+            // exercises a layover, so the one case the itinerary most needs to
+            // get right was the one case the seeded data could not produce.
+            FakePassData(title: "MVD → GRU", venue: "Carrasco Intl.", city: "Montevideo", passType: "flight", daysFromNow: 60, color: "rgb(0,94,184)",
+                         origin: "MVD", destination: "GRU", departTime: "08:15", seat: "14A",
+                         latitude: -34.838, longitude: -56.030,
+                         arriveTime: "11:40", carrier: "LATAM", vehicleInfo: "LA 1425",
+                         travelClass: "Economy", confirmation: "QJ7T2M", gate: "Gate 4",
+                         address: "Ruta 101 s/n, Ciudad de la Costa"),
+            FakePassData(title: "GRU → MAD", venue: "Guarulhos Intl.", city: "São Paulo", passType: "flight", daysFromNow: 60, color: "rgb(0,94,184)",
+                         origin: "GRU", destination: "MAD", departTime: "13:35", seat: "22F",
+                         latitude: -23.435, longitude: -46.473,
+                         arriveTime: "05:50", arrivesDaysLater: 1, carrier: "Iberia", vehicleInfo: "IB 6825",
+                         travelClass: "Economy", confirmation: "QJ7T2M", gate: "Terminal 3",
+                         address: "Rod. Hélio Smidt s/n, Guarulhos"),
             FakePassData(title: "Hotel Riu Plaza España", venue: "Gran Vía 84", city: "Madrid", passType: "hotel", daysFromNow: 61, color: "rgb(140,90,20)",
-                         latitude: 40.423, longitude: -3.712),
+                         latitude: 40.423, longitude: -3.712,
+                         confirmation: "5677544862",
+                         address: "Gran Vía 84, 28013 Madrid, España"),
             FakePassData(title: "Museo Reina Sofía", venue: "Calle de Santa Isabel 52", city: "Madrid", passType: "museum", daysFromNow: 62, color: "rgb(165,0,0)",
-                         latitude: 40.408, longitude: -3.694),
-            FakePassData(title: "Air Europa UX045", venue: "Madrid–Barajas", city: "Madrid", passType: "flight", daysFromNow: 64, color: "rgb(0,94,184)",
-                         origin: "Madrid", destination: "Montevideo", departTime: "12:10", seat: "9C",
-                         latitude: 40.472, longitude: -3.561),
+                         latitude: 40.408, longitude: -3.694,
+                         confirmation: "RS-884213",
+                         address: "Calle de Santa Isabel 52, 28012 Madrid, España"),
+            FakePassData(title: "MAD → MVD", venue: "Madrid–Barajas", city: "Madrid", passType: "flight", daysFromNow: 64, color: "rgb(0,94,184)",
+                         origin: "MAD", destination: "MVD", departTime: "12:10", seat: "9C",
+                         latitude: 40.472, longitude: -3.561,
+                         arriveTime: "20:45", carrier: "Air Europa", vehicleInfo: "UX 045",
+                         travelClass: "Economy", confirmation: "8KP44Q", gate: "Terminal 1",
+                         address: "Av. de la Hispanidad s/n, 28042 Madrid"),
         ]
 
         for (index, data) in fakeData.enumerated() {
@@ -100,7 +133,7 @@ struct ScreenshotModeSeeder {
                 time: nil,
                 duration: nil,
                 venueName: data.venue,
-                venueAddress: nil,
+                venueAddress: data.address,
                 city: data.city,
                 stateCountry: nil,
                 latitude: data.latitude,
@@ -110,8 +143,8 @@ struct ScreenshotModeSeeder {
                 seatInfo: nil,
                 barcodeData: nil,
                 price: nil,
-                confirmationNumber: nil,
-                gateInfo: nil,
+                confirmationNumber: data.confirmation,
+                gateInfo: data.gate,
                 eventDescription: nil,
                 venueType: nil,
                 capacity: nil,
@@ -141,10 +174,23 @@ struct ScreenshotModeSeeder {
                 hasAssignedSeating: nil,
                 eventUrls: nil,
                 segment: data.origin == nil && data.destination == nil ? nil : PassSegment(
-                    page: nil, label: nil, origin: data.origin, destination: data.destination,
-                    departDate: nil, departTime: data.departTime, arriveDate: nil, arriveTime: nil,
-                    carrier: nil, vehicleInfo: nil, seatInfo: data.seat, travelClass: nil,
-                    confirmationNumber: nil, traveler: nil, notes: nil
+                    page: nil,
+                    label: nil,
+                    origin: data.origin,
+                    destination: data.destination,
+                    departDate: formatter.string(from: eventDate),
+                    departTime: data.departTime,
+                    arriveDate: formatter.string(
+                        from: calendar.date(byAdding: .day, value: data.arrivesDaysLater, to: eventDate)!
+                    ),
+                    arriveTime: data.arriveTime,
+                    carrier: data.carrier,
+                    vehicleInfo: data.vehicleInfo,
+                    seatInfo: data.seat,
+                    travelClass: data.travelClass,
+                    confirmationNumber: data.confirmation,
+                    traveler: nil,
+                    notes: nil
                 )
             )
             let pass = SavedPass(
