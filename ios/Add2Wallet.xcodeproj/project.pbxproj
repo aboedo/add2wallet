@@ -10,6 +10,7 @@
 		02CAF4EFE65BB104C370B4BA /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012B4DD7004F9D901EE5D83 /* ThemeManager.swift */; };
 		03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */ = {isa = PBXBuildFile; fileRef = C0628EC3E9565A946EC494F7 /* torre ifel.pdf */; };
 		0D42915AE7018CC78EBEF12C /* PassHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C52E416F2844EFA7CF764A3 /* PassHeaderView.swift */; };
+		111F76F6D0CD156D7C6A1383 /* ConversionResponseDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B1D56F2761542F76B288487 /* ConversionResponseDecodingTests.swift */; };
 		11226D19DF61F6D793216351 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3404A40820DCC113A4B8B9C9 /* Trip.swift */; };
 		12287767426EAE0AA86F27A0 /* FileUploadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80B13712CA64237F9C753B7 /* FileUploadTests.swift */; };
 		1387CA227C02F9A4982011B7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93DAE614FCB87B2BF9381118 /* Preview Assets.xcassets */; };
@@ -35,6 +36,7 @@
 		512CCF786DC0A253CCF22972 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE748F2CC8B2B17A8556650 /* TripDetailView.swift */; };
 		54136CDA2113EBF4AB149D09 /* SavedPassesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7613D12953EEA86AE1BA81B /* SavedPassesView.swift */; };
 		5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */ = {isa = PBXBuildFile; fileRef = 5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */; };
+		5D32AA7DF185FEC53790F4A5 /* fjord-conversion-response.json in Resources */ = {isa = PBXBuildFile; fileRef = 055B38BB17DEBC4C45467515 /* fjord-conversion-response.json */; };
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
 		654A9E7162E7135D8CDD96B8 /* PassKitAcceptanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1205A8F3C1360C4FA78FFC03 /* PassKitAcceptanceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
@@ -146,6 +148,7 @@
 
 /* Begin PBXFileReference section */
 		04AC6D0F0A920B2311141B61 /* PassDetailPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassDetailPresentation.swift; sourceTree = "<group>"; };
+		055B38BB17DEBC4C45467515 /* fjord-conversion-response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fjord-conversion-response.json"; sourceTree = "<group>"; };
 		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
 		0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2Wallet.swift"; sourceTree = "<group>"; };
 		0CE5125D2B22D9E8C032B3FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -170,6 +173,7 @@
 		2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimeFormatter.swift; sourceTree = "<group>"; };
 		3404A40820DCC113A4B8B9C9 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2WalletTests.swift"; sourceTree = "<group>"; };
+		3B1D56F2761542F76B288487 /* ConversionResponseDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversionResponseDecodingTests.swift; sourceTree = "<group>"; };
 		3D399B8FFB8B6F26A9FC8A3B /* ImportStatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportStatusPill.swift; sourceTree = "<group>"; };
 		40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = pass_with_data_matrix.pdf; sourceTree = "<group>"; };
 		413E059A05815E3BF7D737BC /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
@@ -271,6 +275,7 @@
 			isa = PBXGroup;
 			children = (
 				2A325F414CB4D737F46E1705 /* eTicket.pdf */,
+				055B38BB17DEBC4C45467515 /* fjord-conversion-response.json */,
 				B6C011F6A92AC034CC0AEF0D /* mock_error_response.json */,
 				5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */,
 				1CE7FC42ECD8EB77B1730666 /* mock_upload_response.json */,
@@ -457,6 +462,7 @@
 			children = (
 				0F35DBD2C1C78B1703696DA6 /* Resources */,
 				B8342F7B77D21FB7E343FA15 /* ContentViewModelTests.swift */,
+				3B1D56F2761542F76B288487 /* ConversionResponseDecodingTests.swift */,
 				231EF7741DD0B5813D3E8A1A /* DateTimeFormatterTests.swift */,
 				F80B13712CA64237F9C753B7 /* FileUploadTests.swift */,
 				8550F64D7D0DBFA056EEE0FE /* LayoverTests.swift */,
@@ -613,6 +619,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DA762FCAB2B8BA3B36E6ACDD /* eTicket.pdf in Resources */,
+				5D32AA7DF185FEC53790F4A5 /* fjord-conversion-response.json in Resources */,
 				67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */,
 				5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */,
 				EDC5D55FDEB0DE4AA9373979 /* mock_upload_response.json in Resources */,
@@ -690,6 +697,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC1358C8D4ADD78243CEA248 /* ContentViewModelTests.swift in Sources */,
+				111F76F6D0CD156D7C6A1383 /* ConversionResponseDecodingTests.swift in Sources */,
 				C3C69189536FE22445DD1728 /* DateTimeFormatterTests.swift in Sources */,
 				12287767426EAE0AA86F27A0 /* FileUploadTests.swift in Sources */,
 				BB08F4502FE5A4AF3DFF4ED3 /* LayoverTests.swift in Sources */,

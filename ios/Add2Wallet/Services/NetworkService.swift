@@ -245,9 +245,22 @@ struct EnhancedPassMetadata: Codable {
 }
 
 // iOS 26 Upcoming Event structure
+/// A sibling event the backend noticed while reading the document.
+///
+/// Decorative: nothing the app must have. That matters, because it used to be
+/// able to sink the entire conversion — `id` and `name` were non-optional, the
+/// backend never sends either (its entries are shaped `event_type` /
+/// `event_name` / `title`), and the resulting `keyNotFound` failed the whole
+/// `UploadResponse`. Ten finished passes were thrown away over a missing key in
+/// a field nothing reads, and the user saw "the data couldn't be read because
+/// it is missing".
+///
+/// The backend types this as free-form `list[dict[str, Any]]`, so there is no
+/// contract here to hold it to. Everything is optional and the array skips
+/// what it cannot parse.
 struct UpcomingEvent: Codable {
-    let id: String
-    let name: String
+    let id: String?
+    let name: String?
     let date: String?
     let venueName: String?
     let latitude: Double?
@@ -260,10 +273,12 @@ struct UpcomingEvent: Codable {
     let isActive: Bool?
     let headerImageUrl: String?
     let venueMapUrl: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case name
+        case eventName = "event_name"
+        case title
         case date
         case venueName = "venue_name"
         case latitude
@@ -276,6 +291,47 @@ struct UpcomingEvent: Codable {
         case isActive = "is_active"
         case headerImageUrl = "header_image_url"
         case venueMapUrl = "venue_map_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        // The server calls it `event_name` or `title` depending on the path.
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+            ?? container.decodeIfPresent(String.self, forKey: .eventName)
+            ?? container.decodeIfPresent(String.self, forKey: .title)
+        date = try container.decodeIfPresent(String.self, forKey: .date)
+        venueName = try container.decodeIfPresent(String.self, forKey: .venueName)
+        latitude = try container.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
+        appleMapsId = try container.decodeIfPresent(String.self, forKey: .appleMapsId)
+        seatInfo = try container.decodeIfPresent(String.self, forKey: .seatInfo)
+        performerArtist = try container.decodeIfPresent(String.self, forKey: .performerArtist)
+        eventType = try container.decodeIfPresent(String.self, forKey: .eventType)
+        urls = try container.decodeIfPresent(EventURLs.self, forKey: .urls)
+        isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive)
+        headerImageUrl = try container.decodeIfPresent(String.self, forKey: .headerImageUrl)
+        venueMapUrl = try container.decodeIfPresent(String.self, forKey: .venueMapUrl)
+    }
+
+    /// Written by hand because the custom `init(from:)` suppresses synthesis.
+    /// `EnhancedPassMetadata` is persisted, so this has to round-trip.
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encodeIfPresent(date, forKey: .date)
+        try container.encodeIfPresent(venueName, forKey: .venueName)
+        try container.encodeIfPresent(latitude, forKey: .latitude)
+        try container.encodeIfPresent(longitude, forKey: .longitude)
+        try container.encodeIfPresent(appleMapsId, forKey: .appleMapsId)
+        try container.encodeIfPresent(seatInfo, forKey: .seatInfo)
+        try container.encodeIfPresent(performerArtist, forKey: .performerArtist)
+        try container.encodeIfPresent(eventType, forKey: .eventType)
+        try container.encodeIfPresent(urls, forKey: .urls)
+        try container.encodeIfPresent(isActive, forKey: .isActive)
+        try container.encodeIfPresent(headerImageUrl, forKey: .headerImageUrl)
+        try container.encodeIfPresent(venueMapUrl, forKey: .venueMapUrl)
     }
 }
 
