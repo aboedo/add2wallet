@@ -217,6 +217,7 @@ Return JSON:
       "travel_class": "...",
       "confirmation_number": "the reference for THIS segment",
       "traveler": "...",
+      "traveler_count": <how many people this leg is for: the 2 in "2 x Adult", else null>,
       "notes": "practical info worth keeping, plain text"
     }}
   ]
@@ -437,6 +438,10 @@ rarely land on the same colour, so do not fall back on a generic red or blue —
 reach for the whole spectrum. It must be a deep, saturated colour that white
 text can sit on: no greys, pastels, near-white or near-black. Use null only if
 the document gives you nothing to go on.
+
+"traveler_count" is the number of people on that leg, not the number of codes
+printed. A leg that says "2 x Adult" is two tickets whether it shows two
+barcodes, one shared barcode, or none at all.
 
 Times on a ticket are local to the place they happen, so leave them exactly as
 printed and never convert them. Say where they are local to instead, in the

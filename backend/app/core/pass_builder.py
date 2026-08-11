@@ -28,14 +28,11 @@ class WalletPassBuilder:
         self.settings = settings
 
     def build(self, upload: ValidatedUpload, analysis: AnalysisResult) -> list[PassArtifact]:
-        ticket_count = self._ticket_count(analysis)
+        plan = _ticket_plan(analysis)
         artifacts: list[PassArtifact] = []
-        for index in range(ticket_count):
-            barcode = analysis.barcodes[index] if index < len(analysis.barcodes) else (analysis.barcodes[0] if analysis.barcodes else None)
-            # Each pass describes its own leg when the document has several.
-            segment = _segment_for(analysis, barcode, index)
+        for index, (segment, barcode) in enumerate(plan):
             metadata = _merge_segment(analysis.metadata, segment)
-            pass_json = self._pass_json(metadata, barcode, index, ticket_count, segment, analysis)
+            pass_json = self._pass_json(metadata, barcode, index, len(plan), segment, analysis)
             valid, errors = validate_pass(pass_json)
             if not valid:
                 raise ProcessingError(f"Pass validation failed: {'; '.join(errors)}")
@@ -44,11 +41,11 @@ class WalletPassBuilder:
             artifacts.append(
                 PassArtifact(
                     ticket_number=index + 1,
-                    title=self._ticket_title(metadata, index, ticket_count, segment),
+                    title=self._ticket_title(metadata, index, len(plan), segment),
                     description=pass_json.description,
                     barcode=barcode,
                     metadata=self._metadata_for_response(
-                        metadata, index, ticket_count, segment, analysis
+                        metadata, index, len(plan), segment, analysis
                     ),
                     data=data,
                 )
@@ -178,6 +175,54 @@ class WalletPassBuilder:
         if analysis and analysis.segments:
             data["group_size"] = len(analysis.barcodes) or len(analysis.segments)
         return data
+
+
+def _sort_key(segment: PassSegment) -> tuple:
+    """Chronological, falling back to the order the pages came in.
+
+    Passes used to come out in whatever order the barcode scanner returned,
+    which was by descending confidence — so a fjord cruise on the 18th could
+    land between two trains on the 19th. The itinerary is the one thing that
+    has an obviously correct order, and it is not "how sure were we that this
+    was a QR code".
+    """
+    return (
+        segment.depart_date or "9999-99-99",
+        segment.depart_time or "99:99",
+        segment.page if segment.page is not None else 9999,
+    )
+
+
+def _ticket_plan(analysis: AnalysisResult) -> list[tuple[PassSegment | None, Barcode | None]]:
+    """One entry per pass to build: which leg it is, and which code it carries.
+
+    How many passes a document is worth comes from what it *says* — "2 x Adult"
+    on each of five legs is ten tickets — and not from how many barcode images
+    were found. Those disagree constantly: Fjord Tours prints one QR per
+    traveller on the trains, a single shared QR on the cruise, and an
+    order-level QR on the bus, which counted as eight for a ten-ticket journey.
+    """
+    if not analysis.segments:
+        # No legs: the old behaviour, one pass per code, is right for a plain
+        # multi-ticket document where every code is its own admission.
+        if analysis.metadata.multiple_tickets and analysis.barcodes:
+            return [(None, barcode) for barcode in analysis.barcodes]
+        return [(None, analysis.barcodes[0] if analysis.barcodes else None)]
+
+    plan: list[tuple[PassSegment | None, Barcode | None]] = []
+    for segment in sorted(analysis.segments, key=_sort_key):
+        codes = [b for b in analysis.barcodes if b.page is not None and b.page == segment.page]
+        # A leg is worth what it says it is worth. Where the document is silent,
+        # fall back to the number of codes on that page, and never fewer than
+        # one — a leg with no code at all is still a leg you travel.
+        count = segment.traveler_count or len(codes) or 1
+        for traveller in range(count):
+            # Legs that print one code per traveller hand each pass its own;
+            # legs that print one shared code give everyone the same one, which
+            # is exactly what the paper ticket does.
+            code = codes[traveller] if traveller < len(codes) else (codes[0] if codes else None)
+            plan.append((segment, code))
+    return plan
 
 
 def _segment_for(

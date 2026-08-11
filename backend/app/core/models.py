@@ -134,6 +134,13 @@ class PassSegment(BaseModel):
     confirmation_number: str | None = None
     traveler: str | None = None
     notes: str | None = None
+    # How many people this leg is booked for — the "2 x Adult" on the ticket.
+    #
+    # This, not the number of barcodes we managed to find, is how many passes a
+    # leg is worth. A Fjord Tours itinerary prints one QR per traveller on some
+    # legs, one shared QR on others, and an order-level QR on a third; counting
+    # images produced eight passes for a journey that is ten tickets.
+    traveler_count: int | None = None
 
     @field_validator("depart_timezone", "arrive_timezone", mode="after")
     @classmethod
