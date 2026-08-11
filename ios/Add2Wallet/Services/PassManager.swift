@@ -13,24 +13,20 @@ class PassManager: ObservableObject {
     
     func checkAuthorizationStatus() {
         #if !targetEnvironment(simulator)
-        if #available(iOS 19.0, *) {
-            let status = PKPassLibrary().authorizationStatus(for: .backgroundAddPasses)
-            self.isAuthorizedForBackgroundAdd = (status == .authorized)
-        }
+        let status = PKPassLibrary().authorizationStatus(for: .backgroundAddPasses)
+        self.isAuthorizedForBackgroundAdd = (status == .authorized)
         #endif
     }
     
     func requestBackgroundAddAuthorization() async -> Bool {
         #if !targetEnvironment(simulator)
-        if #available(iOS 19.0, *) {
-            do {
-                let status = try await PKPassLibrary().requestAuthorization(for: .backgroundAddPasses)
-                self.isAuthorizedForBackgroundAdd = (status == .authorized)
-                return status == .authorized
-            } catch {
-                print("❌ Failed to request background add authorization: \(error)")
-                return false
-            }
+        do {
+            let status = try await PKPassLibrary().requestAuthorization(for: .backgroundAddPasses)
+            self.isAuthorizedForBackgroundAdd = (status == .authorized)
+            return status == .authorized
+        } catch {
+            print("❌ Failed to request background add authorization: \(error)")
+            return false
         }
         #endif
         return false
@@ -38,7 +34,7 @@ class PassManager: ObservableObject {
     
     func addPasses(_ passes: [PKPass]) async throws {
         #if !targetEnvironment(simulator)
-        if #available(iOS 19.0, *), isAuthorizedForBackgroundAdd {
+        if isAuthorizedForBackgroundAdd {
             await PKPassLibrary().addPasses(passes)
         } else {
             for pass in passes {
@@ -56,10 +52,7 @@ class PassManager: ObservableObject {
     
     func shouldPromptForBackgroundAuthorization() -> Bool {
         #if !targetEnvironment(simulator)
-        if #available(iOS 19.0, *) {
-            let status = PKPassLibrary().authorizationStatus(for: .backgroundAddPasses)
-            return status == .notDetermined
-        }
+        return PKPassLibrary().authorizationStatus(for: .backgroundAddPasses) == .notDetermined
         #endif
         return false
     }

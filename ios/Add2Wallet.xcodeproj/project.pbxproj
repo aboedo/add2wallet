@@ -738,7 +738,7 @@
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Add2Wallet/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -770,7 +770,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = "Derived/InfoPlists/Add2WalletTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -806,7 +806,7 @@
 				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = Add2WalletShareExtension/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -955,7 +955,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = "Derived/InfoPlists/Add2WalletTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -995,7 +995,7 @@
 				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				INFOPLIST_FILE = Add2WalletShareExtension/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1031,7 +1031,7 @@
 				DEVELOPMENT_TEAM = H9DPH4DQG7;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Add2Wallet/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

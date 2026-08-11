@@ -14,7 +14,7 @@ let project = Project(
             destinations: .iOS,
             product: .app,
             bundleId: "com.andresboedo.add2wallet",
-            deploymentTargets: .iOS("17.0"),
+            deploymentTargets: .iOS("26.0"),
             infoPlist: .file(path: "Add2Wallet/Info.plist"),
             sources: [
                 "Add2Wallet/**/*.swift"
@@ -46,7 +46,7 @@ let project = Project(
             destinations: .iOS,
             product: .appExtension,
             bundleId: "com.andresboedo.add2wallet.shareextension",
-            deploymentTargets: .iOS("17.0"),
+            deploymentTargets: .iOS("26.0"),
             infoPlist: .file(path: "Add2WalletShareExtension/Info.plist"),
             sources: [
                 "Add2WalletShareExtension/**/*.swift"
@@ -68,7 +68,7 @@ let project = Project(
             destinations: .iOS,
             product: .unitTests,
             bundleId: "com.andresboedo.add2wallet.tests",
-            deploymentTargets: .iOS("17.0"),
+            deploymentTargets: .iOS("26.0"),
             infoPlist: .default,
             sources: [
                 "Add2WalletTests/**/*.swift"

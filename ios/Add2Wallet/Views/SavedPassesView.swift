@@ -340,13 +340,8 @@ struct PassRowView: View {
     }
     
     private func requestAppRating() {
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if #available(iOS 14.0, *) {
-                SKStoreReviewController.requestReview(in: scene)
-            } else {
-                SKStoreReviewController.requestReview()
-            }
-        }
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
+        AppStore.requestReview(in: scene)
     }
     
     private func sendFeedbackEmail(appUserID: String) {

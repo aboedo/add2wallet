@@ -38,10 +38,10 @@ struct ThemeManager {
     ///
     /// The rule is Apple's: a shape inside another shape should be
     /// *concentric* — its radius is the parent's radius minus the padding
-    /// between them, so the two curves stay parallel instead of drifting. iOS
-    /// 26 ships `.rect(cornerRadius: .containerConcentric)` for this, but the
-    /// deployment target here is iOS 17, so `concentric(inside:inset:)` does
-    /// the same arithmetic by hand.
+    /// between them, so the two curves stay parallel instead of drifting. Now
+    /// that the floor is iOS 26 the system can do this itself with
+    /// `.rect(cornerRadius: .containerConcentric)`; `concentric(inside:inset:)`
+    /// stays for the places that need the number rather than a shape.
     ///
     /// Everything that draws a rounded corner should name one of these. Loose
     /// literals had drifted to 10 and 12 in six different files, which is what
