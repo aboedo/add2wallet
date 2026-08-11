@@ -32,7 +32,7 @@ struct OnboardingView: View {
 
             VStack(spacing: ThemeManager.Spacing.lg) {
                 Image(systemName: "wallet.pass.fill")
-                    .font(.system(size: 80))
+                    .font(.system(size: ThemeManager.IconSize.hero))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [ThemeManager.Colors.brandPrimary, ThemeManager.Colors.brandSecondary],
@@ -98,7 +98,7 @@ struct OnboardingView: View {
                 // Result
                 HStack(spacing: ThemeManager.Spacing.sm) {
                     Image(systemName: "wallet.pass")
-                        .font(.system(size: 20))
+                        .font(.system(size: ThemeManager.IconSize.medium))
                         .foregroundColor(ThemeManager.Colors.brandPrimary)
                         .frame(width: 36, height: 36)
 
@@ -129,7 +129,7 @@ struct OnboardingView: View {
     private func methodCard(icon: String, title: String, description: String, detail: String?) -> some View {
         HStack(spacing: ThemeManager.Spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 24))
+                .font(.system(size: ThemeManager.IconSize.large))
                 .foregroundColor(ThemeManager.Colors.onBrandPrimary)
                 .frame(width: 48, height: 48)
                 .background(

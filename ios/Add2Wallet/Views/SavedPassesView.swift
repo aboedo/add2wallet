@@ -72,13 +72,13 @@ struct SavedPassesView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: ThemeManager.Spacing.md) {
             Image(systemName: "wallet.pass")
-                .font(.system(size: 60))
+                .font(.system(size: ThemeManager.IconSize.hero))
                 .foregroundColor(.secondary)
             
             Text("No Passes Yet")
-                .font(.title2)
+                .font(ThemeManager.Typography.title2)
                 .fontWeight(.semibold)
             
             Group {
@@ -88,7 +88,7 @@ struct SavedPassesView: View {
                     .foregroundColor(ThemeManager.Colors.brandPrimary)
                     .underline()
             }
-            .font(.body)
+            .font(ThemeManager.Typography.body)
             .multilineTextAlignment(.center)
             .padding(.horizontal)
             .onTapGesture {
@@ -263,7 +263,7 @@ struct PassRowView: View {
                 .frame(width: 36, height: 36)
             
             Image(systemName: passIconName)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: ThemeManager.IconSize.small, weight: .medium))
                 .foregroundColor(.white)
         }
     }

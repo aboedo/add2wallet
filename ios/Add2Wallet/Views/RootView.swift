@@ -142,7 +142,7 @@ struct DetailPlaceholder: View {
     var body: some View {
         VStack(spacing: ThemeManager.Spacing.md) {
             Image(systemName: "ticket")
-                .font(.system(size: 48, weight: .thin))
+                .font(.system(size: ThemeManager.IconSize.hero, weight: .thin))
                 .foregroundColor(ThemeManager.Colors.textTertiary)
             Text("Select a trip or a pass")
                 .font(ThemeManager.Typography.body)

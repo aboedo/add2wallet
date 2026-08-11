@@ -25,24 +25,24 @@ struct PassHeaderView: View {
     }
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: ThemeManager.Spacing.sm) {
             // Date and time field with calendar icon (if enabled and available)
             if showDateTime,
                let metadata = metadata,
                let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
-                HStack(spacing: 8) {
+                HStack(spacing: ThemeManager.Spacing.sm) {
                     Spacer()
                     Image(systemName: "calendar")
                         .foregroundColor(.white.opacity(0.9))
-                        .font(.subheadline)
+                        .font(ThemeManager.Typography.subheadline)
                     Text(dateTimeString)
-                        .font(.subheadline)
+                        .font(ThemeManager.Typography.subheadline)
                         .foregroundColor(.white.opacity(0.9))
                 }
             }
             
             Text(title)
-                .font(.largeTitle)
+                .font(ThemeManager.Typography.largeTitle)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white)
@@ -68,7 +68,7 @@ struct PassHeaderView: View {
 }
 
 #Preview {
-    VStack(spacing: 16) {
+    VStack(spacing: ThemeManager.Spacing.md) {
         // ContentView style
         PassHeaderView(
             title: "Add2Wallet", 

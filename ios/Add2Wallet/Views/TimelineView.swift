@@ -74,7 +74,7 @@ struct TimelineView: View {
             .padding(ThemeManager.Spacing.md)
             // Room for the Add Ticket button, so the last row is never hidden
             // behind it the way the old floating tab bar hid the last pass.
-            .padding(.bottom, 88)
+            .padding(.bottom, ThemeManager.Spacing.floatingBarClearance)
         }
     }
 
@@ -255,7 +255,7 @@ struct TimelineLegRow: View {
         HStack(spacing: ThemeManager.Spacing.sm) {
             PassGlyph(pass: pass, size: 30)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: ThemeManager.Spacing.hairline) {
                 Text(pass.displayTitle)
                     .font(ThemeManager.Typography.footnote)
                     .foregroundColor(ThemeManager.Colors.textPrimary)
@@ -287,7 +287,7 @@ struct TimelineRow: View {
             switch item {
             case .trip(let trip):
                 Image(systemName: "suitcase.fill")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: ThemeManager.IconSize.inline, weight: .medium))
                     .foregroundColor(.white)
                     .frame(width: 36, height: 36)
                     .background(accent, in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.glyph(for: 36)))
@@ -295,7 +295,7 @@ struct TimelineRow: View {
                 PassGlyph(pass: pass, size: 36)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: ThemeManager.Spacing.hairline) {
                 Text(title)
                     .font(ThemeManager.Typography.bodySemibold)
                     .foregroundColor(ThemeManager.Colors.textPrimary)
@@ -310,7 +310,7 @@ struct TimelineRow: View {
 
             Spacer(minLength: ThemeManager.Spacing.sm)
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: ThemeManager.Spacing.hairline) {
                 Text(TimelineFormatter.dateLabel(for: item))
                     .font(ThemeManager.Typography.footnote)
                     .foregroundColor(
@@ -362,7 +362,7 @@ struct TimelineEmptyState: View {
     var body: some View {
         VStack(spacing: ThemeManager.Spacing.md) {
             Image(systemName: "suitcase")
-                .font(.system(size: 56, weight: .thin))
+                .font(.system(size: ThemeManager.IconSize.hero, weight: .thin))
                 .foregroundColor(ThemeManager.Colors.textTertiary)
 
             Text("Your trips live here")
@@ -376,7 +376,7 @@ struct TimelineEmptyState: View {
                 .padding(.horizontal, ThemeManager.Spacing.xl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.bottom, 88)
+        .padding(.bottom, ThemeManager.Spacing.floatingBarClearance)
     }
 }
 
@@ -387,7 +387,7 @@ struct PassGlyph: View {
 
     var body: some View {
         Image(systemName: PassColorUtils.iconName(for: pass.metadata, passType: pass.passType))
-            .font(.system(size: size * 0.5, weight: .medium))
+            .font(.system(size: ThemeManager.IconSize.inTile(size), weight: .medium))
             .foregroundColor(.white)
             .frame(width: size, height: size)
             .background(

@@ -28,9 +28,9 @@ struct JourneyStrip: View {
                     alignment: .leading
                 )
 
-                VStack(spacing: 2) {
+                VStack(spacing: ThemeManager.Spacing.hairline) {
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: ThemeManager.IconSize.inline, weight: .semibold))
                         .foregroundColor(accent)
                     // The only place the overnight marker can go without
                     // attaching itself to one of the two clocks and looking
@@ -41,7 +41,7 @@ struct JourneyStrip: View {
                             .foregroundColor(ThemeManager.Colors.textTertiary)
                     }
                 }
-                .padding(.top, 6)
+                .padding(.top, ThemeManager.Spacing.xs)
 
                 end(
                     place: segment.destination,
@@ -62,7 +62,7 @@ struct JourneyStrip: View {
         zone: String?,
         alignment: HorizontalAlignment
     ) -> some View {
-        VStack(alignment: alignment, spacing: 2) {
+        VStack(alignment: alignment, spacing: ThemeManager.Spacing.hairline) {
             if let place {
                 Text(place)
                     .font(ThemeManager.Typography.title2)
@@ -72,7 +72,7 @@ struct JourneyStrip: View {
             }
 
             if let time {
-                HStack(spacing: 4) {
+                HStack(spacing: ThemeManager.Spacing.xs) {
                     Text(time)
                         .font(ThemeManager.Typography.bodyMonospaced)
                         .foregroundColor(ThemeManager.Colors.textPrimary)

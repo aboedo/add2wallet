@@ -153,7 +153,7 @@ private extension View {
 }
 
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: ThemeManager.Spacing.lg) {
         HeroCardStack(
             remainingPasses: 9,
             isLoadingBalance: false,
@@ -171,7 +171,7 @@ private extension View {
         )
         
         Text("Other content below...")
-            .font(.title2)
+            .font(ThemeManager.Typography.title2)
             .foregroundColor(.secondary)
     }
     .padding()

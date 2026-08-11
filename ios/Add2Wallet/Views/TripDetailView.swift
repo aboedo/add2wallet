@@ -187,7 +187,7 @@ struct TripLegCard: View {
             HStack(alignment: .top, spacing: ThemeManager.Spacing.md) {
                 PassGlyph(pass: pass, size: Self.glyphSize)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs) {
                     Text(pass.routeDescription ?? pass.displayTitle)
                         .font(ThemeManager.Typography.bodySemibold)
                         .foregroundColor(ThemeManager.Colors.textPrimary)
@@ -236,7 +236,7 @@ struct TripLegCard: View {
                             .font(ThemeManager.Typography.caption)
                             .lineLimit(1)
                             .padding(.horizontal, ThemeManager.Spacing.sm)
-                            .padding(.vertical, 2)
+                            .padding(.vertical, ThemeManager.Spacing.hairline)
                             .background(ThemeManager.Colors.textTertiary.opacity(0.15), in: Capsule())
                             .foregroundColor(ThemeManager.Colors.textSecondary)
                     }
@@ -258,8 +258,8 @@ struct TripLegCard: View {
     @ViewBuilder
     private var times: some View {
         if let depart = segment?.departTime {
-            VStack(alignment: .trailing, spacing: 2) {
-                HStack(spacing: 4) {
+            VStack(alignment: .trailing, spacing: ThemeManager.Spacing.hairline) {
+                HStack(spacing: ThemeManager.Spacing.xs) {
                     Text(depart)
                         .font(ThemeManager.Typography.bodyMonospaced)
                         .foregroundColor(ThemeManager.Colors.textPrimary)
@@ -271,8 +271,8 @@ struct TripLegCard: View {
                 }
 
                 if let arrive = segment?.arriveTime {
-                    HStack(spacing: 4) {
-                        HStack(spacing: 2) {
+                    HStack(spacing: ThemeManager.Spacing.xs) {
+                        HStack(spacing: ThemeManager.Spacing.hairline) {
                             Text("→ \(arrive)")
                             if let overnight = segment?.overnightSuffix {
                                 Text(overnight)
@@ -504,7 +504,7 @@ struct ImportSourcePicker: View {
     private func card(_ title: String, icon: String, dimmed: Bool = false) -> some View {
         VStack(spacing: ThemeManager.Spacing.sm) {
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .regular))
+                .font(.system(size: ThemeManager.IconSize.medium, weight: .regular))
             Text(title)
                 .font(ThemeManager.Typography.footnote)
         }
@@ -525,7 +525,7 @@ struct LayoverRow: View {
     var body: some View {
         HStack(spacing: ThemeManager.Spacing.sm) {
             Image(systemName: "clock")
-                .font(.system(size: 13))
+                .font(.system(size: ThemeManager.IconSize.inline))
                 .frame(width: 36)
             Text(text)
                 .italic()

@@ -21,7 +21,7 @@ struct PassDetailPresentation: View {
                 // Header: title + key info
                 VStack(alignment: .leading, spacing: ThemeManager.Spacing.sm) {
                     Text(metadata.title ?? metadata.eventName ?? "Untitled Pass")
-                        .font(.title2)
+                        .font(ThemeManager.Typography.title2)
                         .fontWeight(.bold)
                         .foregroundColor(ThemeManager.Colors.textPrimary)
                     
@@ -78,7 +78,7 @@ struct PassDetailPresentation: View {
                 GridItem(.flexible(), alignment: .leading)
             ], alignment: .leading, spacing: ThemeManager.Spacing.md) {
                 ForEach(fields, id: \.label) { field in
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: ThemeManager.Spacing.hairline) {
                         Text(field.label.uppercased())
                             .font(ThemeManager.Typography.caption)
                             .foregroundColor(ThemeManager.Colors.textTertiary)

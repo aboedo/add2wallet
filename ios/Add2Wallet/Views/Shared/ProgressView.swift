@@ -12,9 +12,9 @@ struct ProgressView: View {
     @ObservedObject private var progressViewModel: ProgressViewModel
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: ThemeManager.Spacing.lg) {
             // Progress bar
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: ThemeManager.Spacing.sm) {
                 HStack {
                     Text(progressViewModel.progressMessage)
                         .font(ThemeManager.Typography.bodySemibold)

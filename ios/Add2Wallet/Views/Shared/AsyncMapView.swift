@@ -48,7 +48,7 @@ struct AsyncMapView: View {
     var body: some View {
         Group {
             if shouldShowMap {
-                VStack(spacing: 8) {
+                VStack(spacing: ThemeManager.Spacing.sm) {
                     if isLoadingCoordinate {
                         // Loading state
                         loadingMapView
@@ -70,11 +70,11 @@ struct AsyncMapView: View {
     }
     
     private var loadingMapView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: ThemeManager.Spacing.md) {
             SwiftUI.ProgressView()
                 .scaleEffect(1.2)
             Text("Loading map...")
-                .font(.caption)
+                .font(ThemeManager.Typography.caption)
                 .foregroundColor(.secondary)
         }
         .frame(height: 140)
@@ -122,7 +122,7 @@ struct AsyncMapView: View {
                 }
             }
         }
-        .font(.footnote)
+        .font(ThemeManager.Typography.footnote)
         .padding(.top, ThemeManager.Spacing.xs)
     }
 

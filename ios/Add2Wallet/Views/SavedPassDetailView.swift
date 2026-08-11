@@ -42,7 +42,7 @@ struct SavedPassDetailView: View {
     private var detailContent: some View {
         ZStack {
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: ThemeManager.Spacing.md) {
                         
                         // Use unified pass detail presentation
                         if let metadata = savedPass.metadata {
@@ -53,17 +53,17 @@ struct SavedPassDetailView: View {
                             )
                     } else {
                         // Fallback for passes without metadata
-                        VStack(spacing: 16) {
+                        VStack(spacing: ThemeManager.Spacing.md) {
                             // Header without metadata
-                            VStack(spacing: 8) {
+                            VStack(spacing: ThemeManager.Spacing.sm) {
                                 Text(savedPass.displayTitle)
-                                    .font(.largeTitle)
+                                    .font(ThemeManager.Typography.largeTitle)
                                     .fontWeight(.bold)
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.white)
                                 
                                 Text(savedPass.displaySubtitle)
-                                    .font(.title3)
+                                    .font(ThemeManager.Typography.title3)
                                     .foregroundColor(.white.opacity(0.9))
                                     .multilineTextAlignment(.center)
                             }
@@ -79,14 +79,14 @@ struct SavedPassDetailView: View {
                             .clipShape(RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.large))
                             
                             // Basic pass info
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: ThemeManager.Spacing.sm) {
                                 Text("Pass Information")
-                                    .font(.headline)
+                                    .font(ThemeManager.Typography.bodySemibold)
                                 
                                 Group {
                                     keyValueRow("Type", savedPass.passType.capitalized)
                                 }
-                                .font(.subheadline)
+                                .font(ThemeManager.Typography.subheadline)
                                 .foregroundColor(.secondary)
                             }
                             .padding()
@@ -249,7 +249,7 @@ struct SavedPassDetailView: View {
     @ViewBuilder
     private func keyValueRow(_ key: String, _ value: String?) -> some View {
         if let value = value, !value.isEmpty {
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: ThemeManager.Spacing.sm) {
                 Text("\(key):")
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)

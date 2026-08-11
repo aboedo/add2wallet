@@ -155,7 +155,7 @@ struct ContentView: View {
                         // Empty state
                         VStack(spacing: ThemeManager.Spacing.md) {
                             Image(systemName: "wallet.pass")
-                                .font(.system(size: 64, weight: .thin))
+                                .font(.system(size: ThemeManager.IconSize.hero, weight: .thin))
                                 .foregroundColor(ThemeManager.Colors.textTertiary)
                                 .padding(.top, ThemeManager.Spacing.xl)
                             

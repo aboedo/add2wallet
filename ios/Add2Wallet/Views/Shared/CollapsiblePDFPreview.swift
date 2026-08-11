@@ -23,7 +23,7 @@ struct CollapsibleFilePreview: View {
                             }
                         } label: {
                             Image(systemName: "chevron.up")
-                                .font(.caption)
+                                .font(ThemeManager.Typography.caption)
                                 .foregroundColor(ThemeManager.Colors.textSecondary)
                         }
                     }
@@ -82,7 +82,7 @@ struct CollapsibleFilePreview: View {
                         Spacer()
 
                         Image(systemName: "chevron.down")
-                            .font(.caption)
+                            .font(ThemeManager.Typography.caption)
                             .foregroundColor(ThemeManager.Colors.textSecondary)
                     }
                     .padding(ThemeManager.Spacing.md)

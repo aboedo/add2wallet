@@ -18,7 +18,7 @@ struct SuccessToast: View {
                         .animation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0), value: animationPhase)
                     
                     Image(systemName: "checkmark")
-                        .font(.title2)
+                        .font(ThemeManager.Typography.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                         .scaleEffect(animationPhase < 2 ? 0.5 : 1.0)

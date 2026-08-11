@@ -60,12 +60,12 @@ struct PassMetadataView: View {
         VStack(spacing: style == .contentView ? 12 : 8) {
             // Date and time field with calendar icon
             if let dateTimeString = PassDateTimeFormatter.combineDateTime(date: metadata.date, time: metadata.time) {
-                HStack(spacing: 8) {
+                HStack(spacing: ThemeManager.Spacing.sm) {
                     Image(systemName: "calendar")
                         .foregroundColor(style == .contentView ? ThemeManager.Colors.brandPrimary : iconColor)
-                        .font(.subheadline)
+                        .font(ThemeManager.Typography.subheadline)
                     Text(dateTimeString)
-                        .font(.subheadline)
+                        .font(ThemeManager.Typography.subheadline)
                         .foregroundColor(primaryTextColor)
                     Spacer()
                 }
@@ -73,12 +73,12 @@ struct PassMetadataView: View {
             
             // Event description field
             if let description = metadata.eventDescription ?? metadata.description {
-                HStack(spacing: 8) {
+                HStack(spacing: ThemeManager.Spacing.sm) {
                     Image(systemName: "text.alignleft")
                         .foregroundColor(secondaryTextColor)
-                        .font(.caption)
+                        .font(ThemeManager.Typography.caption)
                     Text(description)
-                        .font(.caption)
+                        .font(ThemeManager.Typography.caption)
                         .foregroundColor(secondaryTextColor)
                         .multilineTextAlignment(.leading)
                     Spacer()
@@ -91,12 +91,12 @@ struct PassMetadataView: View {
             // Venue field with map pin icon
             if let venue = metadata.venueName {
                 VStack(alignment: .leading) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: ThemeManager.Spacing.sm) {
                         Image(systemName: "mappin")
                             .foregroundColor(style == .contentView ? ThemeManager.Colors.brandSecondary : iconColor)
-                            .font(.subheadline)
+                            .font(ThemeManager.Typography.subheadline)
                         Text(venue)
-                            .font(.subheadline)
+                            .font(ThemeManager.Typography.subheadline)
                             .foregroundColor(primaryTextColor)
                         Spacer()
                     }
@@ -107,7 +107,7 @@ struct PassMetadataView: View {
                        let city = metadata.city,
                        let country = metadata.stateCountry {
                         Text("\(address), \(city), \(country)")
-                            .font(.caption)
+                            .font(ThemeManager.Typography.caption)
                             .foregroundColor(primaryTextColor)
                         Spacer()
                     }
@@ -118,10 +118,10 @@ struct PassMetadataView: View {
             if style == .detailView, let ticketCount, ticketCount > 1 {
                 HStack {
                     Text("\(ticketCount) tickets")
-                        .font(.caption)
+                        .font(ThemeManager.Typography.caption)
                         .foregroundColor(.white.opacity(0.8))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, ThemeManager.Spacing.sm)
+                        .padding(.vertical, ThemeManager.Spacing.xs)
                         .background(
                             Capsule()
                                 .fill(Color.black.opacity(0.4))
@@ -201,7 +201,7 @@ extension View {
         eventUrls: nil
     )
     
-    VStack(spacing: 20) {
+    VStack(spacing: ThemeManager.Spacing.lg) {
         // ContentView style
         PassMetadataView(metadata: sampleMetadata, style: .contentView)
         

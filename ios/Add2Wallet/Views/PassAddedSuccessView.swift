@@ -8,24 +8,24 @@ struct PassAddedSuccessView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
+            VStack(spacing: ThemeManager.Spacing.xl) {
                 Spacer()
                 
                 // Success icon
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 100))
+                    .font(.system(size: ThemeManager.IconSize.hero))
                     .foregroundColor(.green)
                     .symbolEffect(.bounce, value: isPresented)
                 
                 // Success message
-                VStack(spacing: 12) {
+                VStack(spacing: ThemeManager.Spacing.md) {
                     Text(passCount > 1 ? "Passes Successfully Added!" : "Pass Successfully Added!")
-                        .font(.largeTitle)
+                        .font(ThemeManager.Typography.largeTitle)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                     
                     Text("You can view \(passCount > 1 ? "them" : "it") in Apple Wallet any time.")
-                        .font(.title3)
+                        .font(ThemeManager.Typography.title3)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
@@ -34,7 +34,7 @@ struct PassAddedSuccessView: View {
                 Spacer()
                 
                 // Action buttons
-                VStack(spacing: 16) {
+                VStack(spacing: ThemeManager.Spacing.md) {
                     Button(action: {
                         // Open Apple Wallet
                         if let url = URL(string: "shoebox://") {
@@ -64,7 +64,7 @@ struct PassAddedSuccessView: View {
                     }
                 }
                 .padding(.horizontal)
-                .padding(.bottom, 30)
+                .padding(.bottom, ThemeManager.Spacing.xl)
             }
             .navigationBarHidden(true)
             .background(

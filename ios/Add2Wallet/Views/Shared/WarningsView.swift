@@ -5,14 +5,14 @@ struct WarningsView: View {
     let warnings: [String]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: ThemeManager.Spacing.sm) {
             ForEach(warnings, id: \.self) { warning in
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top, spacing: ThemeManager.Spacing.md) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(ThemeManager.Colors.warning)
                         .font(ThemeManager.Typography.title2)
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: ThemeManager.Spacing.xs) {
                         Text("Warning")
                             .font(ThemeManager.Typography.bodySemibold)
                             .foregroundColor(ThemeManager.Colors.warning)

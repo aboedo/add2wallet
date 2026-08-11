@@ -56,7 +56,7 @@ private struct PassGroupRow: View {
                         onAdd(ticket)
                     } label: {
                         Image(systemName: "wallet.pass")
-                            .font(.footnote.weight(.semibold))
+                            .font(ThemeManager.Typography.footnote.weight(.semibold))
                     }
                     .buttonStyle(.plain)
                     .foregroundColor(ThemeManager.Colors.interactive)
@@ -72,7 +72,7 @@ private struct PassGroupRow: View {
             }
 
             if !ticket.details.isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: ThemeManager.Spacing.hairline) {
                     ForEach(ticket.details) { detail in
                         HStack(alignment: .firstTextBaseline, spacing: ThemeManager.Spacing.xs) {
                             Text(detail.label)
@@ -86,7 +86,7 @@ private struct PassGroupRow: View {
                         }
                     }
                 }
-                .padding(.top, 2)
+                .padding(.top, ThemeManager.Spacing.hairline)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

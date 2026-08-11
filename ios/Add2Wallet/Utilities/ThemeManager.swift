@@ -7,6 +7,10 @@ struct ThemeManager {
     
     // MARK: - Spacing System (8pt Grid)
     enum Spacing {
+        /// Hairline gap between a label and the value it belongs to. Below the
+        /// grid on purpose: at 4pt a caption stops reading as attached to the
+        /// line above it and starts looking like its own row.
+        static let hairline: CGFloat = 2
         static let xs: CGFloat = 4      // 0.5x
         static let sm: CGFloat = 8      // 1x base
         static let md: CGFloat = 16     // 2x
@@ -15,6 +19,12 @@ struct ThemeManager {
         static let xxl: CGFloat = 40    // 5x
         static let xxxl: CGFloat = 48   // 6x
         
+        /// Room at the bottom of a scroll view for the floating Add Ticket bar
+        /// to hover over without covering the last row. Not a grid step — it is
+        /// the measured height of a control plus its margin, and it belongs
+        /// here so the two screens that need it cannot drift apart.
+        static let floatingBarClearance: CGFloat = 88
+
         // Semantic spacing
         static let cardPadding = md
         static let sectionSpacing = lg
@@ -78,7 +88,13 @@ struct ThemeManager {
         
         // Section titles
         static let title2 = Font.system(.title2, design: .default, weight: .semibold)        // 22/28
-        
+        static let title3 = Font.system(.title3, design: .default, weight: .semibold)        // 20/25
+
+        /// Between body and footnote. Reached for constantly in the metadata
+        /// rows, which is why it had to be named: ten call sites were writing
+        /// `.subheadline` directly because the scale had no word for it.
+        static let subheadline = Font.system(.subheadline, design: .default, weight: .regular)
+
         // Body text and rows
         static let body = Font.system(.body, design: .default, weight: .regular)             // 17/22
         static let bodySemibold = Font.system(.body, design: .default, weight: .semibold)    // 17/22
@@ -95,6 +111,33 @@ struct ThemeManager {
         // Section headers
         static let sectionHeader = Font.system(.caption, design: .default, weight: .medium)
             .smallCaps()
+    }
+
+    // MARK: - Icon Sizes
+    ///
+    /// SF Symbols are sized in points, not text styles, so they never went
+    /// through `Typography` and nothing kept them honest. The app had grown
+    /// thirteen different sizes — 13, 15, 18, 20, 22, 24 for inline glyphs and
+    /// 48, 56, 60, 64, 80, 100 for empty-state art — most of them a point or
+    /// two from each other and none of them chosen against the rest.
+    ///
+    /// Symbols that sit next to text scale with it, via `.imageScale`; these
+    /// are for the ones that stand alone.
+    enum IconSize {
+        /// Inline with a line of text — chips, timeline rows.
+        static let inline: CGFloat = 15
+        /// A symbol acting as a small label's icon.
+        static let small: CGFloat = 18
+        /// The icon in a tappable card or list glyph.
+        static let medium: CGFloat = 22
+        /// A feature icon: onboarding rows, section markers.
+        static let large: CGFloat = 28
+        /// Empty states — the big thin symbol with nothing else on screen.
+        static let hero: CGFloat = 64
+
+        /// Pass glyphs draw their symbol at half the tile, the way an app icon
+        /// fills its own square.
+        static func inTile(_ tile: CGFloat) -> CGFloat { tile * 0.5 }
     }
     
     // MARK: - Color System
