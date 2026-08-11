@@ -130,7 +130,7 @@ struct OnboardingView: View {
         HStack(spacing: ThemeManager.Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 24))
-                .foregroundColor(.white)
+                .foregroundColor(ThemeManager.Colors.onBrandPrimary)
                 .frame(width: 48, height: 48)
                 .background(
                     ThemeManager.Colors.brandPrimary,

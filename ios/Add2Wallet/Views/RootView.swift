@@ -109,7 +109,7 @@ struct RootView: View {
         } label: {
             Label("Add Ticket", systemImage: "plus")
                 .font(ThemeManager.Typography.bodySemibold)
-                .foregroundColor(.white)
+                .foregroundColor(ThemeManager.Colors.onBrandPrimary)
                 .padding(.vertical, ThemeManager.Spacing.md)
                 .frame(maxWidth: .infinity)
                 .background(

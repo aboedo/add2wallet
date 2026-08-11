@@ -12,6 +12,16 @@ struct HeroCardStack: View {
     var onPaste: ([NSItemProvider]) -> Void = { _ in }
     @State private var buttonBounce = 0
 
+    /// Everything drawn on this card, and the card's own fill, are two halves
+    /// of one decision. A pass colour is always saturated and dark enough that
+    /// white reads on it. Ink is not: it flips to white in dark mode, and the
+    /// hardcoded white content that used to sit on top vanished into it — a
+    /// white card with white text, which is exactly the "no contrast" this was
+    /// reported as. So the foreground follows the fill instead of assuming it.
+    private var onCard: Color {
+        passColor == nil ? ThemeManager.Colors.onBrandPrimary : .white
+    }
+
     var body: some View {
         VStack(spacing: ThemeManager.Spacing.md) {
             // Top: App name + value prop
@@ -19,11 +29,11 @@ struct HeroCardStack: View {
                 Text("Add2Wallet")
                     .font(ThemeManager.Typography.largeTitle)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
+                    .foregroundColor(onCard)
+
                 Text("Convert PDFs and images to Apple Wallet passes")
                     .font(ThemeManager.Typography.body)
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(onCard.opacity(0.9))
                     .multilineTextAlignment(.center)
             }
             
@@ -38,16 +48,16 @@ struct HeroCardStack: View {
                     systemImage: isProcessing ? "arrow.trianglehead.2.clockwise" : "doc.text.fill"
                 )
                     .font(ThemeManager.Typography.bodySemibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(onCard)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, ThemeManager.Spacing.md)
                     .background(
-                        .white.opacity(0.2),
+                        onCard.opacity(0.2),
                         in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
-                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                            .stroke(onCard.opacity(0.3), lineWidth: 1)
                     )
                     .symbolEffect(.bounce, value: buttonBounce)
             }
@@ -62,7 +72,7 @@ struct HeroCardStack: View {
                     onSelectPhoto()
                 }) {
                     Label("Photos", systemImage: "photo.on.rectangle")
-                        .secondarySourceButton()
+                        .secondarySourceButton(tint: onCard)
                 }
                 .buttonStyle(.plain)
                 .disabled(isProcessing)
@@ -74,7 +84,7 @@ struct HeroCardStack: View {
                 }
                 .labelStyle(.titleAndIcon)
                 .buttonBorderShape(.roundedRectangle(radius: ThemeManager.CornerRadius.medium))
-                .tint(.white.opacity(0.2))
+                .tint(onCard.opacity(0.2))
                 .disabled(isProcessing)
                 .accessibilityIdentifier("pasteFileButton")
             }
@@ -87,20 +97,20 @@ struct HeroCardStack: View {
                 if isLoadingBalance {
                     SwiftUI.ProgressView()
                         .scaleEffect(0.8)
-                        .tint(.white.opacity(0.8))
+                        .tint(onCard.opacity(0.8))
                 } else {
                     Text("\(remainingPasses) credits left")
                         .font(ThemeManager.Typography.footnoteMonospaced)
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(onCard.opacity(0.8))
                         .padding(.horizontal, ThemeManager.Spacing.sm)
                         .padding(.vertical, ThemeManager.Spacing.xs)
                         .background(
-                            .white.opacity(0.15),
+                            onCard.opacity(0.15),
                             in: Capsule()
                         )
                         .overlay(
                             Capsule()
-                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                                .stroke(onCard.opacity(0.2), lineWidth: 1)
                         )
                 }
             }
@@ -111,8 +121,8 @@ struct HeroCardStack: View {
         .background(
             LinearGradient(
                 colors: [
-                    passColor?.opacity(0.85) ?? Color(.label),
-                    passColor ?? Color(.label).opacity(0.88)
+                    passColor?.opacity(0.85) ?? ThemeManager.Colors.brandPrimary,
+                    passColor ?? ThemeManager.Colors.brandPrimary.opacity(0.88)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -123,19 +133,21 @@ struct HeroCardStack: View {
 }
 
 private extension View {
-    /// Matches the translucent look of the hero card's primary button, one step quieter.
-    func secondarySourceButton() -> some View {
+    /// Matches the translucent look of the hero card's primary button, one step
+    /// quieter. `tint` is whatever reads on the card underneath — see
+    /// `HeroCardStack.onCard`; it is not always white.
+    func secondarySourceButton(tint: Color) -> some View {
         self
-            .foregroundColor(.white)
+            .foregroundColor(tint)
             .frame(maxWidth: .infinity)
             .padding(.vertical, ThemeManager.Spacing.sm)
             .background(
-                .white.opacity(0.15),
+                tint.opacity(0.15),
                 in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.medium)
-                    .stroke(.white.opacity(0.25), lineWidth: 1)
+                    .stroke(tint.opacity(0.25), lineWidth: 1)
             )
     }
 }

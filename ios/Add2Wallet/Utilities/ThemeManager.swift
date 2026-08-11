@@ -72,7 +72,15 @@ struct ThemeManager {
         // own — and nothing clashes with black.
         static let brandPrimary = Color(.label)
         static let brandSecondary = Color(.secondaryLabel)
-        
+
+        // The only correct foreground for anything sitting *on* brandPrimary.
+        // Ink inverts with the appearance — black in light mode, white in dark
+        // — so every hardcoded white label on an ink surface disappeared the
+        // moment the phone went dark. This inverts with it, which is also how
+        // iOS draws its own prominent buttons: dark pill/light text in light
+        // mode, light pill/dark text in dark mode.
+        static let onBrandPrimary = Color(.systemBackground)
+
         // Surface Colors
         static let surfaceDefault = Color(.systemBackground)
         static let surfaceCard = Color(.secondarySystemBackground)
@@ -162,7 +170,7 @@ struct ThemeManager {
         static func primaryButton<Content: View>(@ViewBuilder label: () -> Content) -> some View {
             label()
                 .font(Typography.bodySemibold)
-                .foregroundColor(.white)
+                .foregroundColor(Colors.onBrandPrimary)
                 .padding(.vertical, Spacing.md)
                 .padding(.horizontal, Spacing.lg)
                 .frame(maxWidth: .infinity)
@@ -295,14 +303,17 @@ struct ThemedPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(ThemeManager.Typography.bodySemibold)
-            .foregroundColor(.white)
+            .foregroundColor(ThemeManager.Colors.onBrandPrimary)
             .padding(.vertical, ThemeManager.Spacing.md)
             .padding(.horizontal, ThemeManager.Spacing.lg)
             .frame(maxWidth: .infinity)
+            // Pressed used to drop to `brandSecondary`, a 60%-alpha ink that
+            // let the background bleed through and pulled the label down to
+            // ~2.7:1. Dimming the solid ink keeps the fill opaque, so the
+            // contrast ratio survives the press in both appearances.
             .background(
-                configuration.isPressed 
-                    ? ThemeManager.Colors.brandSecondary 
-                    : ThemeManager.Colors.brandPrimary,
+                ThemeManager.Colors.brandPrimary
+                    .opacity(configuration.isPressed ? 0.82 : 1.0),
                 in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.button)
             )
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
