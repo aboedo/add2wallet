@@ -94,6 +94,11 @@ struct ThemeManager {
         // Surface Colors
         static let surfaceDefault = Color(.systemBackground)
         static let surfaceCard = Color(.secondarySystemBackground)
+        // For a card sitting on a *grouped* background. `surfaceCard` and
+        // `systemGroupedBackground` resolve to the same #F2F2F7 in light mode,
+        // so a `surfaceCard` card on a grouped screen is invisible until the
+        // phone goes dark. This is the pairing UIKit intends for that case.
+        static let surfaceCardGrouped = Color(.secondarySystemGroupedBackground)
         static let surfaceCardElevated = Color(.tertiarySystemBackground)
         
         // Semantic Colors

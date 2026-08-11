@@ -39,6 +39,72 @@ struct ContentView: View {
         #endif
     }
     
+    /// The balance, as a control that does what it looks like it does.
+    ///
+    /// It used to be a bare `Text`. The bar wraps any toolbar item in a capsule,
+    /// so it arrived looking exactly like a button and did nothing when tapped —
+    /// an affordance the platform handed us by accident rather than one we
+    /// chose. There are only two honest ways out of that, and taking the chrome
+    /// away is the worse one: "how do I get more credits?" is a real question
+    /// with a real answer, and the paywall was previously reachable only by
+    /// failing — by picking a file you had no credit to convert.
+    private var creditBalanceButton: some View {
+        Button {
+            ThemeManager.Haptics.light()
+            viewModel.showingPurchaseAlert = true
+        } label: {
+            Text("\(passUsageManager.remainingPasses) left")
+                .font(ThemeManager.Typography.footnoteMonospaced)
+                .foregroundColor(ThemeManager.Colors.textPrimary)
+                // The capsule is sized to its content, and bare text gets
+                // generous room above and below and almost none at the sides.
+                .padding(.horizontal, ThemeManager.Spacing.sm)
+        }
+        .accessibilityLabel("\(passUsageManager.remainingPasses) credits left. Get more.")
+        .accessibilityIdentifier("creditBalanceButton")
+    }
+
+    /// At zero the three source buttons are a trap: you pick a file, wait, and
+    /// only then find out you cannot convert it. A count in the corner is
+    /// reassurance when it reads nine and a blocker when it reads zero, so at
+    /// zero it stops being a corner and says so.
+    private var outOfCreditsBanner: some View {
+        HStack(spacing: ThemeManager.Spacing.md) {
+            // No explanatory second line: the empty state below already says a
+            // ticket costs one credit, and saying it twice on one screen reads
+            // as nagging rather than as helping.
+            Text("You're out of credits")
+                .font(ThemeManager.Typography.bodySemibold)
+                .foregroundColor(ThemeManager.Colors.textPrimary)
+
+            Spacer(minLength: ThemeManager.Spacing.sm)
+
+            // Deliberately *not* `.borderedProminent`: that style draws a white
+            // label whatever the tint, and this button sits on a card, so the
+            // only tints that keep the label legible are the ones that vanish
+            // against the card. Ink with an inverting foreground is the app's
+            // own answer and it holds in both appearances.
+            Button {
+                ThemeManager.Haptics.light()
+                viewModel.showingPurchaseAlert = true
+            } label: {
+                Text("Get credits")
+                    .font(ThemeManager.Typography.footnote.weight(.semibold))
+                    .foregroundColor(ThemeManager.Colors.onBrandPrimary)
+                    .padding(.horizontal, ThemeManager.Spacing.md)
+                    .padding(.vertical, ThemeManager.Spacing.sm)
+                    .background(ThemeManager.Colors.brandPrimary, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .fixedSize()
+        }
+        .padding(ThemeManager.Spacing.cardPadding)
+        .background(
+            ThemeManager.Colors.surfaceCardGrouped,
+            in: RoundedRectangle(cornerRadius: ThemeManager.CornerRadius.card)
+        )
+    }
+
     private var generatePassView: some View {
         ZStack {
                 Color(.systemGroupedBackground)
@@ -50,6 +116,10 @@ struct ContentView: View {
                     // Three ways in, given equal weight. No hero card: the
                     // sheet already said what this is.
                     if viewModel.selectedFileURL == nil && !viewModel.isProcessing {
+                        if passUsageManager.remainingPasses == 0 && !passUsageManager.isLoadingBalance {
+                            outOfCreditsBanner
+                        }
+
                         ImportSourcePicker(
                             onFiles: { viewModel.selectFile() },
                             onPhotos: { showingPhotoPicker = true },
@@ -365,6 +435,11 @@ struct ContentView: View {
                 guard let item else { return }
                 selectedPhoto = nil
                 Task { await importPhoto(item) }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    creditBalanceButton
+                }
             }
             .sheet(isPresented: $viewModel.showingPurchaseAlert) {
                 PaywallView(displayCloseButton: true)
