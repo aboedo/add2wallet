@@ -273,28 +273,32 @@ struct ImportSheet: View {
 /// Files, Photos, Paste — the same weight, because none of them is the obvious
 /// one. Which you reach for depends entirely on where the ticket happens to be.
 ///
-/// Paste does not match the other two, and that is a deliberate trade rather
-/// than an oversight. `PasteButton` is system-rendered because it is the only
-/// way to read the clipboard *without* iOS showing "…would like to paste from…"
-/// on every single tap, and it ignores nearly everything you tell it: it will
-/// not stretch to fill a frame, it ignores `buttonStyle`, it ignores the corner
-/// radius, and it always draws a white label on whatever `.tint` it is given.
+/// All three are ours to draw, which is a decision with a price attached.
 ///
-/// ⚠️ Do not hide it behind a matching card. It works — an opaque card on top
-/// with `allowsHitTesting(false)` does pass the tap through, and it looks
-/// exactly right — but the privilege is tied to the control being genuinely
-/// visible and untransformed. Cover it or scale it and iOS quietly downgrades
-/// it to the consent prompt. Measured, not assumed: tapping the covered card
-/// produced "Add2Wallet would like to paste from…", while the bare control
-/// pasted the file straight through. If we ever accept that prompt, drop
-/// `PasteButton` altogether and read `UIPasteboard` from a card of our own —
-/// same cost, none of the fragility.
+/// `PasteButton` is the only way to read the clipboard *without* iOS showing
+/// "…would like to paste from…" on every tap, but it is system-rendered and
+/// ignores nearly everything you tell it — it will not fill a frame, it ignores
+/// `buttonStyle` and the corner radius, and it always draws a white label on
+/// whatever `.tint` it is given. It cannot be made to match a card.
 ///
-/// So the mismatch stays until someone decides the prompt is worth paying for.
+/// ⚠️ Hiding it behind a matching card does not get you both. It looks right and
+/// the tap does fall through, but the prompt-free privilege is tied to the
+/// control being genuinely visible and untransformed; cover it or scale it and
+/// iOS silently downgrades it to the consent prompt anyway. Measured, not
+/// assumed: the covered card produced the prompt, the bare control did not.
+///
+/// So the choice was consistency or a silent tap, and consistency won on the
+/// grounds that the prompt is self-explanatory here — a person who just tapped
+/// "Paste" is not surprised to be asked about pasting. Given we are paying the
+/// prompt regardless, we read `UIPasteboard` ourselves rather than keep a
+/// system control hidden under a card: same cost to the user, none of the
+/// fragility, and the row finally matches.
 struct ImportSourcePicker: View {
     let onFiles: () -> Void
     let onPhotos: () -> Void
     let onPaste: ([NSItemProvider]) -> Void
+
+    @State private var clipboardHasTicket = false
 
     var body: some View {
         HStack(spacing: ThemeManager.Spacing.sm) {
@@ -316,30 +320,44 @@ struct ImportSourcePicker: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("selectFromPhotosButton")
 
-            // Visible, unobstructed, untransformed — and it has to stay that
-            // way. See the note above: hiding it behind a matching card is what
-            // costs the prompt-free paste.
-            PasteButton(supportedContentTypes: SupportedFile.contentTypes) { providers in
+            Button {
                 ThemeManager.Haptics.light()
-                onPaste(providers)
+                // Reading `itemProviders` is what triggers the consent prompt.
+                // Everything downstream already copes with an empty or
+                // unsupported clipboard, so there is nothing to pre-validate.
+                onPaste(UIPasteboard.general.itemProviders)
+            } label: {
+                card("Paste", icon: "doc.on.clipboard", dimmed: !clipboardHasTicket)
             }
-            .labelStyle(.titleAndIcon)
-            .controlSize(.large)
-            .buttonBorderShape(.roundedRectangle(radius: ThemeManager.CornerRadius.card))
-            .tint(ThemeManager.Colors.sourceChip)
-            .frame(maxWidth: .infinity, minHeight: 84)
+            .buttonStyle(.plain)
+            .disabled(!clipboardHasTicket)
             .accessibilityIdentifier("pasteFileButton")
         }
+        .onAppear { refreshClipboard() }
+        .onReceive(
+            NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+        ) { _ in refreshClipboard() }
     }
 
-    private func card(_ title: String, icon: String) -> some View {
+    /// Asking the pasteboard *which types it holds* is free and prompts nobody —
+    /// it is how `PasteButton` decided whether to enable itself, and it is how
+    /// we decide now. Only asking for the contents costs the prompt.
+    private func refreshClipboard() {
+        clipboardHasTicket = UIPasteboard.general.contains(
+            pasteboardTypes: SupportedFile.contentTypes.map(\.identifier)
+        )
+    }
+
+    /// `dimmed` matches what the old system control did for free: go quiet when
+    /// there is nothing on the clipboard worth pasting.
+    private func card(_ title: String, icon: String, dimmed: Bool = false) -> some View {
         VStack(spacing: ThemeManager.Spacing.sm) {
             Image(systemName: icon)
                 .font(.system(size: 22, weight: .regular))
             Text(title)
                 .font(ThemeManager.Typography.footnote)
         }
-        .foregroundColor(ThemeManager.Colors.textPrimary)
+        .foregroundColor(dimmed ? ThemeManager.Colors.textTertiary : ThemeManager.Colors.textPrimary)
         .frame(maxWidth: .infinity, minHeight: 84)
         .background(
             ThemeManager.Colors.surfaceCardGrouped,
