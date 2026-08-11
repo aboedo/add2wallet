@@ -76,6 +76,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Add2Wallet uses the camera to photograph a printed ticket so it can be turned into a Wallet pass.</string>
 	<key>SKIncludeConsumableInAppPurchaseHistory</key>
 	<true/>
 	<key>UIBackgroundModes</key>

@@ -447,6 +447,7 @@ struct ImportSheet: View {
 struct ImportSourcePicker: View {
     let onFiles: () -> Void
     let onPhotos: () -> Void
+    let onCamera: () -> Void
     let onPaste: ([NSItemProvider]) -> Void
 
     @State private var clipboardHasTicket = false
@@ -470,6 +471,19 @@ struct ImportSourcePicker: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("selectFromPhotosButton")
+
+            // Dimmed rather than hidden where there is no camera — which in
+            // practice means the simulator, so the row we develop against is
+            // the row people get.
+            Button {
+                ThemeManager.Haptics.light()
+                onCamera()
+            } label: {
+                card("Camera", icon: "camera", dimmed: !CameraCapture.isAvailable)
+            }
+            .buttonStyle(.plain)
+            .disabled(!CameraCapture.isAvailable)
+            .accessibilityIdentifier("takePhotoButton")
 
             Button {
                 ThemeManager.Haptics.light()
