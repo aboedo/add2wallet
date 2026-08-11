@@ -28,7 +28,7 @@ struct ContentView: View {
     @State private var addToWalletBounce = 0
     @State private var createPassBounce = 0
     @State private var showingPhotoPicker = false
-    @State private var showingCamera = false
+    @State private var showingScanner = false
     @State private var selectedPhoto: PhotosPickerItem?
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -130,7 +130,7 @@ struct ContentView: View {
                         ImportSourcePicker(
                             onFiles: { viewModel.selectFile() },
                             onPhotos: { showingPhotoPicker = true },
-                            onCamera: { showingCamera = true },
+                            onScan: { showingScanner = true },
                             onPaste: { viewModel.handlePastedProviders($0) }
                         )
                     }
@@ -443,13 +443,13 @@ struct ContentView: View {
                 selectedPhoto = nil
                 Task { await importPhoto(item) }
             }
-            .fullScreenCover(isPresented: $showingCamera) {
-                CameraCapture { data in
-                    showingCamera = false
+            .fullScreenCover(isPresented: $showingScanner) {
+                DocumentScanner { data in
+                    showingScanner = false
                     guard let data, !data.isEmpty else { return }
                     viewModel.importFile(
                         data: data,
-                        filename: SupportedFile.filename("photo", fallbackURL: nil, type: .jpeg)
+                        filename: SupportedFile.filename("scan", fallbackURL: nil, type: .pdf)
                     )
                 }
                 .ignoresSafeArea()
