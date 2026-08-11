@@ -172,8 +172,7 @@ class ContentViewModel: ObservableObject {
             isDemo = true
             
             // Reset any previous state
-            pendingAddPassesController = nil
-            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+            resetPassUI()
             passMetadata = nil
             warnings = []
             errorMessage = nil
@@ -203,8 +202,7 @@ class ContentViewModel: ObservableObject {
             try data.write(to: tempURL, options: [.atomic])
             selectedFileURL = tempURL
             // Reset any previously generated pass UI state/metadata
-            pendingAddPassesController = nil
-            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+            resetPassUI()
             passMetadata = nil
             warnings = []
             errorMessage = nil
@@ -296,6 +294,34 @@ class ContentViewModel: ObservableObject {
         uploadSelected()
     }
 
+
+    /// Announce a built pass, and remember it.
+    ///
+    /// Both halves have to happen together: the notification updates whatever
+    /// view is on screen right now, and the stored controller is what a *later*
+    /// view finds when the sheet is reopened. There used to be two call sites
+    /// doing this by hand — the single-pass path and the multi-pass one — and
+    /// the multi-pass path only did the notification. A ten-leg itinerary,
+    /// which is the case most likely to have you close the sheet and come back,
+    /// came back offering "Create Pass" over ten passes already built.
+    private func announcePassReady(_ passVC: PKAddPassesViewController, tempURL: URL? = nil) {
+        pendingAddPassesController = passVC
+        var payload: [AnyHashable: Any] = ["passViewController": passVC]
+        if let tempURL { payload["tempURL"] = tempURL }
+        NotificationCenter.default.post(
+            name: NSNotification.Name("PassReadyToAdd"),
+            object: nil,
+            userInfo: payload
+        )
+    }
+
+    /// Drop the built pass and tell the UI to forget it. Same reasoning as
+    /// `announcePassReady`: never one without the other.
+    private func resetPassUI() {
+        pendingAddPassesController = nil
+        NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+    }
+
     func clearSelection() {
         // Reset processing state
         isProcessing = false
@@ -313,8 +339,7 @@ class ContentViewModel: ObservableObject {
         isRetry = false
         retryCount = 0
         isDemo = false
-        pendingAddPassesController = nil
-            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+        resetPassUI()
     }
     
     private func handleSharedFile(data: Data, filename: String) {
@@ -333,8 +358,7 @@ class ContentViewModel: ObservableObject {
             selectedFileURL = tempURL
             
             // Reset any previous state
-            pendingAddPassesController = nil
-            NotificationCenter.default.post(name: NSNotification.Name("ResetPassUIState"), object: nil)
+            resetPassUI()
             passMetadata = nil
             warnings = []
             errorMessage = nil
@@ -550,13 +574,7 @@ class ContentViewModel: ObservableObject {
             
             hasError = false
             
-            // Store the pass data for the view to access
-            pendingAddPassesController = passVC
-            NotificationCenter.default.post(
-                name: NSNotification.Name("PassReadyToAdd"),
-                object: nil,
-                userInfo: ["passViewController": passVC, "tempURL": tempURL]
-            )
+            announcePassReady(passVC, tempURL: tempURL)
             isProcessing = false
             progressViewModel.completeProgress()
             
@@ -657,11 +675,12 @@ class ContentViewModel: ObservableObject {
         errorMessage = nil
         hasError = false
 
-        NotificationCenter.default.post(
-            name: NSNotification.Name("PassReadyToAdd"),
-            object: nil,
-            userInfo: ["passViewController": passVC]
-        )
+        // The multi-pass path needs this exactly as much as the single-pass
+        // one does — arguably more, since a ten-leg itinerary is the case most
+        // likely to have you close the sheet and come back. It was missed the
+        // first time round, so a reopened sheet offered "Create Pass" over ten
+        // passes that were already built, downloaded and saved.
+        announcePassReady(passVC)
         isProcessing = false
         progressViewModel.completeProgress()
     }
