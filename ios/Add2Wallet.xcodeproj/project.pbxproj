@@ -28,6 +28,7 @@
 		3E97D12626F05B185D5A9385 /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54837C8CBF4AA918D1214C04 /* NetworkService.swift */; };
 		429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056189355BE651B878F8CD19 /* MockRevenueCat.swift */; };
 		4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */; };
+		496588759476E2C35800D407 /* nutshell-leg.pkpass in Resources */ = {isa = PBXBuildFile; fileRef = 0D623735C56FCB1333DEBA9B /* nutshell-leg.pkpass */; };
 		4D8063DA40FA52374F0226E6 /* DateTimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BA1B83234E08AEACF5046AC /* DateTimeFormatter.swift */; };
 		4EDA2A17CF66185128120E03 /* TuistBundle+Add2WalletTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3991BF94012F9C0E0B1D9500 /* TuistBundle+Add2WalletTests.swift */; };
 		512CCF786DC0A253CCF22972 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE748F2CC8B2B17A8556650 /* TripDetailView.swift */; };
@@ -35,6 +36,7 @@
 		5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */ = {isa = PBXBuildFile; fileRef = 5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */; };
 		60C0017DF9835C58880FF8FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C2A6F21ECDB2698D1667CC4 /* AppDelegate.swift */; };
 		64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */; };
+		654A9E7162E7135D8CDD96B8 /* PassKitAcceptanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1205A8F3C1360C4FA78FFC03 /* PassKitAcceptanceTests.swift */; };
 		658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */; };
 		67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */ = {isa = PBXBuildFile; fileRef = B6C011F6A92AC034CC0AEF0D /* mock_error_response.json */; };
 		6B309F80230F2242AD209547 /* WarningsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C13E0FF22B8EC3A3BF2DD93 /* WarningsView.swift */; };
@@ -147,7 +149,9 @@
 		056189355BE651B878F8CD19 /* MockRevenueCat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRevenueCat.swift; sourceTree = "<group>"; };
 		0A4FC7E5FED3A883D3D487C6 /* TuistBundle+Add2Wallet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuistBundle+Add2Wallet.swift"; sourceTree = "<group>"; };
 		0CE5125D2B22D9E8C032B3FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0D623735C56FCB1333DEBA9B /* nutshell-leg.pkpass */ = {isa = PBXFileReference; path = "nutshell-leg.pkpass"; sourceTree = "<group>"; };
 		0DE0A3702D59C4C3EAB88AB1 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
+		1205A8F3C1360C4FA78FFC03 /* PassKitAcceptanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassKitAcceptanceTests.swift; sourceTree = "<group>"; };
 		13372BE4DCB2183466AD3A53 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		14163BCA5715B9BC2F933391 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		169E5D42997400CE2FC8E0A8 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
@@ -270,6 +274,7 @@
 				B6C011F6A92AC034CC0AEF0D /* mock_error_response.json */,
 				5FDEE15AF9CAC288A3A512E3 /* mock_multi_ticket_response.json */,
 				1CE7FC42ECD8EB77B1730666 /* mock_upload_response.json */,
+				0D623735C56FCB1333DEBA9B /* nutshell-leg.pkpass */,
 				40074D0B32A8D18313E13AE4 /* pass_with_data_matrix.pdf */,
 				C0628EC3E9565A946EC494F7 /* torre ifel.pdf */,
 			);
@@ -459,6 +464,7 @@
 				056189355BE651B878F8CD19 /* MockRevenueCat.swift */,
 				9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */,
 				EBC32204616148833F8A5E01 /* PassColorUtilsTests.swift */,
+				1205A8F3C1360C4FA78FFC03 /* PassKitAcceptanceTests.swift */,
 				4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */,
 				9D63B2AB2686178D1B81AE8D /* SegmentTimezoneTests.swift */,
 				41D19F2E33BA85D5002269CC /* ShareExtensionTests.swift */,
@@ -610,6 +616,7 @@
 				67594FA5004CE736AD651D74 /* mock_error_response.json in Resources */,
 				5A224055E87828BBEE61B8AA /* mock_multi_ticket_response.json in Resources */,
 				EDC5D55FDEB0DE4AA9373979 /* mock_upload_response.json in Resources */,
+				496588759476E2C35800D407 /* nutshell-leg.pkpass in Resources */,
 				4378B57AAF6DA1C4815A33FD /* pass_with_data_matrix.pdf in Resources */,
 				03C09271CA75C79D04C281D1 /* torre ifel.pdf in Resources */,
 			);
@@ -690,6 +697,7 @@
 				429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */,
 				64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */,
 				3BFA31B85752B5F7CACFD04F /* PassColorUtilsTests.swift in Sources */,
+				654A9E7162E7135D8CDD96B8 /* PassKitAcceptanceTests.swift in Sources */,
 				AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */,
 				B19FCE1630ACFAE707429E75 /* SegmentTimezoneTests.swift in Sources */,
 				658D66393F8C3B265725660A /* ShareExtensionTests.swift in Sources */,
