@@ -25,6 +25,11 @@ struct ImportStatusPill: View {
                     .font(ThemeManager.Typography.footnote.weight(.medium))
                     .foregroundColor(ThemeManager.Colors.onBrandPrimary)
                     .lineLimit(1)
+                    // The percentage changes constantly, and the default
+                    // crossfade renders the old and new numbers on top of each
+                    // other. Digits roll instead.
+                    .contentTransition(.numericText())
+                    .animation(ThemeManager.Animations.quick, value: state)
 
                 Spacer(minLength: ThemeManager.Spacing.xs)
 
@@ -39,7 +44,7 @@ struct ImportStatusPill: View {
             }
             .padding(.horizontal, ThemeManager.Spacing.md)
             .padding(.vertical, ThemeManager.Spacing.sm)
-            .background(ThemeManager.Colors.brandPrimary, in: Capsule())
+            .background(progressFill.clipShape(Capsule()))
         }
         .buttonStyle(.plain)
         // `.disabled` would be the obvious way to say "not tappable yet", but
@@ -49,6 +54,32 @@ struct ImportStatusPill: View {
         .allowsHitTesting(state.isReady)
         .accessibilityLabel(state.accessibilityLabel)
         .accessibilityIdentifier("importStatusPill")
+    }
+
+    /// The capsule doubles as the progress bar.
+    ///
+    /// It stays ink end to end and the *completed* part is lifted a shade,
+    /// rather than filling an empty track with colour. That is the only version
+    /// where the label survives: a track light enough to read as empty needs
+    /// dark text, the filled part needs light text, and no single colour is
+    /// both. Lightening ink on ink keeps one foreground legible across the whole
+    /// pill, and the percentage stays for anyone who wants the number.
+    @ViewBuilder
+    private var progressFill: some View {
+        switch state {
+        case .processing(let percent):
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    ThemeManager.Colors.brandPrimary
+                    ThemeManager.Colors.onBrandPrimary
+                        .opacity(0.22)
+                        .frame(width: geometry.size.width * min(max(Double(percent) / 100, 0), 1))
+                }
+            }
+            .animation(ThemeManager.Animations.standard, value: percent)
+        case .idle, .ready, .failed:
+            ThemeManager.Colors.brandPrimary
+        }
     }
 
     @ViewBuilder

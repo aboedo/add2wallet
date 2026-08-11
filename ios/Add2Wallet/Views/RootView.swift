@@ -103,12 +103,15 @@ struct RootView: View {
             if passUsageManager.isLoadingBalance {
                 SwiftUI.ProgressView().scaleEffect(0.7)
             } else {
+                // No capsule of its own. The bar wraps the whole toolbar item
+                // in one, so a second capsule inside it sat hard against the
+                // outer curve with no room to breathe — two radii fighting in
+                // the space of one. The padding is what the outer capsule
+                // needs to look deliberate.
                 Text("\(passUsageManager.remainingPasses)")
                     .font(ThemeManager.Typography.footnoteMonospaced)
                     .foregroundColor(ThemeManager.Colors.textSecondary)
                     .padding(.horizontal, ThemeManager.Spacing.sm)
-                    .padding(.vertical, ThemeManager.Spacing.xs)
-                    .background(.ultraThinMaterial, in: Capsule())
             }
         }
         .accessibilityLabel("\(passUsageManager.remainingPasses) credits left")
@@ -132,9 +135,6 @@ struct RootView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, ThemeManager.Spacing.md)
         .padding(.bottom, ThemeManager.Spacing.sm)
-        // The one true navigation layer in this app: a control floating over
-        // content, so it gets the glass.
-        .modifier(FloatingBarBackground())
     }
 
     /// Read off the import model rather than tracked separately, so the pill
@@ -179,17 +179,5 @@ struct DetailPlaceholder: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
-    }
-}
-
-
-/// Liquid Glass on the floating action bar.
-///
-/// Apple reserves glass for the navigation layer above content, which is
-/// exactly what this bar is. The system handles Reduce Transparency itself, so
-/// there is no hand-rolled accessibility fallback here.
-struct FloatingBarBackground: ViewModifier {
-    func body(content: Content) -> some View {
-        content.glassEffect(.regular, in: .rect(cornerRadius: 0))
     }
 }
