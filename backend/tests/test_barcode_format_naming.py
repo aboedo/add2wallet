@@ -56,6 +56,35 @@ def test_zxing_display_names_map_to_correct_pk_format(display_name, expected_pk_
     assert BARCODE_FORMAT_MAP[_canonical(display_name)] == expected_pk_format
 
 
+@pytest.mark.parametrize("kind", [DocumentKind.png, DocumentKind.jpeg])
+def test_image_scan_reads_aztec_that_pyzbar_cannot(kind):
+    """A photo of a rail ticket must yield the same barcode its PDF does.
+
+    pyzbar has no Aztec decoder at all, and the image path stopped at pyzbar
+    plus an OpenCV QR-only fallback — so screenshots of UK rail and airline
+    tickets came back with no barcode while the identical PDF scanned fine.
+    """
+    zxingcpp = pytest.importorskip("zxingcpp")
+
+    import io
+
+    import numpy as np
+    from PIL import Image
+
+    payload = "ABC123RAILTICKET"
+    matrix = np.array(zxingcpp.write_barcode(zxingcpp.BarcodeFormat.Aztec, payload))
+    image = Image.fromarray(matrix).convert("RGB").resize((400, 400), Image.NEAREST)
+
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG" if kind is DocumentKind.png else "JPEG")
+
+    barcodes, _ = BarcodeScanner().scan(buffer.getvalue(), kind, f"ticket.{kind.value}")
+
+    assert [(bc.type, bc.pk_format, bc.message) for bc in barcodes] == [
+        ("AZTEC", "PKBarcodeFormatAztec", payload)
+    ]
+
+
 def test_data_matrix_is_reported_unsupported_not_emitted_as_qr():
     """Apple Wallet cannot render Data Matrix; the user must be warned.
 

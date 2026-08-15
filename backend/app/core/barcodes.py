@@ -80,6 +80,13 @@ class BarcodeScanner:
         except Exception:
             logger.info("pyzbar image scan unavailable or found no barcode", exc_info=True)
 
+        # pyzbar cannot read Aztec at all and is unreliable on PDF417 — the two
+        # formats rail and airline tickets use most. A photo or screenshot of a
+        # ticket therefore came back empty while the same ticket as a PDF
+        # scanned fine, because only the PDF path ever reached zxing-cpp.
+        if not raw:
+            raw.extend(_scan_with_zxing(image))
+
         if not raw:
             try:
                 import cv2
@@ -96,6 +103,43 @@ class BarcodeScanner:
 
         normalized, normalize_warnings = _normalize(raw)
         return normalized, warnings + normalize_warnings
+
+
+def _scan_with_zxing(image) -> list[dict[str, Any]]:
+    """Second pass over an uploaded image with zxing-cpp.
+
+    Mirrors the PDF path's method 4. Kept separate from the pyzbar loop so a
+    missing zxing-cpp wheel degrades to the old behaviour instead of failing
+    the whole scan.
+    """
+    try:
+        import zxingcpp
+    except ImportError:
+        logger.info("zxing-cpp unavailable for image scan")
+        return []
+
+    try:
+        results = zxingcpp.read_barcodes(np.array(image))
+    except Exception:
+        logger.info("zxing-cpp image scan failed", exc_info=True)
+        return []
+
+    found: list[dict[str, Any]] = []
+    for result in results:
+        # zxing reports display names ("QR Code", "Data Matrix"); _canonical
+        # collapses them to the compact spelling BARCODE_FORMAT_MAP keys on.
+        raw_bytes = bytes(result.bytes) if result.bytes else (result.text or "").encode("utf-8")
+        if not raw_bytes:
+            continue
+        found.append(
+            {
+                "type": _canonical(getattr(result.format, "name", result.format)),
+                "data": result.text,
+                "raw_bytes": raw_bytes,
+                "confidence": 85,
+            }
+        )
+    return found
 
 
 def _normalize(raw: list[dict[str, Any]]) -> tuple[list[Barcode], list[str]]:
