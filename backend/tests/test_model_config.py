@@ -91,14 +91,15 @@ class TestRequestShape:
         assert kwargs["max_completion_tokens"] == SEGMENTS_TOKEN_BUDGET
 
     @pytest.mark.asyncio
-    async def test_json_mode_is_requested(self, extractor):
-        """The parsers strip markdown fences, but asking for JSON is cheaper."""
+    async def test_strict_schema_is_requested(self, extractor):
+        """Temperature is off the table, so the schema is the only lever."""
         extractor.client.chat.completions.create.return_value = _completion('{"title": "T"}')
 
         await extractor.extract_from_text("ticket text", "t.pdf", [])
 
-        kwargs = extractor.client.chat.completions.create.call_args.kwargs
-        assert kwargs["response_format"] == {"type": "json_object"}
+        response_format = extractor.client.chat.completions.create.call_args.kwargs["response_format"]
+        assert response_format["type"] == "json_schema"
+        assert response_format["json_schema"]["strict"] is True
 
     def test_token_budget_leaves_room_for_reasoning(self):
         """Reasoning burns completion tokens before any JSON is emitted."""

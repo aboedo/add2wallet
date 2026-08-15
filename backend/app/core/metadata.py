@@ -5,7 +5,7 @@ import base64
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Union, get_args, get_origin
 
 from openai import APIStatusError, AuthenticationError, BadRequestError, OpenAI, RateLimitError
@@ -14,6 +14,11 @@ from pydantic import ValidationError
 from app.core.config import Settings
 from app.core.errors import UpstreamServiceError
 from app.core.models import DocumentKind, PassSegment, StructuredMetadata
+from app.core.schemas import (
+    JSON_OBJECT_RESPONSE_FORMAT,
+    METADATA_RESPONSE_FORMAT,
+    SEGMENTS_RESPONSE_FORMAT,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -49,6 +54,51 @@ class MetadataExtractor:
             exc_info=True,
         )
 
+    def _complete_json(
+        self,
+        messages: list[dict[str, Any]],
+        response_format: dict[str, Any],
+        max_completion_tokens: int,
+    ) -> str:
+        """Ask for JSON, degrading to plain JSON mode if the schema is rejected.
+
+        The strict schema is what stops two near-identical documents becoming
+        two different passes, but it is newer than some models that could be
+        deployed here. Left alone, a 400 would send every document to the regex
+        heuristics; one retry without the schema keeps extraction working, and
+        the warning says which of the two shapes actually went out.
+        """
+        try:
+            response = self.client.chat.completions.create(
+                model=self.settings.openai_model,
+                messages=messages,
+                response_format=response_format,
+                max_completion_tokens=max_completion_tokens,
+            )
+        except BadRequestError:
+            if response_format is JSON_OBJECT_RESPONSE_FORMAT:
+                raise
+            logger.warning(
+                "Model %r rejected the strict schema; retrying in plain JSON mode, "
+                "so this extraction is unconstrained",
+                self.settings.openai_model,
+                exc_info=True,
+            )
+            response = self.client.chat.completions.create(
+                model=self.settings.openai_model,
+                messages=messages,
+                response_format=JSON_OBJECT_RESPONSE_FORMAT,
+                max_completion_tokens=max_completion_tokens,
+            )
+
+        message = response.choices[0].message
+        # A refusal comes back with content=None, which would otherwise read as
+        # an empty answer and be blamed on a parse failure.
+        refusal = getattr(message, "refusal", None)
+        if isinstance(refusal, str) and refusal.strip():
+            raise ValueError(f"Model refused the extraction: {refusal}")
+        return message.content or ""
+
     async def extract_from_text(
         self,
         text: str,
@@ -60,20 +110,19 @@ class MetadataExtractor:
 
         prompt = _metadata_prompt(filename, text[:6000], barcode_messages)
         try:
-            response = await asyncio.to_thread(
-                self.client.chat.completions.create,
-                model=self.settings.openai_model,
-                messages=[
+            content = await asyncio.to_thread(
+                self._complete_json,
+                [
                     {
                         "role": "system",
-                        "content": "Extract Apple Wallet pass metadata from tickets, receipts, bookings, and travel documents. Return JSON only.",
+                        "content": "Extract Apple Wallet pass metadata from tickets, receipts, bookings, and travel documents.",
                     },
                     {"role": "user", "content": prompt},
                 ],
-                response_format={"type": "json_object"},
-                max_completion_tokens=METADATA_TOKEN_BUDGET,
+                METADATA_RESPONSE_FORMAT,
+                METADATA_TOKEN_BUDGET,
             )
-            return _metadata_from_json(response.choices[0].message.content or "", self.settings.openai_model)
+            return _metadata_from_json(content, self.settings.openai_model)
         except (AuthenticationError, RateLimitError) as exc:
             raise UpstreamServiceError("OpenAI metadata extraction is unavailable") from exc
         except BadRequestError:
@@ -115,20 +164,19 @@ class MetadataExtractor:
             )
 
         try:
-            response = await asyncio.to_thread(
-                self.client.chat.completions.create,
-                model=self.settings.openai_model,
-                messages=[
+            answer = await asyncio.to_thread(
+                self._complete_json,
+                [
                     {
                         "role": "system",
-                        "content": "Extract Apple Wallet pass metadata from ticket images. Return JSON only.",
+                        "content": "Extract Apple Wallet pass metadata from ticket images.",
                     },
                     {"role": "user", "content": content},
                 ],
-                response_format={"type": "json_object"},
-                max_completion_tokens=METADATA_TOKEN_BUDGET,
+                METADATA_RESPONSE_FORMAT,
+                METADATA_TOKEN_BUDGET,
             )
-            return _metadata_from_json(response.choices[0].message.content or "", self.settings.openai_model)
+            return _metadata_from_json(answer, self.settings.openai_model)
         except (AuthenticationError, RateLimitError) as exc:
             raise UpstreamServiceError("OpenAI vision extraction is unavailable") from exc
         except BadRequestError:
@@ -159,23 +207,22 @@ class MetadataExtractor:
             return [], None, None
 
         try:
-            response = await asyncio.to_thread(
-                self.client.chat.completions.create,
-                model=self.settings.openai_model,
-                messages=[
+            content = await asyncio.to_thread(
+                self._complete_json,
+                [
                     {
                         "role": "system",
                         "content": (
                             "Split multi-part travel and booking documents into their individual "
-                            "legs or segments. Return JSON only."
+                            "legs or segments."
                         ),
                     },
                     {"role": "user", "content": _segments_prompt(filename, usable)},
                 ],
-                response_format={"type": "json_object"},
-                max_completion_tokens=SEGMENTS_TOKEN_BUDGET,
+                SEGMENTS_RESPONSE_FORMAT,
+                SEGMENTS_TOKEN_BUDGET,
             )
-            return _segments_from_json(response.choices[0].message.content or "")
+            return _segments_from_json(content)
         except BadRequestError:
             self._log_rejected_request()
             return [], None, None
@@ -198,35 +245,21 @@ This document may contain several separate tickets or bookings — for example a
 multi-leg journey where each page is one leg, or a booking covering several
 nights or sessions.
 
-Return JSON:
-{{
-  "group_id": "shared order/booking reference, or null",
-  "group_name": "short name for the whole trip or booking, or null",
-  "segments": [
-    {{
-      "page": <the PAGE number the segment came from>,
-      "label": "short human title, e.g. 'Train Bergen to Voss'",
-      "origin": "...", "destination": "...",
-      "depart_date": "YYYY-MM-DD", "depart_time": "HH:MM",
-      "arrive_date": "YYYY-MM-DD", "arrive_time": "HH:MM",
-      "depart_timezone": "IANA zone of the ORIGIN, e.g. 'America/Montevideo', or null",
-      "arrive_timezone": "IANA zone of the DESTINATION, or null",
-      "carrier": "operator or provider",
-      "vehicle_info": "train/flight/line number or vessel",
-      "seat_info": "plain text, e.g. 'Car 1, Seats 9 and 10'",
-      "travel_class": "...",
-      "confirmation_number": "the reference for THIS segment",
-      "traveler": "...",
-      "traveler_count": <how many people this leg is for: the 2 in "2 x Adult", else null>,
-      "notes": "practical info worth keeping, plain text"
-    }}
-  ]
-}}
-
 Only include pages that are an actual ticket or booking segment; skip cover
 pages, receipts, terms and payment summaries. If the document is a single
-ticket, return an empty segments array. Never output nested objects or arrays
-inside a segment field — every value must be a plain string or null.
+ticket, return an empty segments array.
+
+Times are local to the place they happen, so leave them exactly as printed and
+never convert them. Say where they are local to in the timezone fields, as an
+IANA zone name like "Europe/Oslo" — never an offset like "+02:00", which is
+only true for half the year. Give a zone when the document states one or when
+the place identifies it beyond doubt (an airport code, a station, a named
+city), and null when it is ambiguous: a wrong zone silently moves every time on
+the itinerary, so do not guess.
+
+"traveler_count" is the number of people on that leg, not the number of codes
+printed. A leg that says "2 x Adult" is two tickets whether it shows two
+barcodes, one shared barcode, or none at all.
 """
 
 
@@ -303,6 +336,8 @@ def _metadata_from_json(raw: str, model: str) -> StructuredMetadata:
         data["performer_artist"] = data["performer"]
     if data.get("confidence") and not data.get("confidence_score"):
         data["confidence_score"] = data["confidence"]
+    data["event_urls"] = _drop_empty(data.get("event_urls"))
+    data["upcoming_events"] = _prune_upcoming_events(data.get("upcoming_events"))
     data["ai_processed"] = True
     data["enrichment_completed"] = True
     data["processing_timestamp"] = datetime.now(timezone.utc).isoformat()
@@ -317,6 +352,32 @@ def _metadata_from_json(raw: str, model: str) -> StructuredMetadata:
         unusable = {str(error["loc"][0]) for error in exc.errors() if error.get("loc")}
         logger.warning("Dropping unusable AI metadata fields: %s", sorted(unusable))
         return StructuredMetadata(**{k: v for k, v in known.items() if k not in unusable})
+
+
+def _drop_empty(value: Any) -> dict[str, Any] | None:
+    """Strip the nulls out of a nested object, and drop it if nothing is left.
+
+    A strict schema requires every key, so the model answers the URL block with
+    five nulls for the many documents that carry no links at all. Storing that
+    turns "we found nothing" into an object the client has to interpret.
+    """
+    if not isinstance(value, dict):
+        return None
+    kept = {key: item for key, item in value.items() if item not in (None, "", [], {})}
+    return kept or None
+
+
+def _prune_upcoming_events(value: Any) -> list[dict[str, Any]] | None:
+    if not isinstance(value, list):
+        return None
+    # `id` and `name` are the two the client requires; an entry without them
+    # fails to decode on the device and takes the whole payload with it.
+    kept = [
+        pruned
+        for pruned in (_drop_empty(item) for item in value)
+        if pruned and pruned.get("id") and pruned.get("name")
+    ]
+    return kept or None
 
 
 def _coerce_to_schema(data: dict[str, Any]) -> dict[str, Any]:
@@ -406,38 +467,58 @@ def _allows_none(annotation: Any) -> bool:
     return get_origin(annotation) is Union and type(None) in get_args(annotation)
 
 
-def _metadata_prompt(filename: str, text: str, barcode_messages: list[str]) -> str:
+def _metadata_prompt(
+    filename: str,
+    text: str,
+    barcode_messages: list[str],
+    today: date | None = None,
+) -> str:
+    """Build the extraction prompt.
+
+    ``today`` is stated rather than left implicit because boarding passes
+    routinely print "18 Mar" and no year at all. Asked to guess, the model
+    answered 2025, 2026 and 2027 for the same file on consecutive runs — the
+    single worst source of drift we measured. Given the date, the rule
+    ("the next 18 Mar from here") lands on one answer.
+    """
+    today = today or date.today()
     return f"""
 File: {filename}
 Detected barcode payloads: {json.dumps(barcode_messages[:5])}
 Extracted text:
 {text}
 
-Return JSON matching these fields when present:
-event_type, event_name, title, description, date, time, end_date, end_time, duration, venue_name,
-venue_address, city, state_country, latitude, longitude, organizer,
-performer_artist, seat_info, barcode_data, price, confirmation_number,
-gate_info, event_description, venue_type, capacity, website, phone,
-nearby_landmarks, public_transport, parking_info, age_restriction, dress_code,
-weather_considerations, amenities, accessibility, confidence_score,
-multiple_events, upcoming_events, venue_place_id, performer_names, exhibit_name,
-has_assigned_seating, event_urls, multiple_tickets, brand_color, background_color,
-foreground_color, label_color, group_name.
+Fill in the schema from the document. Read what is printed, and work out what
+it implies — an airport code names a city, a flight number names an airline, a
+day and month imply a year. Only use null when the document leaves you with
+nothing to work from; a field you could have inferred is worse left empty.
 
-Use null for unknown values. Keep title under 30 characters. Use rgb(R, G, B)
-strings for colors with readable contrast. confidence_score is an integer from
-0 to 100, not a fraction. event_urls is an object mapping a label to a URL,
-e.g. {{"tickets": "https://..."}}.
+Two people given this same document should write down the same answers, so
+where a rule below says how to phrase a field, follow it exactly rather than
+finding your own wording.
 
-brand_color is the one field you may reason about rather than copy: it becomes
-the background of the Wallet pass. Give it as hex #RRGGBB. Prefer the
-well-known brand colour of the issuing organization, venue, team, airline or
-event (a club's kit, an airline's livery, a museum's identity); failing that, a
-colour that suits this specific subject matter. Two different documents should
-rarely land on the same colour, so do not fall back on a generic red or blue —
-reach for the whole spectrum. It must be a deep, saturated colour that white
-text can sit on: no greys, pastels, near-white or near-black. Use null only if
-the document gives you nothing to go on.
+title is the pass headline, under 30 characters:
+  * a journey is "ORIGIN → DESTINATION", using the airport or station codes
+    whenever the document prints them ("AUH → MAD") and the place names only
+    when it does not ("Bergen → Voss");
+  * an event is the act or match: "Coldplay", "Peñarol v Nacional";
+  * a place you visit is its name: "Museo Reina Sofía";
+  * a stay or a booking is the property or restaurant name.
+Do not put the operator, the word "ticket", or a booking reference in it.
+
+venue_name is where the holder physically goes to use this: the departure
+airport or station for a journey, the stadium, museum, cinema or theatre for an
+event, the property for a stay. city is the city that venue is in — for a
+journey, the origin city, not the destination.
+
+brand_color becomes the background of the Wallet pass. Give it as hex #RRGGBB.
+Use the actual brand colour of whoever issues the document — the airline's
+livery, the club's kit, the museum's identity — so that two documents from the
+same issuer always come out the same colour. If the issuer has no colour you
+know, pick one from the subject matter, and avoid a generic red or blue. It
+must be deep and saturated enough for white text to sit on: no greys, pastels,
+near-white or near-black. Use null only if the document gives you nothing to go
+on. Colors other than brand_color are rgb(R, G, B) with readable contrast.
 
 "group_name" is what to call the document as a whole when it is worth several
 passes — several tickets to one show, the legs of one journey, the nights of
@@ -446,26 +527,15 @@ one booking. Name the set, never one of its members: "Coldplay at Wembley", not
 under 40 characters, and use null for a single ticket or when the set has no
 name beyond what its members already say.
 
-"traveler_count" is the number of people on that leg, not the number of codes
-printed. A leg that says "2 x Adult" is two tickets whether it shows two
-barcodes, one shared barcode, or none at all.
-
 Times on a ticket are local to the place they happen, so leave them exactly as
-printed and never convert them. Say where they are local to instead, in the
-timezone fields, as an IANA zone name like "Europe/Madrid" — never an offset
-like "+02:00", which is only true for half the year.
-
-Give a zone when the document states one, or when the place identifies it
-beyond doubt: an airport code, a station, a named city. A leg from MVD to MAD
-is America/Montevideo to Europe/Madrid whether or not the ticket says so. If
-the place is ambiguous or missing, use null. A wrong zone is worse than none —
-it silently moves every time on the itinerary — so do not guess.
+printed and never convert them to another zone.
 
 Dates must be YYYY-MM-DD and times HH:MM (24h). Boarding passes often print a
-day and month with no year ("18 Mar"): infer the year from any other date in
-the document, and otherwise from the booking or issue date. A pass with a
-complete date is far more useful than a null, so only give up if there is no
-day or month either.
+day and month with no year ("18 Mar"). Take the year from another date printed
+on the document — the issue date, the booking date, the return leg. When the
+document prints no year at all, use the next time that day and month occur on
+or after today, {today}: an undated boarding pass is for the journey ahead, not
+the one last year. Only give up when there is no day or month either.
 
 For a document that covers a
 range — a hotel stay, a car rental, a multi-day pass — put the start in
