@@ -46,6 +46,13 @@ logger = logging.getLogger(__name__)
 # effective DPI fall to whatever fits.
 MAX_RASTER_PIXELS = 12_000_000
 
+# Blank pages compress to almost nothing: 50,000 of them fit in 8.3MB, well under
+# the 10MB upload cap, and a page with no barcode is the *expensive* case because
+# every detection method runs before giving up (~2.6s/page). Unbounded, that one
+# upload is 35 hours of CPU. The LLM paths already stop at MAX_TEXT_PAGES=25;
+# match that rather than trusting the byte cap to bound the page count.
+MAX_BARCODE_PAGES = 25
+
 
 def capped_zoom(width_pt: float, height_pt: float, requested_dpi: int) -> float:
     """Return a rasterization zoom factor that keeps a page under the pixel cap.
@@ -82,7 +89,10 @@ def capped_dpi_for_pdf(pdf_data: bytes, requested_dpi: int) -> int:
     finally:
         doc.close()
 
-    dpi = max(72, int(zoom * 72))
+    # No 72 DPI floor: PDF allows pages up to 14400pt (200in) a side, and at 72 DPI
+    # that is still 207MP — 17x over the cap, caught only by PIL's own bomb limit,
+    # and only on the pdf2image paths. Honour the cap instead of a nominal minimum.
+    dpi = max(1, int(zoom * 72))
     if dpi < requested_dpi:
         logger.info(f"📉 Capping rasterization at {dpi} DPI (requested {requested_dpi}) to stay under {MAX_RASTER_PIXELS/1_000_000:.0f}MP")
     return dpi
@@ -138,7 +148,16 @@ class BarcodeExtractor:
             List of detected barcodes with their data and types
         """
         logger.info(f"🔍 Starting barcode extraction from {filename}")
-        
+
+        try:
+            doc = fitz.open(stream=pdf_data, filetype="pdf")
+            total_pages = doc.page_count
+            doc.close()
+            if total_pages > MAX_BARCODE_PAGES:
+                logger.warning(f"✂️ {filename} has {total_pages} pages; scanning only the first {MAX_BARCODE_PAGES}")
+        except Exception as e:
+            logger.debug(f"Could not read page count from {filename}: {e}")
+
         barcodes = []
         
         logger.info("🚀 Using advanced barcode detection with format prioritization")
@@ -275,7 +294,7 @@ class BarcodeExtractor:
         # Open PDF with PyMuPDF
         doc = fitz.open(stream=pdf_data, filetype="pdf")
         
-        for page_num in range(len(doc)):
+        for page_num in range(min(len(doc), MAX_BARCODE_PAGES)):
             page = doc[page_num]
             
             # Get page as image — 300 DPI for reliable barcode detection, lowered
@@ -324,7 +343,8 @@ class BarcodeExtractor:
                     pdf_data,
                     dpi=dpi,
                     fmt='RGB',
-                    thread_count=2
+                    thread_count=2,
+                    last_page=MAX_BARCODE_PAGES  # bound poppler itself, not just the loop
                 )
 
                 page_barcodes = []
@@ -424,7 +444,7 @@ class BarcodeExtractor:
         barcodes = []
         doc = fitz.open(stream=pdf_data, filetype="pdf")
 
-        for page_num in range(doc.page_count):
+        for page_num in range(min(doc.page_count, MAX_BARCODE_PAGES)):
             page = doc[page_num]
             pix = page.get_pixmap(matrix=capped_matrix(page, 300))
             img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
@@ -488,7 +508,8 @@ class BarcodeExtractor:
         images = convert_from_bytes(
             pdf_data,
             dpi=capped_dpi_for_pdf(pdf_data, 600),  # Very high DPI, capped by page size
-            fmt='RGB'
+            fmt='RGB',
+            last_page=MAX_BARCODE_PAGES  # bound poppler itself, not just the loop
         )
         
         for page_num, image in enumerate(images, 1):

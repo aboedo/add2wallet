@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.services.barcode_extractor import (
     BarcodeExtractor,
+    MAX_BARCODE_PAGES,
     MAX_RASTER_PIXELS,
     capped_dpi_for_pdf,
     capped_zoom,
@@ -415,6 +416,100 @@ class TestRasterizationCap:
         assert capped_dpi_for_pdf(pdf, 600) <= 600
         results = BarcodeExtractor().extract_barcodes_from_pdf(pdf, "scan.pdf")
         assert any(bc["data"] == payload for bc in results)
+
+
+class TestDecompressionBombLimits:
+    """The 10MB upload cap does not bound the work a PDF can ask for: blank pages
+    compress to ~170 bytes each, and a page box may legally be 14400pt a side."""
+
+    MAX_PDF_POINT = 14400  # PDF spec limit, 200 inches
+
+    def _blank_pdf(self, pages, width_pt=595, height_pt=842):
+        import fitz
+
+        doc = fitz.open()
+        for _ in range(pages):
+            doc.new_page(width=width_pt, height=height_pt)
+        data = doc.tobytes()
+        doc.close()
+        return data
+
+    def test_largest_legal_page_still_respects_pixel_cap(self):
+        """A 72 DPI floor would leave this at 207MP — 17x over the cap."""
+        pdf = self._blank_pdf(1, self.MAX_PDF_POINT, self.MAX_PDF_POINT)
+        dpi = capped_dpi_for_pdf(pdf, 600)
+        pixels = (self.MAX_PDF_POINT / 72 * dpi) ** 2
+        assert pixels <= MAX_RASTER_PIXELS * 1.01
+
+    def test_page_count_bomb_is_bounded(self):
+        """Cost must track the page cap, not the page count.
+
+        A page with no barcode is the expensive case — every method runs before
+        giving up — so a huge blank PDF is the worst input, and it fits easily
+        under the byte cap.
+        """
+        import time
+
+        many = self._blank_pdf(MAX_BARCODE_PAGES * 20)
+        assert len(many) < 10 * 1024 * 1024, "should fit under the upload cap"
+
+        extractor = BarcodeExtractor()
+        start = time.time()
+        extractor.extract_barcodes_from_pdf(self._blank_pdf(MAX_BARCODE_PAGES), "capped.pdf")
+        capped = time.time() - start
+
+        start = time.time()
+        extractor.extract_barcodes_from_pdf(many, "bomb.pdf")
+        bomb = time.time() - start
+
+        # 20x the pages must not mean 20x the work
+        assert bomb < capped * 3, f"{bomb:.1f}s for 20x the pages vs {capped:.1f}s capped"
+
+    def test_barcode_beyond_page_cap_is_not_scanned(self):
+        """Documents the tradeoff: the limit is real, and it is a truncation."""
+        import io
+        import fitz
+        import zxingcpp
+        from PIL import Image
+
+        payload = "beyond-the-cap"
+        matrix = np.array(zxingcpp.write_barcode(zxingcpp.BarcodeFormat.QRCode, payload))
+        buf = io.BytesIO()
+        Image.fromarray(matrix).convert("RGB").resize((300, 300), Image.NEAREST).save(buf, format="PNG")
+
+        doc = fitz.open()
+        for index in range(MAX_BARCODE_PAGES + 3):
+            page = doc.new_page(width=595, height=842)
+            if index == MAX_BARCODE_PAGES + 2:  # last page, past the cap
+                page.insert_image(fitz.Rect(150, 250, 390, 490), stream=buf.getvalue())
+        pdf = doc.tobytes()
+        doc.close()
+
+        results = BarcodeExtractor().extract_barcodes_from_pdf(pdf, "deep.pdf")
+        assert not any(bc["data"] == payload for bc in results)
+
+    def test_barcode_within_page_cap_is_still_found(self):
+        import io
+        import fitz
+        import zxingcpp
+        from PIL import Image
+
+        payload = "0183444078710"
+        matrix = np.array(zxingcpp.write_barcode(zxingcpp.BarcodeFormat.QRCode, payload))
+        buf = io.BytesIO()
+        Image.fromarray(matrix).convert("RGB").resize((300, 300), Image.NEAREST).save(buf, format="PNG")
+
+        doc = fitz.open()
+        for index in range(5):
+            page = doc.new_page(width=595, height=842)
+            if index == 2:
+                page.insert_image(fitz.Rect(150, 250, 390, 490), stream=buf.getvalue())
+        pdf = doc.tobytes()
+        doc.close()
+
+        results = BarcodeExtractor().extract_barcodes_from_pdf(pdf, "ticket.pdf")
+        found = [bc for bc in results if bc["data"] == payload]
+        assert found and found[0]["page"] == 3
 
 
 if __name__ == "__main__":
