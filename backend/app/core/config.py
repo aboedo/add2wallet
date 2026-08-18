@@ -14,6 +14,7 @@ load_dotenv()
 class Settings:
     api_key: str
     max_upload_bytes: int
+    processing_timeout_seconds: float
     upload_dir: Path
     job_ttl_seconds: int
     cleanup_interval_seconds: int
@@ -45,6 +46,7 @@ def get_settings() -> Settings:
     return Settings(
         api_key=os.getenv("API_KEY", "development-api-key"),
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024))),
+        processing_timeout_seconds=float(os.getenv("PROCESSING_TIMEOUT_SECONDS", "90")),
         upload_dir=Path(os.getenv("UPLOAD_DIR", "uploads")),
         job_ttl_seconds=int(os.getenv("JOB_TTL_SECONDS", "1800")),
         cleanup_interval_seconds=int(os.getenv("CLEANUP_INTERVAL_SECONDS", "300")),

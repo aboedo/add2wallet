@@ -12,6 +12,7 @@ def _settings(tmp_path):
     return Settings(
         api_key="development-api-key",
         max_upload_bytes=10 * 1024 * 1024,
+        processing_timeout_seconds=90.0,
         upload_dir=tmp_path / "uploads",
         job_ttl_seconds=1800,
         cleanup_interval_seconds=300,
@@ -161,3 +162,73 @@ async def test_revenuecat_is_not_called_if_pass_persistence_fails(tmp_path, monk
         )
 
     assert revenuecat.called is False
+
+
+@pytest.mark.asyncio
+async def test_slow_conversion_times_out_and_fails_the_job(tmp_path, monkeypatch):
+    """A job that outruns the budget must answer, not hang.
+
+    The client waits on this request, so a stage that never finishes used to mean
+    a dead connection and no job state either way.
+    """
+    import asyncio
+    import dataclasses
+
+    from app.core.errors import ProcessingTimeoutError
+
+    class StubIngest:
+        def run(self, filename, content_type, data):
+            return ValidatedUpload(
+                filename=filename,
+                content_type=content_type,
+                kind=DocumentKind.pdf,
+                data=data,
+                extension="pdf",
+            )
+
+    class HangingExtraction:
+        async def run(self, upload):
+            await asyncio.sleep(30)
+            raise AssertionError("should have been cut off by the timeout")
+
+    class StubRevenueCat:
+        called = False
+
+        def deduct_pass(self, *args):
+            self.called = True
+            return 1
+
+    settings = dataclasses.replace(_settings(tmp_path), processing_timeout_seconds=0.05)
+    store = JobStore(settings)
+    revenuecat = StubRevenueCat()
+    pipeline = ConversionPipeline(
+        settings,
+        store,
+        ingest=StubIngest(),
+        extraction=HangingExtraction(),
+        revenuecat=revenuecat,
+    )
+    monkeypatch.setattr("app.core.pipeline.uuid.uuid4", lambda: "job-id")
+
+    with pytest.raises(ProcessingTimeoutError) as excinfo:
+        await pipeline.convert(
+            filename="ticket.pdf",
+            content_type="application/pdf",
+            data=b"%PDF-",
+            user_id="user-id",
+            session_token="token",
+            is_retry=False,
+            is_demo=False,
+        )
+
+    assert excinfo.value.status_code == 504
+    assert excinfo.value.code == "processing_timeout"
+    assert store.get("job-id").status == "failed"
+    assert revenuecat.called is False, "a timed-out job must not spend a PASS"
+
+
+def test_processing_timeout_defaults_to_90_seconds(monkeypatch):
+    from app.core.config import get_settings
+
+    monkeypatch.delenv("PROCESSING_TIMEOUT_SECONDS", raising=False)
+    assert get_settings().processing_timeout_seconds == 90.0

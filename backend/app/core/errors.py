@@ -34,6 +34,15 @@ class ProcessingError(ConversionError):
         super().__init__("processing_failed", message, 422)
 
 
+class ProcessingTimeoutError(ConversionError):
+    def __init__(self, seconds: float) -> None:
+        super().__init__(
+            "processing_timeout",
+            f"Processing took longer than {int(seconds)}s. Try a smaller or simpler file.",
+            504,
+        )
+
+
 class UpstreamServiceError(ConversionError):
     def __init__(self, message: str) -> None:
         super().__init__("upstream_unavailable", message, 503)

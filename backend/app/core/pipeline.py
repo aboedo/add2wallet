@@ -5,7 +5,7 @@ import logging
 import uuid
 
 from app.core.config import Settings
-from app.core.errors import ConversionError
+from app.core.errors import ConversionError, ProcessingTimeoutError
 from app.core.models import StoredJob
 from app.core.revenuecat import RevenueCatClient
 from app.core.stages import (
@@ -62,31 +62,24 @@ class ConversionPipeline:
         job_id = str(uuid.uuid4())
         job = self.store.create_processing_job(job_id, user_id, upload)
 
+        timeout_seconds = self.settings.processing_timeout_seconds
         try:
-            extracted = await self.extraction.run(upload)
-            job.progress = 35
-            classified = await self.classification.run(upload, extracted)
-            job.progress = 55
-            analysis = await asyncio.to_thread(self.enrichment.run, upload, extracted, classified)
-            job.progress = 70
-            artifacts = await self.generation.run(upload, analysis)
-            job.progress = 85
-            self.store.save_artifacts(
-                job_id,
-                artifacts,
-                [barcode.model_dump() for barcode in analysis.barcodes],
-                _job_metadata(analysis, len(artifacts)),
-                analysis.warnings,
+            # Bounds how long the client waits, not how long the CPU runs:
+            # asyncio.to_thread work cannot be cancelled and finishes in the
+            # background. The per-request cost is already bounded upstream by the
+            # upload cap, MAX_BARCODE_PAGES and MAX_RASTER_PIXELS; this is what
+            # turns a slow job into an answer instead of a hung connection.
+            return await asyncio.wait_for(
+                self._run_stages(job_id, job, upload, user_id, is_retry, is_demo),
+                timeout=timeout_seconds,
             )
-            job.progress = 90
-            remaining = await asyncio.to_thread(
-                self.revenuecat.deduct_pass,
-                user_id,
-                is_retry,
-                is_demo,
-                job_id,
+        except asyncio.TimeoutError as exc:
+            error = ProcessingTimeoutError(timeout_seconds)
+            logger.warning(
+                "Conversion timed out after %ss", timeout_seconds, extra={"a2w_job_id": job_id}
             )
-            return self.store.complete_job(job_id, remaining)
+            self.store.fail_job(job_id, error.message)
+            raise error from exc
         except ConversionError as exc:
             self.store.fail_job(job_id, exc.message)
             raise
@@ -96,6 +89,40 @@ class ConversionPipeline:
             from app.core.errors import ProcessingError
 
             raise ProcessingError("Could not create an Apple Wallet pass from this file") from exc
+
+    async def _run_stages(
+        self,
+        job_id: str,
+        job: StoredJob,
+        upload,
+        user_id: str,
+        is_retry: bool,
+        is_demo: bool,
+    ) -> StoredJob:
+        extracted = await self.extraction.run(upload)
+        job.progress = 35
+        classified = await self.classification.run(upload, extracted)
+        job.progress = 55
+        analysis = await asyncio.to_thread(self.enrichment.run, upload, extracted, classified)
+        job.progress = 70
+        artifacts = await self.generation.run(upload, analysis)
+        job.progress = 85
+        self.store.save_artifacts(
+            job_id,
+            artifacts,
+            [barcode.model_dump() for barcode in analysis.barcodes],
+            _job_metadata(analysis, len(artifacts)),
+            analysis.warnings,
+        )
+        job.progress = 90
+        remaining = await asyncio.to_thread(
+            self.revenuecat.deduct_pass,
+            user_id,
+            is_retry,
+            is_demo,
+            job_id,
+        )
+        return self.store.complete_job(job_id, remaining)
 
 
 def _job_metadata(analysis, pass_count: int = 1) -> dict:

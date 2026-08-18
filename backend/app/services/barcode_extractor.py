@@ -49,9 +49,9 @@ MAX_RASTER_PIXELS = 12_000_000
 # Blank pages compress to almost nothing: 50,000 of them fit in 8.3MB, well under
 # the 10MB upload cap, and a page with no barcode is the *expensive* case because
 # every detection method runs before giving up (~2.6s/page). Unbounded, that one
-# upload is 35 hours of CPU. The LLM paths already stop at MAX_TEXT_PAGES=25;
-# match that rather than trusting the byte cap to bound the page count.
-MAX_BARCODE_PAGES = 25
+# upload is 35 hours of CPU. 15 pages keeps the worst case near 40s, inside the
+# 90s request budget, and a real ticket is 1-5 pages.
+MAX_BARCODE_PAGES = 15
 
 
 def capped_zoom(width_pt: float, height_pt: float, requested_dpi: int) -> float:

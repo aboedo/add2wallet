@@ -497,9 +497,14 @@ class NetworkService {
         if let session {
             self.session = session
         } else {
+            // The 90s budget is enforced by the backend (PROCESSING_TIMEOUT_SECONDS),
+            // which answers with a 504 explaining itself. Ten seconds of headroom so
+            // that answer wins the race — the client giving up first is the worst
+            // outcome, since the server finishes the pass and charges for it while
+            // the user sees a bare timeout.
             let config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 60.0
-            config.timeoutIntervalForResource = 60.0
+            config.timeoutIntervalForRequest = 100.0
+            config.timeoutIntervalForResource = 100.0
             self.session = URLSession(configuration: config)
         }
     }
