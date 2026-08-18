@@ -9,7 +9,12 @@ from unittest.mock import Mock, patch, MagicMock
 # Add the project root to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services.barcode_extractor import BarcodeExtractor
+from app.services.barcode_extractor import (
+    BarcodeExtractor,
+    MAX_RASTER_PIXELS,
+    capped_dpi_for_pdf,
+    capped_zoom,
+)
 
 
 class TestBarcodeExtractor:
@@ -353,6 +358,63 @@ class TestBarcodeExtractor:
             assert len(result) == 1
             assert result[0]['type'] == 'DATAMATRIX'
             assert result[0]['data'] == 'datamatrix_data'
+
+
+class TestRasterizationCap:
+    """A camera-scanned PDF can carry a page box big enough that 600 DPI lands
+    near 100 megapixels, which used to cost ~90s per pass and time the client
+    out. Rasterization is capped instead."""
+
+    A4_PT = (595, 842)
+    OVERSIZED_PT = (2400, 3200)  # scanner mapping the capture 1:1 into points
+
+    def test_small_page_keeps_requested_dpi(self):
+        # A business-card-sized page at 300 DPI is nowhere near the cap
+        assert capped_zoom(200, 300, 300) == pytest.approx(300 / 72)
+
+    @pytest.mark.parametrize("width_pt,height_pt", [A4_PT, OVERSIZED_PT])
+    @pytest.mark.parametrize("requested_dpi", [300, 400, 600])
+    def test_page_never_rasterizes_above_cap(self, width_pt, height_pt, requested_dpi):
+        zoom = capped_zoom(width_pt, height_pt, requested_dpi)
+        assert (width_pt * zoom) * (height_pt * zoom) <= MAX_RASTER_PIXELS * 1.001
+        assert zoom <= requested_dpi / 72
+
+    def test_degenerate_page_size_does_not_divide_by_zero(self):
+        assert capped_zoom(0, 0, 600) == pytest.approx(600 / 72)
+
+    def test_capped_dpi_falls_back_when_pdf_unreadable(self):
+        assert capped_dpi_for_pdf(b"not a pdf", 400) == 400
+
+    def _pdf_with_qr(self, width_pt, height_pt, payload):
+        import io
+        import fitz
+        import zxingcpp
+        from PIL import Image
+
+        matrix = np.array(zxingcpp.write_barcode(zxingcpp.BarcodeFormat.QRCode, payload))
+        buf = io.BytesIO()
+        Image.fromarray(matrix).convert("RGB").resize((300, 300), Image.NEAREST).save(buf, format="PNG")
+
+        doc = fitz.open()
+        page = doc.new_page(width=width_pt, height=height_pt)
+        origin = fitz.Point(width_pt * 0.3, height_pt * 0.3)
+        page.insert_image(
+            fitz.Rect(origin.x, origin.y, origin.x + 240, origin.y + 240),
+            stream=buf.getvalue(),
+        )
+        pdf = doc.tobytes()
+        doc.close()
+        return pdf
+
+    @pytest.mark.parametrize("width_pt,height_pt", [A4_PT, OVERSIZED_PT])
+    def test_qr_still_found_on_capped_page(self, width_pt, height_pt):
+        """The cap must buy speed without costing detection."""
+        payload = "0183444078710"
+        pdf = self._pdf_with_qr(width_pt, height_pt, payload)
+
+        assert capped_dpi_for_pdf(pdf, 600) <= 600
+        results = BarcodeExtractor().extract_barcodes_from_pdf(pdf, "scan.pdf")
+        assert any(bc["data"] == payload for bc in results)
 
 
 if __name__ == "__main__":

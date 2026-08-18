@@ -39,6 +39,60 @@ import PyPDF2
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Rasterizing a page costs time quadratic in DPI, and a camera-scanned PDF often
+# carries a page box large enough that 600 DPI lands near 100 megapixels — a
+# minute of work per pass, on top of PIL's decompression-bomb warning. Barcodes
+# need resolution per module, not per page, so cap the raster and let the
+# effective DPI fall to whatever fits.
+MAX_RASTER_PIXELS = 12_000_000
+
+
+def capped_zoom(width_pt: float, height_pt: float, requested_dpi: int) -> float:
+    """Return a rasterization zoom factor that keeps a page under the pixel cap.
+
+    ``width_pt``/``height_pt`` are PDF user-space units (1/72 inch). The returned
+    value is the multiplier a 72-DPI render needs to reach the effective DPI.
+    """
+    zoom = requested_dpi / 72.0
+    if width_pt <= 0 or height_pt <= 0:
+        return zoom
+    pixels = (width_pt * zoom) * (height_pt * zoom)
+    if pixels > MAX_RASTER_PIXELS:
+        zoom *= math.sqrt(MAX_RASTER_PIXELS / pixels)
+    return zoom
+
+
+def capped_dpi_for_pdf(pdf_data: bytes, requested_dpi: int) -> int:
+    """Return the highest DPI at or below ``requested_dpi`` that no page exceeds.
+
+    pdf2image rasterizes every page at a single DPI, so the cap is driven by the
+    largest page in the document.
+    """
+    try:
+        doc = fitz.open(stream=pdf_data, filetype="pdf")
+    except Exception as e:
+        logger.debug(f"Could not measure page sizes, using {requested_dpi} DPI: {e}")
+        return requested_dpi
+
+    try:
+        zoom = min(
+            (capped_zoom(page.rect.width, page.rect.height, requested_dpi) for page in doc),
+            default=requested_dpi / 72.0,
+        )
+    finally:
+        doc.close()
+
+    dpi = max(72, int(zoom * 72))
+    if dpi < requested_dpi:
+        logger.info(f"📉 Capping rasterization at {dpi} DPI (requested {requested_dpi}) to stay under {MAX_RASTER_PIXELS/1_000_000:.0f}MP")
+    return dpi
+
+
+def capped_matrix(page: Any, requested_dpi: int) -> "fitz.Matrix":
+    """Build a PyMuPDF render matrix for ``page`` that respects the pixel cap."""
+    zoom = capped_zoom(page.rect.width, page.rect.height, requested_dpi)
+    return fitz.Matrix(zoom, zoom)
+
 
 def canonical_format_name(raw: Any) -> str:
     """Normalize a barcode format name to the internal canonical spelling.
@@ -97,18 +151,31 @@ class BarcodeExtractor:
         except Exception as e:
             logger.warning(f"⚠️ PyMuPDF extraction failed: {e}")
         
-        # Method 2: Convert PDF to images and scan (more thorough)
+        # Method 2: zxing-cpp — better PDF417/DataMatrix support than pyzbar, and
+        # it renders at the same 300 DPI as method 1. It used to run last, after
+        # two full-page rasterization passes had already burned ~90s finding
+        # nothing; running it here usually means those passes never happen.
         try:
-            image_barcodes = self._extract_from_images(pdf_data)
-            # Avoid duplicates by checking barcode data
-            existing_data = {bc['data'] for bc in barcodes}
-            new_barcodes = [bc for bc in image_barcodes if bc['data'] not in existing_data]
-            barcodes.extend(new_barcodes)
-            logger.info(f"🖼️ Image scanning found {len(new_barcodes)} additional barcodes")
+            zxing_barcodes = self._extract_with_zxing(pdf_data)
+            if zxing_barcodes:
+                barcodes = self._reconcile_with_zxing(barcodes, zxing_barcodes)
+                logger.info(f"🔍 zxing-cpp found {len(zxing_barcodes)} barcode(s)")
         except Exception as e:
-            logger.warning(f"⚠️ Image-based extraction failed: {e}")
-        
-        # Method 3: Enhanced image processing for difficult barcodes
+            logger.warning(f"⚠️ zxing-cpp extraction failed: {e}")
+
+        # Method 3: Convert PDF to images and scan (more thorough, much slower)
+        if not barcodes:
+            try:
+                image_barcodes = self._extract_from_images(pdf_data)
+                # Avoid duplicates by checking barcode data
+                existing_data = {bc['data'] for bc in barcodes}
+                new_barcodes = [bc for bc in image_barcodes if bc['data'] not in existing_data]
+                barcodes.extend(new_barcodes)
+                logger.info(f"🖼️ Image scanning found {len(new_barcodes)} additional barcodes")
+            except Exception as e:
+                logger.warning(f"⚠️ Image-based extraction failed: {e}")
+
+        # Method 4: Enhanced image processing for difficult barcodes
         if not barcodes:
             try:
                 enhanced_barcodes = self._extract_with_enhancement(pdf_data)
@@ -116,38 +183,6 @@ class BarcodeExtractor:
                 logger.info(f"🔧 Enhanced processing found {len(enhanced_barcodes)} barcodes")
             except Exception as e:
                 logger.warning(f"⚠️ Enhanced extraction failed: {e}")
-        
-        # Method 4: zxing-cpp — better PDF417/DataMatrix support than pyzbar
-        try:
-            zxing_barcodes = self._extract_with_zxing(pdf_data)
-            if zxing_barcodes:
-                # zxing results are authoritative for format detection.
-                # For each zxing barcode, remove any pyzbar barcode from the same page
-                # that covers an overlapping region (pyzbar often misidentifies PDF417 as QRCODE).
-                zxing_data_set = {bc['data'] for bc in zxing_barcodes}
-                zxing_pages = {bc.get('page', 0) for bc in zxing_barcodes}
-
-                # Drop pyzbar barcodes from pages where zxing also found something,
-                # unless the pyzbar barcode data doesn't appear in zxing results at all
-                # (meaning it's a different, distinct barcode on the same page).
-                filtered_existing = []
-                for bc in barcodes:
-                    page = bc.get('page', 0)
-                    if page in zxing_pages and bc.get('data') not in zxing_data_set:
-                        # Different data on same page — keep only if it's not a QRCODE
-                        # that might be a misidentification (pyzbar is unreliable for PDF417)
-                        if bc.get('type') == 'QRCODE' and bc.get('source') != 'zxing':
-                            logger.info(f"🔄 Dropping pyzbar QRCODE in favour of zxing results for same page: {bc.get('data','')[:40]}")
-                            continue
-                    filtered_existing.append(bc)
-                barcodes = filtered_existing
-
-                existing_data = {bc['data'] for bc in barcodes}
-                new_zxing = [bc for bc in zxing_barcodes if bc['data'] not in existing_data]
-                barcodes.extend(new_zxing)
-                logger.info(f"🔍 zxing-cpp found {len(zxing_barcodes)} barcode(s), added {len(new_zxing)} new")
-        except Exception as e:
-            logger.warning(f"⚠️ zxing-cpp extraction failed: {e}")
 
         # If no barcodes found through image processing, try text extraction as fallback
         if not barcodes:
@@ -243,8 +278,9 @@ class BarcodeExtractor:
         for page_num in range(len(doc)):
             page = doc[page_num]
             
-            # Get page as image
-            pix = page.get_pixmap(matrix=fitz.Matrix(300/72, 300/72))  # 300 DPI for reliable barcode detection
+            # Get page as image — 300 DPI for reliable barcode detection, lowered
+            # automatically on oversized pages (see MAX_RASTER_PIXELS)
+            pix = page.get_pixmap(matrix=capped_matrix(page, 300))
             img_data = pix.tobytes("png")
             
             # Convert to PIL Image and then to OpenCV format
@@ -270,10 +306,19 @@ class BarcodeExtractor:
         barcodes = []
         
         # Try 400 DPI first
-        for dpi in [400, 600]:
+        attempted_dpis = set()
+        for requested_dpi in [400, 600]:
+            dpi = capped_dpi_for_pdf(pdf_data, requested_dpi)
+            # On an oversized page both requests cap to the same DPI; escalating
+            # would just redo the identical render.
+            if dpi in attempted_dpis:
+                logger.debug(f"⏭️ Skipping {requested_dpi} DPI pass — already rendered at the {dpi} DPI cap")
+                continue
+            attempted_dpis.add(dpi)
+
             try:
                 logger.debug(f"🔍 Trying rasterization at {dpi} DPI")
-                
+
                 # Convert PDF to images
                 images = convert_from_bytes(
                     pdf_data,
@@ -281,7 +326,7 @@ class BarcodeExtractor:
                     fmt='RGB',
                     thread_count=2
                 )
-                
+
                 page_barcodes = []
                 for page_num, image in enumerate(images, 1):
                     # Convert PIL to OpenCV
@@ -318,6 +363,34 @@ class BarcodeExtractor:
         
         return barcodes
     
+    def _reconcile_with_zxing(
+        self,
+        barcodes: List[Dict[str, Any]],
+        zxing_barcodes: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """Merge zxing results into earlier detections, letting zxing win on format.
+
+        pyzbar frequently reports a PDF417 as a QRCODE, so on any page where zxing
+        also found something, a pyzbar QRCODE carrying different data is treated as
+        a misidentification rather than a second barcode.
+        """
+        zxing_data_set = {bc['data'] for bc in zxing_barcodes}
+        zxing_pages = {bc.get('page', 0) for bc in zxing_barcodes}
+
+        filtered_existing = []
+        for bc in barcodes:
+            page = bc.get('page', 0)
+            if page in zxing_pages and bc.get('data') not in zxing_data_set:
+                if bc.get('type') == 'QRCODE' and bc.get('source') != 'zxing':
+                    logger.info(f"🔄 Dropping pyzbar QRCODE in favour of zxing results for same page: {bc.get('data','')[:40]}")
+                    continue
+            filtered_existing.append(bc)
+
+        existing_data = {bc['data'] for bc in filtered_existing}
+        new_zxing = [bc for bc in zxing_barcodes if bc['data'] not in existing_data]
+        logger.info(f"🔍 zxing-cpp added {len(new_zxing)} new barcode(s)")
+        return filtered_existing + new_zxing
+
     def _extract_with_zxing(self, pdf_data: bytes) -> List[Dict[str, Any]]:
         """Extract barcodes using zxing-cpp (better PDF417/DataMatrix support than pyzbar).
 
@@ -353,7 +426,7 @@ class BarcodeExtractor:
 
         for page_num in range(doc.page_count):
             page = doc[page_num]
-            pix = page.get_pixmap(matrix=fitz.Matrix(300/72, 300/72))
+            pix = page.get_pixmap(matrix=capped_matrix(page, 300))
             img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
             if pix.n == 4:
                 img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
@@ -414,7 +487,7 @@ class BarcodeExtractor:
         # Convert PDF to high-resolution images
         images = convert_from_bytes(
             pdf_data,
-            dpi=600,  # Very high DPI
+            dpi=capped_dpi_for_pdf(pdf_data, 600),  # Very high DPI, capped by page size
             fmt='RGB'
         )
         
