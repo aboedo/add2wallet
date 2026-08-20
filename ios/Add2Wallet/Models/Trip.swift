@@ -18,8 +18,11 @@ struct Trip: Identifiable, Hashable {
         passes.map(\.eventDateOrFallback).min() ?? Date()
     }
 
+    /// When the trip is actually over — the latest end across its passes, so a
+    /// journey that finishes with a four-night stay reads through the check-out
+    /// rather than stopping at the check-in.
     var endDate: Date {
-        passes.map(\.eventDateOrFallback).max() ?? startDate
+        passes.compactMap(\.lastRelevantDate).max() ?? startDate
     }
 
     /// A trip is past only once every one of its passes is.

@@ -202,18 +202,43 @@ class SavedPass {
         return passDatas.count
     }
     
-    /// Whether the event date has passed (expired)
-    var isExpired: Bool {
-        guard let eventDateString = eventDate, !eventDateString.isEmpty else {
-            // No date → never expires
-            return false
+    /// The last day this record is still worth something, or nil when no real
+    /// date could be read off it.
+    ///
+    /// A booking that has an end runs until that end, not until it starts — a
+    /// hotel stay expiring on its first morning is the bug this exists to fix.
+    /// Where a record covers several things at once (the legs of an itinerary,
+    /// a multi-ticket import), it is done when its *last* part is, so the latest
+    /// date wins.
+    ///
+    /// Each part contributes its own end, falling back to its own start: a
+    /// three-leg trip where only leg one records an arrival must not expire on
+    /// that arrival, which is earlier than leg three even leaves.
+    var lastRelevantDate: Date? {
+        var candidates: [Date] = []
+
+        if let recordEnd = SavedPass.parseDate(metadata?.endDate) {
+            candidates.append(recordEnd)
+        } else if let recordStart = SavedPass.parseDate(eventDate) {
+            candidates.append(recordStart)
         }
-        // eventDateOrFallback already parses multiple formats
-        let eventDay = eventDateOrFallback
-        // If it fell back to createdAt and there's no real event date, don't expire
-        if eventDay == createdAt { return false }
-        // Expired = event date is before start of today
-        return Calendar.current.startOfDay(for: eventDay) < Calendar.current.startOfDay(for: Date())
+
+        for segment in segments {
+            if let arrival = SavedPass.parseDate(segment.arriveDate) {
+                candidates.append(arrival)
+            } else if let departure = SavedPass.parseDate(segment.departDate) {
+                candidates.append(departure)
+            }
+        }
+
+        return candidates.max()
+    }
+
+    /// Whether the booking has run out — the end date where there is one, the
+    /// start date otherwise. A pass with no readable date never expires.
+    var isExpired: Bool {
+        guard let lastDay = lastRelevantDate else { return false }
+        return Calendar.current.startOfDay(for: lastDay) < Calendar.current.startOfDay(for: Date())
     }
     
     /// Built once. Creating a `DateFormatter` is expensive, and this list was
@@ -247,24 +272,33 @@ class SavedPass {
     /// timeline sorts, groups and filters, and every comparison asks for this.
     private static let parsedDates = NSCache<NSString, NSDate>()
 
-    /// Parse event date string or fallback to creation date for sorting/grouping.
-    var eventDateOrFallback: Date {
-        guard let eventDateString = eventDate, !eventDateString.isEmpty else {
-            return createdAt
-        }
+    /// Read a date off any of the shapes the backend and the tickets use, or nil.
+    ///
+    /// The same strings recur across a library — every leg of an itinerary, every
+    /// ticket of a booking — so results are cached rather than re-parsed.
+    static func parseDate(_ string: String?) -> Date? {
+        guard let string, !string.isEmpty else { return nil }
 
-        let key = eventDateString as NSString
-        if let cached = SavedPass.parsedDates.object(forKey: key) {
+        let key = string as NSString
+        if let cached = parsedDates.object(forKey: key) {
             return cached as Date
         }
 
-        for formatter in SavedPass.eventDateFormatters {
-            if let parsed = formatter.date(from: eventDateString) {
-                SavedPass.parsedDates.setObject(parsed as NSDate, forKey: key)
+        for formatter in eventDateFormatters {
+            if let parsed = formatter.date(from: string) {
+                parsedDates.setObject(parsed as NSDate, forKey: key)
                 return parsed
             }
         }
 
-        return createdAt
+        return nil
+    }
+
+    /// Parse event date string or fallback to creation date for sorting/grouping.
+    ///
+    /// Deliberately still the *start*: an upcoming booking belongs in the
+    /// timeline at the point it begins. Only expiry looks at the end.
+    var eventDateOrFallback: Date {
+        SavedPass.parseDate(eventDate) ?? createdAt
     }
 }

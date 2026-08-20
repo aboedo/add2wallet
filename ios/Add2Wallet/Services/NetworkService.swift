@@ -12,6 +12,11 @@ struct EnhancedPassMetadata: Codable {
     // Date and Time
     let date: String?
     let time: String?
+    /// End of a multi-day booking — hotel check-out, rental return, last day of
+    /// a pass. The backend has always sent these; the app only ever read the
+    /// start, which is why stays expired on their first morning.
+    let endDate: String?
+    let endTime: String?
     let duration: String?
 
     // Location Information
@@ -84,6 +89,8 @@ struct EnhancedPassMetadata: Codable {
         case description
         case date
         case time
+        case endDate = "end_date"
+        case endTime = "end_time"
         case duration
         case venueName = "venue_name"
         case venueAddress = "venue_address"
@@ -140,6 +147,8 @@ struct EnhancedPassMetadata: Codable {
         description: String? = nil,
         date: String? = nil,
         time: String? = nil,
+        endDate: String? = nil,
+        endTime: String? = nil,
         duration: String? = nil,
         venueName: String? = nil,
         venueAddress: String? = nil,
@@ -194,6 +203,8 @@ struct EnhancedPassMetadata: Codable {
         self.description = description
         self.date = date
         self.time = time
+        self.endDate = endDate
+        self.endTime = endTime
         self.duration = duration
         self.venueName = venueName
         self.venueAddress = venueAddress

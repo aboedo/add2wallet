@@ -77,6 +77,7 @@
 		E0849A5D57E3132B1E9683B3 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 169E5D42997400CE2FC8E0A8 /* NotificationManager.swift */; };
 		E218D7BB1695B1A64D72FADD /* Add2WalletShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4B2E979DBA8AD1D444C472F9 /* Add2WalletShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E2F6FF5D4CBF46C13774A890 /* PassAddedSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C354EED755FFEC6C272D2EAE /* PassAddedSuccessView.swift */; };
+		E70D6F489C82A0DDC15334DA /* PassExpirationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C3391DF97A1E950E72A4FD5 /* PassExpirationTests.swift */; };
 		EBAC9EE2C2144B5B220202EE /* URLHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8379EB966293400461957261 /* URLHandler.swift */; };
 		EBBF5CD71B12D7962BE70965 /* PassManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20402F2F51A6E2826F18CF35 /* PassManager.swift */; };
 		ED5B8B52313A45DFA5CC67A4 /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 413E059A05815E3BF7D737BC /* ProgressView.swift */; };
@@ -197,6 +198,7 @@
 		6328294BD904F874321F4287 /* torre_ifel.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = torre_ifel.pdf; sourceTree = "<group>"; };
 		68794C33012813537B9B78E9 /* TripGroupingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGroupingTests.swift; sourceTree = "<group>"; };
 		6A622B26E336BBE5945AA0C9 /* PassKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassKitView.swift; sourceTree = "<group>"; };
+		6C3391DF97A1E950E72A4FD5 /* PassExpirationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassExpirationTests.swift; sourceTree = "<group>"; };
 		71A33C0E1CF6C5AC9B3DCF49 /* ProgressViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewModel.swift; sourceTree = "<group>"; };
 		74CE070EB97417FF392D5060 /* PassGroupList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassGroupList.swift; sourceTree = "<group>"; };
 		797CFFCC95DD642828FB976F /* JourneyStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyStrip.swift; sourceTree = "<group>"; };
@@ -478,6 +480,7 @@
 				056189355BE651B878F8CD19 /* MockRevenueCat.swift */,
 				9FDD16A7870322158E9C02F8 /* NetworkServiceTests.swift */,
 				EBC32204616148833F8A5E01 /* PassColorUtilsTests.swift */,
+				6C3391DF97A1E950E72A4FD5 /* PassExpirationTests.swift */,
 				02DABAC11C45FB8BD57E786B /* PassGroupTitleTests.swift */,
 				1205A8F3C1360C4FA78FFC03 /* PassKitAcceptanceTests.swift */,
 				4DEEA8937777692946008C62 /* PassUsageManagerTests.swift */,
@@ -716,6 +719,7 @@
 				429D8EF769F0B6B37383C60D /* MockRevenueCat.swift in Sources */,
 				64FD010A5789AFD71211E68B /* NetworkServiceTests.swift in Sources */,
 				3BFA31B85752B5F7CACFD04F /* PassColorUtilsTests.swift in Sources */,
+				E70D6F489C82A0DDC15334DA /* PassExpirationTests.swift in Sources */,
 				294113FCF46B0EABC474B8C7 /* PassGroupTitleTests.swift in Sources */,
 				654A9E7162E7135D8CDD96B8 /* PassKitAcceptanceTests.swift in Sources */,
 				AEABA64DAF1568B595726584 /* PassUsageManagerTests.swift in Sources */,
