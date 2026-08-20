@@ -161,6 +161,76 @@ final class PassExpirationTests: XCTestCase {
         XCTAssertTrue(Trip(id: "ABC123", name: "Trip", passes: [past, done]).isPast)
     }
 
+    // MARK: - The user's own call
+
+    func testUndatedPassCanBeMarkedExpiredByHand() {
+        let ticket = pass()
+        XCTAssertFalse(ticket.isExpired, "nothing to go on, so it stays put")
+
+        ticket.manuallyExpired = true
+        XCTAssertTrue(ticket.isExpired, "the person holding it knows it is spent")
+    }
+
+    func testAnExpiredPassCanBeBroughtBack() {
+        let ticket = pass(date: day(offsetFromToday: -1))
+        XCTAssertTrue(ticket.isExpired)
+
+        ticket.manuallyExpired = false
+        XCTAssertFalse(ticket.isExpired)
+    }
+
+    func testClearingTheOverrideReturnsToTheDates() {
+        let ticket = pass(date: day(offsetFromToday: -1))
+        ticket.manuallyExpired = false
+        XCTAssertFalse(ticket.isExpired)
+
+        ticket.manuallyExpired = nil
+        XCTAssertTrue(ticket.isExpired, "back to what the ticket says")
+    }
+
+    func testOverrideDoesNotDisturbTheUnderlyingDateReading() {
+        let stay = pass(date: day(offsetFromToday: -3), endDate: day(offsetFromToday: 3))
+        stay.manuallyExpired = true
+
+        XCTAssertTrue(stay.isExpired)
+        XCTAssertFalse(stay.isExpiredByDate, "the dates still say what they said")
+    }
+
+    func testAgreeingWithTheDatesIsNotFlaggedAsAnOverride() {
+        let ticket = pass(date: day(offsetFromToday: -1))
+        ticket.manuallyExpired = true
+
+        XCTAssertTrue(ticket.isExpired)
+        XCTAssertFalse(
+            ticket.isManuallyOverridden,
+            "it agrees with the dates, so there is nothing to explain"
+        )
+    }
+
+    func testContradictingTheDatesIsFlaggedAsAnOverride() {
+        let ticket = pass(date: day(offsetFromToday: -1))
+        ticket.manuallyExpired = false
+        XCTAssertTrue(ticket.isManuallyOverridden)
+
+        let undated = pass()
+        undated.manuallyExpired = true
+        XCTAssertTrue(undated.isManuallyOverridden)
+    }
+
+    func testNoOverrideIsNeverFlagged() {
+        XCTAssertFalse(pass().isManuallyOverridden)
+        XCTAssertFalse(pass(date: day(offsetFromToday: -1)).isManuallyOverridden)
+    }
+
+    func testAManuallyExpiredPassLeavesTheUpcomingTimeline() {
+        let undated = pass()
+        undated.manuallyExpired = true
+
+        let timeline = Timeline.build(from: [undated])
+        XCTAssertNil(timeline.next)
+        XCTAssertEqual(timeline.past.count, 1)
+    }
+
     // MARK: - Decoding
 
     func testEndDateDecodesFromTheBackendPayload() throws {

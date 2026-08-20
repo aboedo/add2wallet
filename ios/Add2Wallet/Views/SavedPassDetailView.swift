@@ -142,44 +142,51 @@ struct SavedPassDetailView: View {
                             .frame(maxWidth: .infinity)
                     }
                     
-                    // Primary CTA and secondary actions
-                    if !savedPass.passDatas.isEmpty {
-                        VStack(spacing: ThemeManager.Spacing.sm) {
+                    // Primary CTA and secondary actions.
+                    //
+                    // Only "Add to Wallet" depends on there being pass files —
+                    // managing the record itself must not. A pass whose .pkpass
+                    // never arrived is precisely the one you want to expire or
+                    // delete, and it used to offer neither.
+                    VStack(spacing: ThemeManager.Spacing.sm) {
+                        if !savedPass.passDatas.isEmpty {
                             // Primary CTA - Add to Wallet
                             Button {
                                 ThemeManager.Haptics.light()
                                 addToWalletBounce += 1
                                 addPassToWallet()
                             } label: {
-                                Label(savedPass.passCount > 1 ? "Add \(savedPass.passCount) to Wallet" : "Add to Wallet", 
+                                Label(savedPass.passCount > 1 ? "Add \(savedPass.passCount) to Wallet" : "Add to Wallet",
                                       systemImage: "plus.rectangle.on.folder")
                                     .symbolEffect(.bounce, value: addToWalletBounce)
                             }
                             .themedPrimaryButton()
-                            
-                            // Delete and report — visible, because a long press
-                            // is a hidden gesture and deleting must not be one.
-                            HStack(spacing: ThemeManager.Spacing.lg) {
-                                Button {
-                                    ThemeManager.Haptics.selection()
-                                    confirmingDelete = true
-                                } label: {
-                                    Label("Delete pass", systemImage: "trash")
-                                        .font(ThemeManager.Typography.footnote)
-                                        .foregroundColor(ThemeManager.Colors.error)
-                                }
-                                .buttonStyle(.plain)
+                        }
 
-                                Button {
-                                    ThemeManager.Haptics.selection()
-                                    reportIssue()
-                                } label: {
-                                    Text("Report an issue")
-                                        .font(ThemeManager.Typography.footnote)
-                                        .foregroundColor(ThemeManager.Colors.textTertiary)
-                                }
-                                .buttonStyle(.plain)
+                        expirationToggle
+
+                        // Delete and report — visible, because a long press
+                        // is a hidden gesture and deleting must not be one.
+                        HStack(spacing: ThemeManager.Spacing.lg) {
+                            Button {
+                                ThemeManager.Haptics.selection()
+                                confirmingDelete = true
+                            } label: {
+                                Label("Delete pass", systemImage: "trash")
+                                    .font(ThemeManager.Typography.footnote)
+                                    .foregroundColor(ThemeManager.Colors.error)
                             }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                ThemeManager.Haptics.selection()
+                                reportIssue()
+                            } label: {
+                                Text("Report an issue")
+                                    .font(ThemeManager.Typography.footnote)
+                                    .foregroundColor(ThemeManager.Colors.textTertiary)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -231,6 +238,49 @@ struct SavedPassDetailView: View {
         )
     }
     
+    /// Lets the holder settle what the dates could not.
+    ///
+    /// A ticket with no readable date never expires by itself, so without this
+    /// it sits among the upcoming passes forever. The toggle works on dated
+    /// passes too — the person holding the ticket knows things the PDF does not.
+    private var expirationToggle: some View {
+        VStack(spacing: ThemeManager.Spacing.xs) {
+            Button {
+                ThemeManager.Haptics.selection()
+                let nowExpired = !savedPass.isExpired
+                savedPass.manuallyExpired = nowExpired
+                try? modelContext.save()
+                successToastMessage = nowExpired ? "Marked as expired" : "Marked as not expired"
+                showingSuccessToast = true
+            } label: {
+                Label(
+                    savedPass.isExpired ? "Mark as not expired" : "Mark as expired",
+                    systemImage: savedPass.isExpired ? "arrow.uturn.backward.circle" : "clock.badge.xmark"
+                )
+                .font(ThemeManager.Typography.footnote)
+                .foregroundColor(ThemeManager.Colors.textSecondary)
+            }
+            .buttonStyle(.plain)
+
+            // Only worth saying when the override contradicts the dates —
+            // otherwise the button label already tells the whole story.
+            if savedPass.isManuallyOverridden {
+                Button {
+                    ThemeManager.Haptics.selection()
+                    savedPass.manuallyExpired = nil
+                    try? modelContext.save()
+                    successToastMessage = "Back to the ticket's dates"
+                    showingSuccessToast = true
+                } label: {
+                    Text("Set by you • use the ticket's dates instead")
+                        .font(ThemeManager.Typography.caption)
+                        .foregroundColor(ThemeManager.Colors.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
     private func createTempSourceURL(from data: Data) -> URL? {
         let tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent(savedPass.id, isDirectory: true)

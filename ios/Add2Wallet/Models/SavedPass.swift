@@ -34,6 +34,15 @@ class SavedPass {
     /// precedence over `groupId` so "Move to trip…" can override the backend.
     var manualTripId: String?
 
+    /// The user's own call on whether this is done, overriding the dates.
+    ///
+    /// `nil` means "work it out from the dates", which is where every pass
+    /// starts. A ticket whose date could not be read never expires on its own
+    /// and would otherwise sit at the top of the list forever, so the person
+    /// holding it needs a way to say it is spent — and to take that back.
+    /// Optional with no default, so SwiftData migrates existing stores.
+    var manuallyExpired: Bool?
+
     init(
         id: String = UUID().uuidString,
         createdAt: Date = Date(),
@@ -235,10 +244,25 @@ class SavedPass {
     }
 
     /// Whether the booking has run out — the end date where there is one, the
-    /// start date otherwise. A pass with no readable date never expires.
+    /// start date otherwise. A pass with no readable date never expires on its
+    /// own; the user's own call, when they have made one, beats all of it.
     var isExpired: Bool {
+        if let manuallyExpired { return manuallyExpired }
+        return isExpiredByDate
+    }
+
+    /// What the dates alone say, ignoring any override. The detail screen shows
+    /// this so the button can explain what it is overriding.
+    var isExpiredByDate: Bool {
         guard let lastDay = lastRelevantDate else { return false }
         return Calendar.current.startOfDay(for: lastDay) < Calendar.current.startOfDay(for: Date())
+    }
+
+    /// True when the user has overridden the dates and the two disagree —
+    /// the only case worth explaining in the UI.
+    var isManuallyOverridden: Bool {
+        guard let manuallyExpired else { return false }
+        return manuallyExpired != isExpiredByDate
     }
     
     /// Built once. Creating a `DateFormatter` is expensive, and this list was
