@@ -36,7 +36,7 @@ let project = Project(
                     "CODE_SIGN_STYLE": "Automatic",
                     "ENABLE_PREVIEWS": "YES",
                     "MARKETING_VERSION": "1.0",
-                    "CURRENT_PROJECT_VERSION": "58",
+                    "CURRENT_PROJECT_VERSION": "59",
                     "SWIFT_VERSION": "5.0"
                 ]
             )
@@ -57,7 +57,7 @@ let project = Project(
                     "DEVELOPMENT_TEAM": "H9DPH4DQG7",
                     "CODE_SIGN_STYLE": "Automatic",
                     "MARKETING_VERSION": "1.0",
-                    "CURRENT_PROJECT_VERSION": "58",
+                    "CURRENT_PROJECT_VERSION": "59",
                     "SWIFT_VERSION": "5.0",
                     "APPLICATION_EXTENSION_API_ONLY": "YES"
                 ]
