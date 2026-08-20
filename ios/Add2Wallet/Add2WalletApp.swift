@@ -18,6 +18,12 @@ struct Add2WalletApp: App {
     @StateObject private var importViewModel = ContentViewModel()
     let container: ModelContainer
 
+    /// True when the app is running as an XCTest host rather than for a person.
+    /// Xcode sets this variable for the test bundle it injects.
+    static var isRunningUnitTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
     init() {
         // Initialize RevenueCat
         #if DEBUG
@@ -39,8 +45,14 @@ struct Add2WalletApp: App {
             // Create a schema with the current model
             let schema = Schema([SavedPass.self])
 
-            // In screenshot mode, use in-memory storage (no disk, no CloudKit dialog)
-            if ScreenshotModeSeeder.isScreenshotMode() {
+            // In screenshot mode or under XCTest, use in-memory storage (no disk,
+            // no CloudKit dialog).
+            //
+            // Unit tests must never reach the real iCloud container: the mirroring
+            // delegate sets itself up asynchronously and traps on a device with no
+            // account, killing the test host before it can connect ("Early
+            // unexpected exit"). Nothing here needs sync to be exercised.
+            if ScreenshotModeSeeder.isScreenshotMode() || Add2WalletApp.isRunningUnitTests {
                 let localConfig = ModelConfiguration(
                     schema: schema,
                     isStoredInMemoryOnly: true,
